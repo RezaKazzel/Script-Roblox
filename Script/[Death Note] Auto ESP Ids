@@ -1,5 +1,4 @@
 --[ Death Note Esp IDs ]--
-getgenv().ESP = true
 local function MakeESP(Name)
 	local Esp = Instance.new("BillboardGui")
 	Esp.Name = "Esp"
@@ -73,10 +72,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameFolder = ReplicatedStorage.Game
 local Gamemode, Timer, GamePhase = GameFolder.Gamemode, GameFolder.Timer, GameFolder.GamePhase
-while getgenv().ESP do task.wait()
-	if Timer.Value < 178.5 and GamePhase.Value == "IdScatter" then
-		EspActor(true)
-	else
-		EspActor(false)
-	end
+
+if Timer.Value < 178.5 and GamePhase.Value == "IdScatter" then
+	EspActor(true)
+else
+	EspActor(false)
 end
