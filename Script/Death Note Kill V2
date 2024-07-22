@@ -1,0 +1,44 @@
+--[ Death Note Kill V2 ]--
+CheckM = game.CoreGui:FindFirstChild("DeathNoteKill")
+if CheckM then CheckM:Destroy() end
+
+local Main = Instance.new("ScreenGui")
+local Toggle = Instance.new("TextButton")
+
+Main.Name = "DeathNoteKill"
+Main.Parent = game.CoreGui
+
+Toggle.Name = "Toggle"
+Toggle.Parent = Main
+Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Toggle.Position = UDim2.new(0.0777777806, 0, 0.024390243, 0)
+Toggle.Size = UDim2.new(0, 74, 0, 38)
+Toggle.Font = Enum.Font.Cartoon
+Toggle.Text = "KILL"
+Toggle.TextColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.TextScaled = true
+Toggle.TextSize = 14.000
+Toggle.TextWrapped = true
+Toggle.Draggable = true
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GameFolder = ReplicatedStorage.Game
+
+Toggle.MouseButton1Click:connect(function()
+	pcall(function()
+		for _, player in GameFolder.FolderForIds() do
+			local t = {"Fall", "Car"}
+			local random = t[math.random(1, #t)]
+			local args = {
+			    [1] = {
+			        ["Status"] = "ExecuteFromDeathNote",
+			        ["Cause"] = random.."Accident",
+			        ["Target"] = Players[player.Name]
+			    }
+			}
+			game:GetService("ReplicatedStorage").Remotes.Gamemode:FireServer(unpack(args))
+			break
+		end
+	end)
+end)
