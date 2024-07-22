@@ -1,5 +1,5 @@
 --[ Death Note Most Vote List ]--
-CheckM = game.CoreGui:FindFirstChild("DNMostVoteList")
+local CheckM = game.CoreGui:FindFirstChild("DNMostVoteList")
 if CheckM then CheckM:Destroy() end
 
 local Main = Instance.new("ScreenGui")
