@@ -1,0 +1,147 @@
+--[ Death Note Most Vote List ]--
+CheckM = game.CoreGui:FindFirstChild("DNMostVoteList")
+if CheckM then CheckM:Destroy() end
+
+local Main = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local tes = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local PlayerLabel = Instance.new("TextLabel")
+
+local Button = Instance.new("TextButton")
+
+Main.Name = "DNMostVoteList"
+Main.Parent = game.CoreGui
+
+Button.Name = "Button"
+Button.Parent = Main
+Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Button.Position = UDim2.new(0.1777777806, 0, 0.024390243, 0)
+Button.Size = UDim2.new(0, 70, 0, 35)
+Button.Font = Enum.Font.Cartoon
+Button.Text = "VoteHelp: OPEN"
+Button.TextColor3 = Color3.fromRGB(0, 255, 0)
+Button.TextScaled = true
+Button.TextSize = 14.000
+Button.TextWrapped = true
+Button.Draggable = true
+
+Frame.Name = "Frame"
+Frame.Parent = Main
+Frame.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+Frame.Position = UDim2.new(0.6, 0, 0.02, 0)
+Frame.Size = UDim2.new(0.3, 15, 0.3, 1)
+Frame.Draggable = true
+Frame.Active = true
+Frame.Visible = false
+
+tes.Name = "Frame"
+tes.Parent = Frame
+tes.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+tes.Position = UDim2.new(0, 0, 0.2, 0)
+tes.Size = UDim2.new(1, 0, 0.8, 0)
+tes.Draggable = false
+tes.Active = false
+
+Title.Name = "Title"
+Title.FontFace = Font.new(
+	"rbxasset://fonts/families/GothamSSm.json",
+	Enum.FontWeight.Bold,
+	Enum.FontStyle.Normal
+)
+Title.Text = "Most Voted Player ;"
+Title.Parent = Frame
+Title.TextColor3 = Color3.fromRGB(0, 200, 200)
+Title.TextScaled = true
+Title.TextSize = 14
+Title.TextWrapped = true
+--Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.BorderColor3 = Color3.fromRGB(50, 50, 50)
+Title.BorderSizePixel = 1
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.Size = UDim2.new(1, 0, 0.2, 0)
+
+PlayerLabel.Name = "PlayerLabel"
+PlayerLabel.FontFace = Font.new(
+	"rbxasset://fonts/families/GothamSSm.json",
+	Enum.FontWeight.Bold,
+	Enum.FontStyle.Normal
+)
+PlayerLabel.Text = ""
+PlayerLabel.TextColor3 = Color3.fromRGB(255, 0, 255)
+PlayerLabel.TextScaled = true
+PlayerLabel.TextXAlignment = 0
+PlayerLabel.TextSize = 14
+PlayerLabel.TextWrapped = true
+PlayerLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PlayerLabel.BackgroundTransparency = 1
+PlayerLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+PlayerLabel.BorderSizePixel = 0
+--PlayerLabel.Position = UDim2.new(0.046, 0,0.333, 0)
+PlayerLabel.Size = UDim2.new(0.7, 0, 0.7, 0)
+PlayerLabel.Parent = tes
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+--local UserInputService = game:GetService("UserInputService")
+local GameFolder = ReplicatedStorage.Game
+
+
+local function GetPersonWithMostVotesAlgorithm()
+	if GameFolder:FindFirstChild("VoteoutFolder") then
+		for _, plrvotes in pairs(GameFolder.VoteoutFolder:GetChildren()) do
+			if plrvotes.Value > 0 then
+				table.insert(VoteList,plrvotes)
+				table.sort(VoteList, function(a, b)
+					return a.Value > b.Value
+				end)
+			end
+		end
+		--N1, N2, N3 = VoteList[1], VoteList[2], VoteList[3]
+		Votes = ""
+		for _, PList in pairs(VoteList) do wait()
+			pcall(function()
+				for _, plr in pairs(Players:GetPlayers()) do
+					if plr.Name == PList.Name or plr.DisplayName == PList.Name then
+						Name = plr.DisplayName
+					elseif PList.Name == "Skip" then
+						Name = PList.Name
+					end
+				end
+				Votes = Votes.. _ .. ". " .. Name .. " [ " .. PList.Value .. " Votes ]\n"
+			end)
+		end
+		
+		return Votes
+	end
+end
+
+
+Button.MouseButton1Click:connect(function()
+	pcall(function()
+		ayam = not ayam
+		if ayam then
+			Button.Text = "VoteHelp: CLOSE"
+			Button.TextColor3 = Color3.fromRGB(255, 0, 0)
+			Frame.Visible = true
+		else
+			Button.Text = "VoteHelp: OPEN"
+			Button.TextColor3 = Color3.fromRGB(0, 255, 0)
+			Frame.Visible = false
+		end
+		
+		while ayam do
+		wait(0.1)
+		VoteList = {}
+			if GameFolder.GamePhase.Value == "Voteout" then
+				ListName = GetPersonWithMostVotesAlgorithm()
+				if ListName and ListName ~= "" then
+					PlayerLabel.Text = ListName
+				end
+			else
+				PlayerLabel.Text = ""
+			end
+		end
+	end)
+end)
