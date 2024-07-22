@@ -1,5 +1,5 @@
 --[ Death Note Kill V2 ]--
-CheckM = game.CoreGui:FindFirstChild("DeathNoteKill")
+local CheckM = game.CoreGui:FindFirstChild("DeathNoteKill")
 if CheckM then CheckM:Destroy() end
 
 local Main = Instance.new("ScreenGui")
