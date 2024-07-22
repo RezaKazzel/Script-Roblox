@@ -1,0 +1,22 @@
+local Main = Instance.new("ScreenGui")
+local Toggle = Instance.new("TextButton")
+
+Main.Name = "Test 1"
+Main.Parent = game.CoreGui
+
+Toggle.Name = "Toggle"
+Toggle.Parent = Main
+Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Toggle.Position = UDim2.new(0.0777777806, 0, 0.024390243, 0)
+Toggle.Size = UDim2.new(0, 74, 0, 38)
+Toggle.Font = Enum.Font.Cartoon
+Toggle.Text = "Test 1"
+Toggle.TextColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.TextScaled = true
+Toggle.TextSize = 14.000
+Toggle.TextWrapped = true
+Toggle.Draggable = true
+
+Toggle.MouseButton1Click:connect(function()
+	print("Test 1")
+end)
