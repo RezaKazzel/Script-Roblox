@@ -1,0 +1,82 @@
+--[ Death Note Esp IDs ]--
+getgenv().ESP = true
+local function MakeESP(Name)
+	local Esp = Instance.new("BillboardGui")
+	Esp.Name = "Esp"
+	Esp.Active = true
+	Esp.AlwaysOnTop = true
+	Esp.ClipsDescendants = true
+	Esp.LightInfluence = 1
+	Esp.Size = UDim2.new(0.5, 100, 0, 50)
+	Esp.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+	local TextLabeltemp = Instance.new("TextLabel")
+	TextLabeltemp.Name = "TextLabel"
+	TextLabeltemp.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json")
+	TextLabeltemp.TextColor3 = Color3.fromRGB(27, 27, 27)
+	TextLabeltemp.TextScaled = true
+	TextLabeltemp.TextSize = 14
+	TextLabeltemp.TextWrapped = true
+	TextLabeltemp.Text = Name
+	TextLabeltemp.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TextLabeltemp.BackgroundTransparency = 1
+	TextLabeltemp.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	TextLabeltemp.BorderSizePixel = 0
+	TextLabeltemp.Size = UDim2.new(1, 0, 1, 0)
+
+	local UIStroke = Instance.new("UIStroke")
+	UIStroke.Name = "UIStroke"
+	UIStroke.Color = Color3.fromRGB(255, 0, 0)
+	UIStroke.Parent = TextLabeltemp
+	
+	
+
+	TextLabeltemp.Parent = Esp
+	
+	return Esp
+end
+
+local esptable = {}
+
+function EspActor(DB)
+	local map = game.Workspace.Map
+	
+	if DB == true and map ~= nil then
+		for _, v in map:GetChildren() do
+			if v.Name == "Id" and v.SurfaceGui.Enabled == true and not v:FindFirstChild("Esp") then
+				local espagent = MakeESP(v.SurfaceGui.Frame.PlayerName.Text)
+				local highlight = Instance.new("Highlight")
+				highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+				
+				highlight.Parent = v
+				espagent.Parent = v
+				table.insert(esptable, espagent)
+				table.insert(esptable, highlight)
+			end
+		end
+	elseif DB == false and map ~= nil then
+		for _, item in pairs(esptable) do
+			item:Destroy()
+			table.remove(esptable, table.find(esptable, item))
+		end
+		for _, v in map:GetChildren() do
+			if v.Name == "Id" and v:FindFirstChild("Esp") then
+				v["Esp"]:Destroy()
+			end
+		end
+	elseif map == nil then
+		DB = false
+	end
+end
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GameFolder = ReplicatedStorage.Game
+local Gamemode, Timer, GamePhase = GameFolder.Gamemode, GameFolder.Timer, GameFolder.GamePhase
+while getgenv().ESP do task.wait()
+	if Timer.Value < 178.5 and GamePhase.Value == "IdScatter" then
+		EspActor(true)
+	else
+		EspActor(false)
+	end
+end
