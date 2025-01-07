@@ -3,7 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 
 -- Membuat UI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ModernControlPanel"
+screenGui.Name = "ReyUI"
 screenGui.Parent = CoreGui
 screenGui.ResetOnSpawn = false
 
@@ -33,7 +33,7 @@ shadow.Parent = panel
 local header = Instance.new("TextLabel")
 header.Size = UDim2.new(1, 0, 0, 30)
 header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-header.Text = "Modern UI"
+header.Text = "Rey UI"
 header.TextColor3 = Color3.fromRGB(255, 255, 255)
 header.BorderSizePixel = 0
 header.Font = Enum.Font.GothamBold
