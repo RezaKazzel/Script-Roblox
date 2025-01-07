@@ -80,7 +80,10 @@ local function createButton(name, color, parent)
     return button
 end
 
-local button1 = createButton("Button 1", Color3.fromRGB(128, 0, 128), buttonContainer)
+-- Tombol AutoKill
+local autoKillButton = createButton("AutoKill OFF", Color3.fromRGB(128, 0, 128), buttonContainer)
+
+-- Tombol lainnya
 local button2 = createButton("Button 2", Color3.fromRGB(148, 0, 211), buttonContainer)
 local button3 = createButton("Button 3", Color3.fromRGB(186, 85, 211), buttonContainer)
 local button4 = createButton("Button 4", Color3.fromRGB(138, 43, 226), buttonContainer)
@@ -129,14 +132,35 @@ header.InputEnded:Connect(function(input)
     end
 end)
 
+-- Fungsi AutoKill ON/OFF
+local function toggleAutoKill()
+    if getgenv().AutoKill then
+        getgenv().AutoKill = false
+        autoKillButton.Text = "AutoKill OFF"
+    else
+        getgenv().AutoKill = true
+        autoKillButton.Text = "AutoKill ON"
+        
+        -- Skrip AutoKill
+        while getgenv().AutoKill do
+            wait(0.3)
+            sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
+            sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
+            for i,d in pairs(game.Workspace:GetDescendants()) do
+                if d.ClassName == 'Humanoid' and d.Health < d.MaxHealth and d.Parent.Name ~= game.Players.LocalPlayer.Name then
+                    d.Health = 0
+                end
+            end
+        end
+    end
+end
+
 -- Event Tombol
 openCloseButton.MouseButton1Click:Connect(toggleUI)
 closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
-button1.MouseButton1Click:Connect(function()
-    print("Button 1 clicked!")
-end)
+autoKillButton.MouseButton1Click:Connect(toggleAutoKill)
 button2.MouseButton1Click:Connect(function()
     print("Button 2 clicked!")
 end)
