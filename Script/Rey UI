@@ -1,0 +1,148 @@
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Membuat UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ModernControlPanel"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
+
+-- Panel utama
+local panel = Instance.new("Frame")
+panel.Size = UDim2.new(0, 250, 0, 200)
+panel.Position = UDim2.new(0.5, -125, 0.5, -100)
+panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+panel.BackgroundTransparency = 0.05
+panel.BorderSizePixel = 0
+panel.Visible = false -- Mulai tersembunyi
+panel.Parent = screenGui
+
+-- Shadow
+local shadow = Instance.new("ImageLabel")
+shadow.Size = UDim2.new(1, 20, 1, 20)
+shadow.Position = UDim2.new(0, -10, 0, -10)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+shadow.ImageTransparency = 0.5
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+shadow.Parent = panel
+
+-- Header panel
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1, 0, 0, 30)
+header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+header.Text = "Modern UI"
+header.TextColor3 = Color3.fromRGB(255, 255, 255)
+header.BorderSizePixel = 0
+header.Font = Enum.Font.GothamBold
+header.TextSize = 16
+header.TextXAlignment = Enum.TextXAlignment.Center
+header.Parent = panel
+
+-- Tombol Close
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -30, 0, 2)
+closeButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BorderSizePixel = 0
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 16
+closeButton.Parent = header
+
+-- Grid untuk tombol
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Size = UDim2.new(1, -20, 1, -50)
+buttonContainer.Position = UDim2.new(0, 10, 0, 40)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.Parent = panel
+
+-- Layout grid
+local gridLayout = Instance.new("UIGridLayout")
+gridLayout.CellSize = UDim2.new(0, 110, 0, 40)
+gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+gridLayout.FillDirectionMaxCells = 2
+gridLayout.Parent = buttonContainer
+
+-- Membuat tombol
+local function createButton(name, color, parent)
+    local button = Instance.new("TextButton")
+    button.Text = name
+    button.BackgroundColor3 = color
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 16
+    button.BorderSizePixel = 0
+    button.Parent = parent
+    return button
+end
+
+local button1 = createButton("Button 1", Color3.fromRGB(128, 0, 128), buttonContainer)
+local button2 = createButton("Button 2", Color3.fromRGB(148, 0, 211), buttonContainer)
+local button3 = createButton("Button 3", Color3.fromRGB(186, 85, 211), buttonContainer)
+local button4 = createButton("Button 4", Color3.fromRGB(138, 43, 226), buttonContainer)
+
+-- Tombol Rey
+local openCloseButton = Instance.new("TextButton")
+openCloseButton.Size = UDim2.new(0, 70, 0, 30)
+openCloseButton.Position = UDim2.new(1, -80, 0, 10) -- Pojok kanan atas
+openCloseButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211) -- Warna ungu
+openCloseButton.Text = "Rey"
+openCloseButton.TextColor3 = Color3.new(1, 1, 1)
+openCloseButton.BorderSizePixel = 0
+openCloseButton.Font = Enum.Font.GothamBold
+openCloseButton.TextSize = 14
+openCloseButton.Parent = screenGui
+
+-- Fungsi untuk menampilkan/meminimalkan UI
+local function toggleUI()
+    if panel.Visible then
+        panel.Visible = false
+    else
+        panel.Visible = true
+    end
+end
+
+-- Fungsi untuk drag UI
+local dragging, dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = panel.Position
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+header.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Event Tombol
+openCloseButton.MouseButton1Click:Connect(toggleUI)
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+button1.MouseButton1Click:Connect(function()
+    print("Button 1 clicked!")
+end)
+button2.MouseButton1Click:Connect(function()
+    print("Button 2 clicked!")
+end)
+button3.MouseButton1Click:Connect(function()
+    print("Button 3 clicked!")
+end)
+button4.MouseButton1Click:Connect(function()
+    print("Button 4 clicked!")
+end)
