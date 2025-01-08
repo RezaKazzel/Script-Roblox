@@ -99,6 +99,8 @@ openCloseButton.BorderSizePixel = 0
 openCloseButton.Font = Enum.Font.GothamBold
 openCloseButton.TextSize = 14
 openCloseButton.Parent = screenGui
+openCloseButton.Active = true
+openCloseButton.Draggable = true
 
 -- Fungsi untuk menampilkan/meminimalkan UI
 local function toggleUI()
@@ -109,7 +111,7 @@ local function toggleUI()
     end
 end
 
-panel.Active = true
+panel.Active = true -- main = gui
 panel.Draggable = true
 
 -- Fungsi AutoKill ON/OFF
@@ -140,7 +142,9 @@ openCloseButton.MouseButton1Click:Connect(toggleUI)
 closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
+
 autoKillButton.MouseButton1Click:Connect(toggleAutoKill)
+
 button2.MouseButton1Click:Connect(function()
     print("Button 2 clicked!")
 end)
