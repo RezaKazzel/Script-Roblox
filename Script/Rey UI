@@ -1,23 +1,21 @@
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
--- Membuat UI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ReyUI"
 screenGui.Parent = CoreGui
 screenGui.ResetOnSpawn = false
 
--- Panel utama
 local panel = Instance.new("Frame")
 panel.Size = UDim2.new(0, 250, 0, 200)
 panel.Position = UDim2.new(0.5, -125, 0.5, -100)
 panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 panel.BackgroundTransparency = 0.05
 panel.BorderSizePixel = 0
-panel.Visible = false -- Mulai tersembunyi
+panel.Visible = false
 panel.Parent = screenGui
 
--- Shadow
 local shadow = Instance.new("ImageLabel")
 shadow.Size = UDim2.new(1, 20, 1, 20)
 shadow.Position = UDim2.new(0, -10, 0, -10)
@@ -29,7 +27,6 @@ shadow.ScaleType = Enum.ScaleType.Slice
 shadow.SliceCenter = Rect.new(10, 10, 118, 118)
 shadow.Parent = panel
 
--- Header panel
 local header = Instance.new("TextLabel")
 header.Size = UDim2.new(1, 0, 0, 30)
 header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -41,7 +38,6 @@ header.TextSize = 16
 header.TextXAlignment = Enum.TextXAlignment.Center
 header.Parent = panel
 
--- Tombol Close
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 25, 0, 25)
 closeButton.Position = UDim2.new(1, -30, 0, 2)
@@ -53,21 +49,18 @@ closeButton.Font = Enum.Font.GothamBold
 closeButton.TextSize = 16
 closeButton.Parent = header
 
--- Grid untuk tombol
 local buttonContainer = Instance.new("Frame")
 buttonContainer.Size = UDim2.new(1, -20, 1, -50)
 buttonContainer.Position = UDim2.new(0, 10, 0, 40)
 buttonContainer.BackgroundTransparency = 1
 buttonContainer.Parent = panel
 
--- Layout grid
 local gridLayout = Instance.new("UIGridLayout")
 gridLayout.CellSize = UDim2.new(0, 110, 0, 40)
 gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 gridLayout.FillDirectionMaxCells = 2
 gridLayout.Parent = buttonContainer
 
--- Membuat tombol
 local function createButton(name, color, parent)
     local button = Instance.new("TextButton")
     button.Text = name
@@ -80,19 +73,210 @@ local function createButton(name, color, parent)
     return button
 end
 
--- Tombol AutoKill
-local autoKillButton = createButton("AutoKill OFF", Color3.fromRGB(128, 0, 128), buttonContainer)
+local OneHitButton = createButton("One Hit : OFF", Color3.fromRGB(128, 0, 128), buttonContainer)
+local flygui = createButton("Fly GUI", Color3.fromRGB(148, 0, 211), buttonContainer)
 
--- Tombol lainnya
-local button2 = createButton("Button 2", Color3.fromRGB(148, 0, 211), buttonContainer)
-local button3 = createButton("Button 3", Color3.fromRGB(186, 85, 211), buttonContainer)
-local button4 = createButton("Button 4", Color3.fromRGB(138, 43, 226), buttonContainer)
+local refreshButton = Instance.new("ImageButton")
+refreshButton.Size = UDim2.new(0, 30, 0, 30)
+refreshButton.Position = UDim2.new(1, -35, 1, -35)
+refreshButton.BackgroundTransparency = 1
+refreshButton.Image = "rbxassetid://6034818375"
+refreshButton.Parent = panel
 
--- Tombol Rey
+local dropdownButton = createButton("Teleport to NPC", Color3.fromRGB(85, 85, 255), buttonContainer)
+dropdownButton.BackgroundColor3 = Color3.fromRGB(75, 75, 200)
+
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(0, 200, 0, 150)
+dropdownFrame.Position = UDim2.new(-2, 0, 1, 5)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+dropdownFrame.BorderSizePixel = 0
+dropdownFrame.Visible = false
+dropdownFrame.Parent = dropdownButton
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+scrollingFrame.ScrollBarThickness = 6
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.Parent = dropdownFrame
+
+local dropdownLayout = Instance.new("UIListLayout")
+dropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+dropdownLayout.Padding = UDim.new(0, 5)
+dropdownLayout.Parent = scrollingFrame
+
+Folder = "NPC"
+local function addHumanoidOptions()
+    for _, child in pairs(scrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local folders = game.Workspace:FindFirstChild(Folder)
+    local npcs = {}
+
+    if folders then
+        npcs = folders:GetChildren()
+    end
+
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #npcs * 35 + 10)
+
+    for _, npc in ipairs(npcs) do
+        local option = Instance.new("TextButton")
+        option.Size = UDim2.new(1, -10, 0, 30)
+        option.Position = UDim2.new(0, 5, 0, 5)
+        option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        option.TextColor3 = Color3.fromRGB(255, 255, 255)
+        option.Text = npc.Name
+        option.Font = Enum.Font.Gotham
+        option.TextSize = 14
+        option.BorderSizePixel = 0
+        option.Parent = scrollingFrame
+
+        option.MouseEnter:Connect(function()
+            option.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        end)
+
+        option.MouseLeave:Connect(function()
+            option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        end)
+
+        option.MouseButton1Click:Connect(function()
+            dropdownButton.Text = npc.Name
+            -- dropdownFrame.Visible = false
+
+            local player = game.Players.LocalPlayer
+            local targetPosition
+
+            if npc:FindFirstChild("HumanoidRootPart") then
+                targetPosition = npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0)
+            elseif npc:FindFirstChild("PrimaryPart") then
+                targetPosition = npc.PrimaryPart.Position + Vector3.new(0, 3, 0)
+            elseif npc:IsA("MeshPart") then
+                targetPosition = npc.Position + Vector3.new(0, 3, 0)
+            elseif npc:IsA("UnionOperation") then
+                local proximityPrompt = npc:FindFirstChildOfClass("ProximityPrompt")
+                if proximityPrompt then
+                    targetPosition = npc.Position + Vector3.new(0, 3, 0)
+                else
+                    targetPosition = npc.Position + Vector3.new(0, 3, 0)
+                end
+            else
+                for _, part in ipairs(npc:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        targetPosition = part.Position + Vector3.new(0, 3, 0)
+                        break
+                    end
+                end
+            end
+
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        end)
+    end
+end
+
+addHumanoidOptions()
+
+local function animateDropdown(show)
+    if show then
+        dropdownFrame.Visible = true
+        dropdownFrame.Position = UDim2.new(-2, 0, 1, 5)
+        dropdownFrame:TweenPosition(UDim2.new(-2, 0, 1, -150), "Out", "Quad", 0.3, true)
+    else
+        dropdownFrame:TweenPosition(UDim2.new(-2, 0, 1, 5), "In", "Quad", 0.3, true, function()
+            dropdownFrame.Visible = false
+        end)
+    end
+end
+
+dropdownButton.MouseButton1Click:Connect(function()
+    local isVisible = dropdownFrame.Visible
+    animateDropdown(not isVisible)
+end)
+
+-- Tombol baru untuk memilih folder tujuan
+local targetDropdownButton = createButton("Pilih Folder Tujuan", Color3.fromRGB(85, 255, 85), buttonContainer)
+
+-- Dropdown kedua untuk folder tujuan
+local targetDropdownFrame = Instance.new("Frame")
+targetDropdownFrame.Size = UDim2.new(0, 200, 0, 150)
+targetDropdownFrame.Position = UDim2.new(0, 220, 1, 5)
+targetDropdownFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+targetDropdownFrame.BorderSizePixel = 0
+targetDropdownFrame.Visible = false
+targetDropdownFrame.Parent = panel
+
+local targetScrollingFrame = Instance.new("ScrollingFrame")
+targetScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+targetScrollingFrame.ScrollBarThickness = 6
+targetScrollingFrame.BackgroundTransparency = 1
+targetScrollingFrame.Parent = targetDropdownFrame
+
+local targetDropdownLayout = Instance.new("UIListLayout")
+targetDropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+targetDropdownLayout.Padding = UDim.new(0, 5)
+targetDropdownLayout.Parent = targetScrollingFrame
+
+local function addTargetFolderOptions()
+    for _, child in pairs(targetScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local folders = game.Workspace:GetChildren()
+    targetScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #folders * 35 + 10)
+
+    for _, folder in ipairs(folders) do
+        local option = Instance.new("TextButton")
+        option.Size = UDim2.new(1, -10, 0, 30)
+        option.Position = UDim2.new(0, 5, 0, 5)
+        option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        option.TextColor3 = Color3.fromRGB(255, 255, 255)
+        option.Text = folder.Name
+        option.Font = Enum.Font.Gotham
+        option.TextSize = 14
+        option.BorderSizePixel = 0
+        option.Parent = targetScrollingFrame
+
+        option.MouseEnter:Connect(function()
+            option.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        end)
+
+        option.MouseLeave:Connect(function()
+            option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        end)
+
+        option.MouseButton1Click:Connect(function()
+	        Folder = folder.Name
+            targetDropdownButton.Text = folder.Name
+            targetDropdownFrame.Visible = false
+        end)
+    end
+end
+
+addTargetFolderOptions()
+
+targetDropdownButton.MouseButton1Click:Connect(function()
+    local isVisible = targetDropdownFrame.Visible
+    if not isVisible then
+        targetDropdownFrame.Visible = true
+        targetDropdownFrame.Position = UDim2.new(0, 220, 1, 5)
+        targetDropdownFrame:TweenPosition(UDim2.new(0, 220, 1, -150), "Out", "Quad", 0.3, true)
+    else
+        targetDropdownFrame.Visible = false
+    end
+end)
+
+refreshButton.MouseButton1Click:Connect(function()
+    addHumanoidOptions()
+end)
+
 local openCloseButton = Instance.new("TextButton")
 openCloseButton.Size = UDim2.new(0, 70, 0, 30)
-openCloseButton.Position = UDim2.new(1, -80, 0, 10) -- Pojok kanan atas
-openCloseButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211) -- Warna ungu
+openCloseButton.Position = UDim2.new(1, -80, 0, 10)
+openCloseButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
 openCloseButton.Text = "Rey"
 openCloseButton.TextColor3 = Color3.new(1, 1, 1)
 openCloseButton.BorderSizePixel = 0
@@ -102,55 +286,54 @@ openCloseButton.Parent = screenGui
 openCloseButton.Active = true
 openCloseButton.Draggable = true
 
--- Fungsi untuk menampilkan/meminimalkan UI
 local function toggleUI()
-    if panel.Visible then
-        panel.Visible = false
-    else
-        panel.Visible = true
-    end
+    panel.Visible = not panel.Visible
 end
 
-panel.Active = true -- main = gui
+panel.Active = true
 panel.Draggable = true
 
--- Fungsi AutoKill ON/OFF
-local function toggleAutoKill()
-    if getgenv().AutoKill then
-        getgenv().AutoKill = false
-        autoKillButton.Text = "AutoKill OFF"
+openCloseButton.MouseButton1Click:Connect(toggleUI)
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+local function toggleOneHit()
+    if getgenv().OneHit then
+        getgenv().OneHit = false
+        OneHitButton.Text = "One Hit : OFF"
     else
-        getgenv().AutoKill = true
-        autoKillButton.Text = "AutoKill ON"
-        
-        -- Skrip AutoKill
-        while getgenv().AutoKill do
-            wait(0.3)
+        getgenv().OneHit = true
+        OneHitButton.Text = "One Hit : ON"
+
+        local player = game.Players.LocalPlayer
+        local humanoidRootPart = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+
+        local function isWithinRange(target)
+            if not humanoidRootPart or not target then return false end
+            local distance = (humanoidRootPart.Position - target.Position).Magnitude
+            return distance < 100
+        end
+
+        while getgenv().OneHit do
+            wait(0.5)
             sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
             sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
-            for i,d in pairs(game.Workspace:GetDescendants()) do
-                if d.ClassName == 'Humanoid' and d.Health < d.MaxHealth and d.Parent.Name ~= game.Players.LocalPlayer.Name then
-                    d.Health = 0
+
+            for _, object in pairs(game.Workspace:GetDescendants()) do
+                if object:IsA("Humanoid") and object.Health < object.MaxHealth and object.Parent.Name ~= player.Name then
+                    local humanoidRoot = object.Parent:FindFirstChild("HumanoidRootPart")
+                    if humanoidRoot and isWithinRange(humanoidRoot) then
+                        object.Health = 0
+                    end
                 end
             end
         end
     end
 end
 
--- Event Tombol
-openCloseButton.MouseButton1Click:Connect(toggleUI)
-closeButton.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
-
-autoKillButton.MouseButton1Click:Connect(toggleAutoKill)
-
-button2.MouseButton1Click:Connect(function()
-    print("Button 2 clicked!")
-end)
-button3.MouseButton1Click:Connect(function()
-    print("Button 3 clicked!")
-end)
-button4.MouseButton1Click:Connect(function()
-    print("Button 4 clicked!")
+OneHitButton.MouseButton1Click:Connect(toggleOneHit)
+flygui.MouseButton1Click:Connect(function()
+    loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
