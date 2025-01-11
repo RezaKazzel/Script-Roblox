@@ -1,47 +1,54 @@
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Library UI
 local UI = {}
+UI.screenGui = Instance.new("ScreenGui")
+UI.screenGui.Name = "ReyUI"
+UI.screenGui.Parent = CoreGui
+UI.screenGui.ResetOnSpawn = false
 
-function UI:CreateLibrary()
-    local library = {}
-    
-    local CoreGui = game:GetService("CoreGui")
-    local UserInputService = game:GetService("UserInputService")
-    
-    library.ScreenGui = Instance.new("ScreenGui")
-    library.ScreenGui.Name = "ReyUI"
-    library.ScreenGui.Parent = CoreGui
-    library.ScreenGui.ResetOnSpawn = false
+-- Panel Utama
+UI.panel = Instance.new("Frame")
+UI.panel.Size = UDim2.new(0, 500, 0, 300)
+UI.panel.Position = UDim2.new(0.5, -250, 0.5, -150)
+UI.panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+UI.panel.BackgroundTransparency = 0.05
+UI.panel.BorderSizePixel = 0
+UI.panel.Visible = false
+UI.panel.Parent = UI.screenGui
+UI.panel.Active = true
+UI.panel.Draggable = true
 
-    library.Panel = Instance.new("Frame")
-    library.Panel.Size = UDim2.new(0, 250, 0, 200)
-    library.Panel.Position = UDim2.new(0.5, -125, 0.5, -100)
-    library.Panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    library.Panel.BackgroundTransparency = 0.05
-    library.Panel.BorderSizePixel = 0
-    library.Panel.Visible = false
-    library.Panel.Parent = library.ScreenGui
+-- Shadow
+UI.shadow = Instance.new("ImageLabel")
+UI.shadow.Size = UDim2.new(1, 20, 1, 20)
+UI.shadow.Position = UDim2.new(0, -10, 0, -10)
+UI.shadow.BackgroundTransparency = 1
+UI.shadow.Image = "rbxassetid://1316045217"
+UI.shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+UI.shadow.ImageTransparency = 0.5
+UI.shadow.ScaleType = Enum.ScaleType.Slice
+UI.shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+UI.shadow.Parent = UI.panel
 
-    local shadow = Instance.new("ImageLabel")
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0, -10, 0, -10)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.5
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Parent = library.Panel
-
+-- Header
+function UI:createHeader(text)
     local header = Instance.new("TextLabel")
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    header.Text = "Rey UI"
+    header.Text = text
     header.TextColor3 = Color3.fromRGB(255, 255, 255)
     header.BorderSizePixel = 0
     header.Font = Enum.Font.GothamBold
     header.TextSize = 16
     header.TextXAlignment = Enum.TextXAlignment.Center
-    header.Parent = library.Panel
+    header.Parent = UI.panel
+    return header
+end
 
+-- Close Button
+function UI:createCloseButton(parent)
     local closeButton = Instance.new("TextButton")
     closeButton.Size = UDim2.new(0, 25, 0, 25)
     closeButton.Position = UDim2.new(1, -30, 0, 2)
@@ -51,61 +58,98 @@ function UI:CreateLibrary()
     closeButton.BorderSizePixel = 0
     closeButton.Font = Enum.Font.GothamBold
     closeButton.TextSize = 16
-    closeButton.Parent = header
-    
-    local buttonContainer = Instance.new("Frame")
-    buttonContainer.Size = UDim2.new(1, -20, 1, -50)
-    buttonContainer.Position = UDim2.new(0, 10, 0, 40)
-    buttonContainer.BackgroundTransparency = 1
-    buttonContainer.Parent = library.Panel
-
-    local gridLayout = Instance.new("UIGridLayout")
-    gridLayout.CellSize = UDim2.new(0, 110, 0, 40)
-    gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
-    gridLayout.FillDirectionMaxCells = 2
-    gridLayout.Parent = buttonContainer
-
-    function library:CreateButton(name, color)
-        local button = Instance.new("TextButton")
-        button.Text = name
-        button.BackgroundColor3 = color
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.Font = Enum.Font.GothamBold
-        button.TextSize = 16
-        button.BorderSizePixel = 0
-        button.Parent = buttonContainer
-        return button
-    end
-    
-    -- UI controls
-    function library:ToggleUI()
-        library.Panel.Visible = not library.Panel.Visible
-    end
-    
-    function library:CloseUI()
-        library.ScreenGui:Destroy()
-    end
-    
-    -- Buttons actions
-    local OneHitButton = library:CreateButton("One Hit : OFF", Color3.fromRGB(128, 0, 128))
-    OneHitButton.MouseButton1Click:Connect(function()
-        -- Toggle OneHit functionality here
-    end)
-
-    local FlyButton = library:CreateButton("Fly GUI", Color3.fromRGB(148, 0, 211))
-    FlyButton.MouseButton1Click:Connect(function()
-        -- Fly GUI action
-    end)
-
-    local TeleportButton = library:CreateButton("Teleport to NPC", Color3.fromRGB(85, 85, 255))
-    TeleportButton.MouseButton1Click:Connect(function()
-        -- Teleport action
-    end)
-
-    -- Add more button and UI functionality as needed
-    closeButton.MouseButton1Click:Connect(library.CloseUI)
-    
-    return library
+    closeButton.Parent = parent
+    return closeButton
 end
 
-return UI
+-- Button Generator
+function UI:createButton(name, parent, size, callback)
+    local button = Instance.new("TextButton")
+    button.Size = size or UDim2.new(1, -10, 0, 30)
+    button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 14
+    button.BorderSizePixel = 0
+    button.Text = name
+    button.Parent = parent
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+-- Create Page
+function UI:createPage(parent)
+    local page = Instance.new("Frame")
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.Parent = parent
+    return page
+end
+
+-- Add UI Elements
+local header = UI:createHeader("Rey UI")
+local closeButton = UI:createCloseButton(header)
+
+local leftFrame = Instance.new("Frame")
+leftFrame.Size = UDim2.new(0, 100, 1, -30)
+leftFrame.Position = UDim2.new(0, 0, 0, 30)
+leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+leftFrame.BorderSizePixel = 0
+leftFrame.Parent = UI.panel
+
+local rightFrame = Instance.new("Frame")
+rightFrame.Size = UDim2.new(1, -100, 1, -30)
+rightFrame.Position = UDim2.new(0, 100, 0, 30)
+rightFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+rightFrame.BorderSizePixel = 0
+rightFrame.Parent = UI.panel
+
+-- Tabs
+local tabContainer = Instance.new("Frame")
+tabContainer.Size = UDim2.new(1, 0, 1, 0)
+tabContainer.BackgroundTransparency = 1
+tabContainer.Parent = leftFrame
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Vertical
+tabLayout.Padding = UDim.new(0, 5)
+tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+tabLayout.Parent = tabContainer
+
+-- Pages
+local autoFarmPage = UI:createPage(rightFrame)
+local utilitiesPage = UI:createPage(rightFrame)
+local settingsPage = UI:createPage(rightFrame)
+
+-- Buttons for Pages
+UI:createButton("AutoFarm", tabContainer, UDim2.new(1, -10, 0, 30), function()
+    autoFarmPage.Visible = true
+    utilitiesPage.Visible = false
+    settingsPage.Visible = false
+end)
+
+UI:createButton("Utilities", tabContainer, UDim2.new(1, -10, 0, 30), function()
+    autoFarmPage.Visible = false
+    utilitiesPage.Visible = true
+    settingsPage.Visible = false
+end)
+
+UI:createButton("Settings", tabContainer, UDim2.new(1, -10, 0, 30), function()
+    autoFarmPage.Visible = false
+    utilitiesPage.Visible = false
+    settingsPage.Visible = true
+end)
+
+-- Toggle Visibility
+local openCloseButton = UI:createButton("Rey", UI.screenGui, UDim2.new(0, 70, 0, 30), function()
+    UI.panel.Visible = not UI.panel.Visible
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    UI.screenGui:Destroy()
+end)
+
+-- Add draggable functionality
+UI.panel.Active = true
+UI.panel.Draggable = true
