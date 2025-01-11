@@ -1,61 +1,111 @@
-local UI_Library = {}
+local UI = {}
 
-function UI_Library.CreatePanel(parent, size, position, bgColor)
-    local panel = Instance.new("Frame")
-    panel.Size = size
-    panel.Position = position
-    panel.BackgroundColor3 = bgColor
-    panel.BorderSizePixel = 0
-    panel.Parent = parent
-    return panel
-end
+function UI:CreateLibrary()
+    local library = {}
+    
+    local CoreGui = game:GetService("CoreGui")
+    local UserInputService = game:GetService("UserInputService")
+    
+    library.ScreenGui = Instance.new("ScreenGui")
+    library.ScreenGui.Name = "ReyUI"
+    library.ScreenGui.Parent = CoreGui
+    library.ScreenGui.ResetOnSpawn = false
 
-function UI_Library.CreateButton(parent, size, position, text, bgColor, textColor, fontSize, callback)
-    local button = Instance.new("TextButton")
-    button.Size = size
-    button.Position = position
-    button.Text = text
-    button.BackgroundColor3 = bgColor
-    button.TextColor3 = textColor
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = fontSize
-    button.BorderSizePixel = 0
-    button.Parent = parent
-    button.MouseButton1Click:Connect(callback)
-    return button
-end
+    library.Panel = Instance.new("Frame")
+    library.Panel.Size = UDim2.new(0, 250, 0, 200)
+    library.Panel.Position = UDim2.new(0.5, -125, 0.5, -100)
+    library.Panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    library.Panel.BackgroundTransparency = 0.05
+    library.Panel.BorderSizePixel = 0
+    library.Panel.Visible = false
+    library.Panel.Parent = library.ScreenGui
 
-function UI_Library.CreateLabel(parent, size, position, text, bgColor, textColor, fontSize)
-    local label = Instance.new("TextLabel")
-    label.Size = size
-    label.Position = position
-    label.Text = text
-    label.BackgroundColor3 = bgColor
-    label.TextColor3 = textColor
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = fontSize
-    label.BorderSizePixel = 0
-    label.Parent = parent
-    return label
-end
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.5
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Parent = library.Panel
 
-function UI_Library.CreateTextBox(parent, size, position, text, bgColor, textColor, fontSize, callback)
-    local textBox = Instance.new("TextBox")
-    textBox.Size = size
-    textBox.Position = position
-    textBox.Text = text
-    textBox.BackgroundColor3 = bgColor
-    textBox.TextColor3 = textColor
-    textBox.Font = Enum.Font.GothamBold
-    textBox.TextSize = fontSize
-    textBox.BorderSizePixel = 0
-    textBox.Parent = parent
-    textBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            callback(textBox.Text)
-        end
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    header.Text = "Rey UI"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.BorderSizePixel = 0
+    header.Font = Enum.Font.GothamBold
+    header.TextSize = 16
+    header.TextXAlignment = Enum.TextXAlignment.Center
+    header.Parent = library.Panel
+
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 25, 0, 25)
+    closeButton.Position = UDim2.new(1, -30, 0, 2)
+    closeButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.BorderSizePixel = 0
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextSize = 16
+    closeButton.Parent = header
+    
+    local buttonContainer = Instance.new("Frame")
+    buttonContainer.Size = UDim2.new(1, -20, 1, -50)
+    buttonContainer.Position = UDim2.new(0, 10, 0, 40)
+    buttonContainer.BackgroundTransparency = 1
+    buttonContainer.Parent = library.Panel
+
+    local gridLayout = Instance.new("UIGridLayout")
+    gridLayout.CellSize = UDim2.new(0, 110, 0, 40)
+    gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+    gridLayout.FillDirectionMaxCells = 2
+    gridLayout.Parent = buttonContainer
+
+    function library:CreateButton(name, color)
+        local button = Instance.new("TextButton")
+        button.Text = name
+        button.BackgroundColor3 = color
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = 16
+        button.BorderSizePixel = 0
+        button.Parent = buttonContainer
+        return button
+    end
+    
+    -- UI controls
+    function library:ToggleUI()
+        library.Panel.Visible = not library.Panel.Visible
+    end
+    
+    function library:CloseUI()
+        library.ScreenGui:Destroy()
+    end
+    
+    -- Buttons actions
+    local OneHitButton = library:CreateButton("One Hit : OFF", Color3.fromRGB(128, 0, 128))
+    OneHitButton.MouseButton1Click:Connect(function()
+        -- Toggle OneHit functionality here
     end)
-    return textBox
+
+    local FlyButton = library:CreateButton("Fly GUI", Color3.fromRGB(148, 0, 211))
+    FlyButton.MouseButton1Click:Connect(function()
+        -- Fly GUI action
+    end)
+
+    local TeleportButton = library:CreateButton("Teleport to NPC", Color3.fromRGB(85, 85, 255))
+    TeleportButton.MouseButton1Click:Connect(function()
+        -- Teleport action
+    end)
+
+    -- Add more button and UI functionality as needed
+    closeButton.MouseButton1Click:Connect(library.CloseUI)
+    
+    return library
 end
 
-return UI_Library
+return UI
