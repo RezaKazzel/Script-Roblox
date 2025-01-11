@@ -1,0 +1,61 @@
+local UI_Library = {}
+
+function UI_Library.CreatePanel(parent, size, position, bgColor)
+    local panel = Instance.new("Frame")
+    panel.Size = size
+    panel.Position = position
+    panel.BackgroundColor3 = bgColor
+    panel.BorderSizePixel = 0
+    panel.Parent = parent
+    return panel
+end
+
+function UI_Library.CreateButton(parent, size, position, text, bgColor, textColor, fontSize, callback)
+    local button = Instance.new("TextButton")
+    button.Size = size
+    button.Position = position
+    button.Text = text
+    button.BackgroundColor3 = bgColor
+    button.TextColor3 = textColor
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = fontSize
+    button.BorderSizePixel = 0
+    button.Parent = parent
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+function UI_Library.CreateLabel(parent, size, position, text, bgColor, textColor, fontSize)
+    local label = Instance.new("TextLabel")
+    label.Size = size
+    label.Position = position
+    label.Text = text
+    label.BackgroundColor3 = bgColor
+    label.TextColor3 = textColor
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = fontSize
+    label.BorderSizePixel = 0
+    label.Parent = parent
+    return label
+end
+
+function UI_Library.CreateTextBox(parent, size, position, text, bgColor, textColor, fontSize, callback)
+    local textBox = Instance.new("TextBox")
+    textBox.Size = size
+    textBox.Position = position
+    textBox.Text = text
+    textBox.BackgroundColor3 = bgColor
+    textBox.TextColor3 = textColor
+    textBox.Font = Enum.Font.GothamBold
+    textBox.TextSize = fontSize
+    textBox.BorderSizePixel = 0
+    textBox.Parent = parent
+    textBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            callback(textBox.Text)
+        end
+    end)
+    return textBox
+end
+
+return UI_Library
