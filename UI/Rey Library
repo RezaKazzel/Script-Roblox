@@ -1,158 +1,212 @@
--- Rey UI Library
-local Library = {}
+local ReyUI = {}
 
--- Create Window function
-function Library:CreateWindow(title, size)
-    local UI = {}
-    UI.Window = Instance.new("ScreenGui")
-    UI.Window.Name = title
-    UI.Window.Parent = game:GetService("CoreGui")
-    UI.Window.ResetOnSpawn = false
-    
-    -- Create main frame
-    UI.MainFrame = Instance.new("Frame")
-    UI.MainFrame.Size = size
-    UI.MainFrame.Position = UDim2.new(0.5, -size.X.Offset / 2, 0.5, -size.Y.Offset / 2)
-    UI.MainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    UI.MainFrame.Parent = UI.Window
-    
-    -- Header Frame
-    UI.Header = Instance.new("TextLabel")
-    UI.Header.Size = UDim2.new(1, 0, 0, 30)
-    UI.Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    UI.Header.Text = title
-    UI.Header.TextColor3 = Color3.fromRGB(255, 255, 255)
-    UI.Header.Font = Enum.Font.GothamBold
-    UI.Header.TextSize = 16
-    UI.Header.TextXAlignment = Enum.TextXAlignment.Center
-    UI.Header.Parent = UI.MainFrame
-    
-    -- Toggle Button for showing/hiding UI
-    UI.ToggleButton = Instance.new("TextButton")
-    UI.ToggleButton.Size = UDim2.new(0, 60, 0, 30)
-    UI.ToggleButton.Position = UDim2.new(1, -70, 0, 10)
-    UI.ToggleButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
-    UI.ToggleButton.Text = "Toggle"
-    UI.ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    UI.ToggleButton.Font = Enum.Font.GothamBold
-    UI.ToggleButton.TextSize = 14
-    UI.ToggleButton.Parent = UI.Window
-    
-    -- Function to hide/show window
-    function UI:ToggleVisibility()
-        UI.MainFrame.Visible = not UI.MainFrame.Visible
-    end
-    
-    UI.ToggleButton.MouseButton1Click:Connect(function()
-        UI:ToggleVisibility()
+local CoreGui = game:GetService("CoreGui")
+
+local function createScreenGui(name)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = name
+    screenGui.Parent = CoreGui
+    screenGui.ResetOnSpawn = false
+    return screenGui
+end
+
+function ReyUI:CreateWindow(title)
+    local screenGui = createScreenGui("ReyUI")
+
+    -- Main Panel
+    local panel = Instance.new("Frame")
+    panel.Size = UDim2.new(0, 500, 0, 300)
+    panel.Position = UDim2.new(0.5, -250, 0.5, -150)
+    panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    panel.BorderSizePixel = 0
+    panel.Visible = true
+    panel.Parent = screenGui
+
+    -- Header
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    header.Text = title or "Rey UI"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.Font = Enum.Font.GothamBold
+    header.TextSize = 16
+    header.Parent = panel
+
+    -- Close Button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 25, 0, 25)
+    closeButton.Position = UDim2.new(1, -30, 0, 2)
+    closeButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextSize = 16
+    closeButton.Parent = header
+
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
     end)
-    
-    -- Function to switch pages
-    function UI:SwitchPage(page)
-        page.Visible = true
-    end
-    
-    -- Add Page
-    function UI:AddPage(pageName)
+
+    panel.Active = true
+    panel.Draggable = true
+
+    -- Tab Container
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Size = UDim2.new(0, 100, 1, -30)
+    tabContainer.Position = UDim2.new(0, 0, 0, 30)
+    tabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    tabContainer.BorderSizePixel = 0
+    tabContainer.Parent = panel
+
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.FillDirection = Enum.FillDirection.Vertical
+    tabLayout.Padding = UDim.new(0, 5)
+    tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    tabLayout.Parent = tabContainer
+
+    -- Right Frame for Pages
+    local rightFrame = Instance.new("Frame")
+    rightFrame.Size = UDim2.new(1, -100, 1, -30)
+    rightFrame.Position = UDim2.new(0, 100, 0, 30)
+    rightFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    rightFrame.BorderSizePixel = 0
+    rightFrame.Parent = panel
+
+    local tabs = {}
+
+    -- AddPage Method
+    function tabs:AddPage(pageName)
+        -- Page
         local page = Instance.new("Frame")
-        page.Size = UDim2.new(1, 0, 1, -30)
-        page.Position = UDim2.new(0, 0, 0, 30)
+        page.Size = UDim2.new(1, 0, 1, 0)
         page.BackgroundTransparency = 1
         page.Visible = false
-        page.Parent = UI.MainFrame
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 0, 30)
-        label.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        label.Text = pageName
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Font = Enum.Font.GothamBold
-        label.TextSize = 16
-        label.TextXAlignment = Enum.TextXAlignment.Center
-        label.Parent = page
-        
-        return page
-    end
-    
-    -- Add Button
-    function UI:AddButton(buttonText, callback)
+        page.Parent = rightFrame
+
+        -- Tab Button
         local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0, 100, 0, 40)
+        button.Size = UDim2.new(1, -10, 0, 30)
         button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
         button.TextColor3 = Color3.fromRGB(255, 255, 255)
         button.Font = Enum.Font.GothamBold
         button.TextSize = 14
-        button.Text = buttonText
-        button.Parent = UI.MainFrame
-        
-        button.MouseButton1Click:Connect(callback)
-    end
-    
-    -- Add Toggle
-    function UI:AddToggle(toggleText, defaultValue, callback)
-        local toggle = Instance.new("TextButton")
-        toggle.Size = UDim2.new(0, 100, 0, 40)
-        toggle.BackgroundColor3 = Color3.fromRGB(85, 255, 85)
-        toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        toggle.Font = Enum.Font.GothamBold
-        toggle.TextSize = 14
-        toggle.Text = toggleText
-        toggle.Parent = UI.MainFrame
-        toggle.MouseButton1Click:Connect(function()
-            callback(not defaultValue)
+        button.Text = pageName
+        button.Parent = tabContainer
+
+        button.MouseButton1Click:Connect(function()
+            for _, child in pairs(rightFrame:GetChildren()) do
+                if child:IsA("Frame") then
+                    child.Visible = false
+                end
+            end
+            page.Visible = true
         end)
+
+        -- Add Elements to Page
+        local elements = {}
+
+        function elements:AddButton(buttonText, callback)
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(0, 200, 0, 50)
+            button.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.Text = buttonText
+            button.Font = Enum.Font.GothamBold
+            button.TextSize = 14
+            button.Parent = page
+            button.MouseButton1Click:Connect(callback)
+        end
+
+        function elements:AddToggle(toggleText, default, callback)
+            local toggle = Instance.new("TextButton")
+            toggle.Size = UDim2.new(0, 200, 0, 50)
+            toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            toggle.Text = toggleText
+            toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            toggle.Font = Enum.Font.GothamBold
+            toggle.TextSize = 14
+            toggle.Parent = page
+
+            local state = default
+            toggle.MouseButton1Click:Connect(function()
+                state = not state
+                toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                callback(state)
+            end)
+        end
+
+        function elements:AddTextBox(placeholderText, callback)
+            local textBox = Instance.new("TextBox")
+            textBox.Size = UDim2.new(0, 200, 0, 50)
+            textBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            textBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+            textBox.PlaceholderText = placeholderText
+            textBox.Font = Enum.Font.GothamBold
+            textBox.TextSize = 14
+            textBox.Parent = page
+            textBox.FocusLost:Connect(function()
+                callback(textBox.Text)
+            end)
+        end
+
+        function elements:AddDropdown(options, callback)
+            local dropdown = Instance.new("TextButton")
+            dropdown.Size = UDim2.new(0, 200, 0, 50)
+            dropdown.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+            dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+            dropdown.Text = "Select Option"
+            dropdown.Font = Enum.Font.GothamBold
+            dropdown.TextSize = 14
+            dropdown.Parent = page
+
+            local listFrame = Instance.new("Frame")
+            listFrame.Size = UDim2.new(0, 200, 0, #options * 30)
+            listFrame.Position = UDim2.new(0, 0, 0, 50)
+            listFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            listFrame.Visible = false
+            listFrame.Parent = page
+
+            for i, option in ipairs(options) do
+                local optionButton = Instance.new("TextButton")
+                optionButton.Size = UDim2.new(1, 0, 0, 30)
+                optionButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                optionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+                optionButton.Text = option
+                optionButton.Font = Enum.Font.GothamBold
+                optionButton.TextSize = 14
+                optionButton.Parent = listFrame
+                optionButton.MouseButton1Click:Connect(function()
+                    dropdown.Text = option
+                    listFrame.Visible = false
+                    callback(option)
+                end)
+            end
+
+            dropdown.MouseButton1Click:Connect(function()
+                listFrame.Visible = not listFrame.Visible
+            end)
+        end
+
+        return elements
     end
-    
-    -- Add Input Box
-    function UI:AddInputBox(inputText, placeholderText, callback)
-        local inputBox = Instance.new("TextBox")
-        inputBox.Size = UDim2.new(0, 200, 0, 40)
-        inputBox.Position = UDim2.new(0.5, -100, 0, 70)
-        inputBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        inputBox.Font = Enum.Font.Gotham
-        inputBox.TextSize = 14
-        inputBox.Text = placeholderText
-        inputBox.Parent = UI.MainFrame
-        inputBox.FocusLost:Connect(function()
-            callback(inputBox.Text)
-        end)
-    end
-    
-    -- Add Dropdown
-    function UI:AddDropdown(dropdownText, options, callback)
-        local dropdown = Instance.new("TextButton")
-        dropdown.Size = UDim2.new(0, 200, 0, 40)
-        dropdown.Position = UDim2.new(0.5, -100, 0, 120)
-        dropdown.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-        dropdown.Font = Enum.Font.Gotham
-        dropdown.TextSize = 14
-        dropdown.Text = dropdownText
-        dropdown.Parent = UI.MainFrame
-        dropdown.MouseButton1Click:Connect(function()
-            local option = options[math.random(1, #options)]
-            callback(option)
-        end)
-    end
-    
-    -- Add Slider
-    function UI:AddSlider(sliderText, minValue, maxValue, defaultValue, callback)
-        local slider = Instance.new("TextButton")
-        slider.Size = UDim2.new(0, 200, 0, 40)
-        slider.Position = UDim2.new(0.5, -100, 0, 170)
-        slider.BackgroundColor3 = Color3.fromRGB(128, 128, 255)
-        slider.TextColor3 = Color3.fromRGB(255, 255, 255)
-        slider.Font = Enum.Font.Gotham
-        slider.TextSize = 14
-        slider.Text = sliderText
-        slider.Parent = UI.MainFrame
-        slider.MouseButton1Click:Connect(function()
-            callback(math.random(minValue, maxValue))
-        end)
-    end
-    
-    return UI
+
+    -- Add Hide/Show Button
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 70, 0, 30)
+    toggleButton.Position = UDim2.new(1, -80, 0, 10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
+    toggleButton.Text = "Rey"
+    toggleButton.TextColor3 = Color3.new(1, 1, 1)
+    toggleButton.Font = Enum.Font.GothamBold
+    toggleButton.TextSize = 14
+    toggleButton.Parent = screenGui
+
+    toggleButton.MouseButton1Click:Connect(function()
+        panel.Visible = not panel.Visible
+    end)
+
+    return tabs
 end
 
-return Library
+return ReyUI
