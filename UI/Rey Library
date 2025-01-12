@@ -1,6 +1,7 @@
 local ReyUI = {}
 
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
 local function createScreenGui(name)
     local screenGui = Instance.new("ScreenGui")
@@ -12,13 +13,17 @@ end
 
 function ReyUI:CreateWindow(title)
     local screenGui = createScreenGui("ReyUI")
+
+    -- Main Panel
     local panel = Instance.new("Frame")
     panel.Size = UDim2.new(0, 500, 0, 300)
     panel.Position = UDim2.new(0.5, -250, 0.5, -150)
     panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     panel.BorderSizePixel = 0
+    panel.Visible = false
     panel.Parent = screenGui
 
+    -- Header
     local header = Instance.new("TextLabel")
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -28,54 +33,86 @@ function ReyUI:CreateWindow(title)
     header.TextSize = 16
     header.Parent = panel
 
+    -- Close Button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 25, 0, 25)
+    closeButton.Position = UDim2.new(1, -30, 0, 2)
+    closeButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextSize = 16
+    closeButton.Parent = header
+
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    panel.Active = true
+    panel.Draggable = true
+
     return {
         Panel = panel,
         ScreenGui = screenGui,
-        Header = header,
+        AddPage = function(self, name)
+            local page = Instance.new("Frame")
+            page.Size = UDim2.new(1, 0, 1, -30)
+            page.Position = UDim2.new(0, 0, 0, 30)
+            page.BackgroundTransparency = 1
+            page.Visible = false
+            page.Parent = panel
+
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(0, 100, 0, 30)
+            button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.Text = name
+            button.Font = Enum.Font.GothamBold
+            button.TextSize = 14
+            button.Parent = panel
+
+            button.MouseButton1Click:Connect(function()
+                for _, child in pairs(panel:GetChildren()) do
+                    if child:IsA("Frame") then
+                        child.Visible = false
+                    end
+                end
+                page.Visible = true
+            end)
+
+            return {
+                Page = page,
+                AddButton = function(_, text, callback)
+                    local button = Instance.new("TextButton")
+                    button.Size = UDim2.new(0, 200, 0, 50)
+                    button.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+                    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    button.Text = text
+                    button.Font = Enum.Font.GothamBold
+                    button.TextSize = 14
+                    button.Parent = page
+                    button.MouseButton1Click:Connect(callback)
+                end,
+                AddToggle = function(_, text, default, callback)
+                    local toggle = Instance.new("TextButton")
+                    toggle.Size = UDim2.new(0, 200, 0, 50)
+                    toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                    toggle.Text = text
+                    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    toggle.Font = Enum.Font.GothamBold
+                    toggle.TextSize = 14
+                    toggle.Parent = page
+
+                    local state = default
+                    toggle.MouseButton1Click:Connect(function()
+                        state = not state
+                        toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                        callback(state)
+                    end)
+                end,
+            }
+        end,
     }
-end
-
-function ReyUI:CreateButton(window, text, callback)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 200, 0, 50)
-    button.Position = UDim2.new(0.5, -100, 0.5, 0)
-    button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
-    button.Text = text or "Button"
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
-    button.Parent = window.Panel
-
-    button.MouseButton1Click:Connect(function()
-        if callback then
-            callback()
-        end
-    end)
-
-    return button
-end
-
-function ReyUI:CreateToggle(window, text, default, callback)
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 200, 0, 50)
-    toggle.Position = UDim2.new(0.5, -100, 0.5, 60)
-    toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    toggle.Text = text or "Toggle"
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.Font = Enum.Font.GothamBold
-    toggle.TextSize = 14
-    toggle.Parent = window.Panel
-
-    local state = default or false
-    toggle.MouseButton1Click:Connect(function()
-        state = not state
-        toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        if callback then
-            callback(state)
-        end
-    end)
-
-    return toggle
 end
 
 return ReyUI
