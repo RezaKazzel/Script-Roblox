@@ -84,6 +84,7 @@ function Library:CreateWindow(title, size)
         button.TextSize = 14
         button.Text = buttonText
         button.Parent = UI.MainFrame
+        
         button.MouseButton1Click:Connect(callback)
     end
     
