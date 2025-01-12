@@ -150,6 +150,8 @@ function ReyUI:CreateWindow(title)
     toggleButton.Font = Enum.Font.GothamBold
     toggleButton.TextSize = 14
     toggleButton.Parent = screenGui
+    toggleButton.Active = true
+    toggleButton.Draggable = true
 
     toggleButton.MouseButton1Click:Connect(function()
         panel.Visible = not panel.Visible
