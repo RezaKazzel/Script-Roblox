@@ -139,6 +139,21 @@ function ReyUI:CreateWindow(title)
         return elements
     end
 
+    -- Add Hide/Show Button
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 70, 0, 30)
+    toggleButton.Position = UDim2.new(1, -80, 0, 10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
+    toggleButton.Text = "Rey"
+    toggleButton.TextColor3 = Color3.new(1, 1, 1)
+    toggleButton.Font = Enum.Font.GothamBold
+    toggleButton.TextSize = 14
+    toggleButton.Parent = screenGui
+
+    toggleButton.MouseButton1Click:Connect(function()
+        panel.Visible = not panel.Visible
+    end)
+
     return tabs
 end
 
