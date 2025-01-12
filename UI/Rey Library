@@ -73,6 +73,12 @@ function ReyUI:CreateWindow(title)
     rightFrame.BorderSizePixel = 0
     rightFrame.Parent = panel
 
+    -- Add Visual Debugging for the Right Frame
+    local debugFrame = Instance.new("Frame")
+    debugFrame.Size = UDim2.new(1, 0, 1, 0)
+    debugFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Red outline for debugging
+    debugFrame.Parent = rightFrame
+
     local tabs = {}
 
     -- AddPage Method
@@ -81,7 +87,7 @@ function ReyUI:CreateWindow(title)
         local page = Instance.new("Frame")
         page.Size = UDim2.new(1, 0, 1, 0)
         page.BackgroundTransparency = 1
-        page.Visible = false
+        page.Visible = true  -- Ensure it's visible
         page.Parent = rightFrame
 
         -- Tab Button
@@ -109,6 +115,7 @@ function ReyUI:CreateWindow(title)
         function elements:AddButton(buttonText, callback)
             local button = Instance.new("TextButton")
             button.Size = UDim2.new(0, 200, 0, 50)
+            button.Position = UDim2.new(0, 0, 0, #elements * 55)  -- Adjust position based on number of elements
             button.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
             button.TextColor3 = Color3.fromRGB(255, 255, 255)
             button.Text = buttonText
@@ -121,6 +128,7 @@ function ReyUI:CreateWindow(title)
         function elements:AddToggle(toggleText, default, callback)
             local toggle = Instance.new("TextButton")
             toggle.Size = UDim2.new(0, 200, 0, 50)
+            toggle.Position = UDim2.new(0, 0, 0, #elements * 55)  -- Adjust position based on number of elements
             toggle.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
             toggle.Text = toggleText
             toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -136,55 +144,62 @@ function ReyUI:CreateWindow(title)
             end)
         end
 
-        function elements:AddTextBox(placeholderText, callback)
-            local textBox = Instance.new("TextBox")
-            textBox.Size = UDim2.new(0, 200, 0, 50)
-            textBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            textBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-            textBox.PlaceholderText = placeholderText
-            textBox.Font = Enum.Font.GothamBold
-            textBox.TextSize = 14
-            textBox.Parent = page
-            textBox.FocusLost:Connect(function()
-                callback(textBox.Text)
+        function elements:AddTextBox(defaultText, callback)
+            local textbox = Instance.new("TextBox")
+            textbox.Size = UDim2.new(0, 200, 0, 50)
+            textbox.Position = UDim2.new(0, 0, 0, #elements * 55)  -- Adjust position based on number of elements
+            textbox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+            textbox.Font = Enum.Font.GothamBold
+            textbox.TextSize = 14
+            textbox.Text = defaultText or ""
+            textbox.Parent = page
+
+            textbox.FocusLost:Connect(function()
+                callback(textbox.Text)
             end)
         end
 
-        function elements:AddDropdown(options, callback)
-            local dropdown = Instance.new("TextButton")
-            dropdown.Size = UDim2.new(0, 200, 0, 50)
-            dropdown.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-            dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-            dropdown.Text = "Select Option"
-            dropdown.Font = Enum.Font.GothamBold
-            dropdown.TextSize = 14
-            dropdown.Parent = page
+        function elements:AddDropdown(options, defaultChoice, callback)
+            local dropdownButton = Instance.new("TextButton")
+            dropdownButton.Size = UDim2.new(0, 200, 0, 50)
+            dropdownButton.Position = UDim2.new(0, 0, 0, #elements * 55)  -- Adjust position based on number of elements
+            dropdownButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+            dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            dropdownButton.Font = Enum.Font.GothamBold
+            dropdownButton.TextSize = 14
+            dropdownButton.Text = defaultChoice or "Choose an option"
+            dropdownButton.Parent = page
 
-            local listFrame = Instance.new("Frame")
-            listFrame.Size = UDim2.new(0, 200, 0, #options * 30)
-            listFrame.Position = UDim2.new(0, 0, 0, 50)
-            listFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            listFrame.Visible = false
-            listFrame.Parent = page
+            local dropdownMenu = Instance.new("Frame")
+            dropdownMenu.Size = UDim2.new(0, 200, 0, 0)
+            dropdownMenu.Position = UDim2.new(0, 0, 0, 50)
+            dropdownMenu.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            dropdownMenu.Parent = page
+            dropdownMenu.Visible = false
 
-            for i, option in ipairs(options) do
+            local listLayout = Instance.new("UIListLayout")
+            listLayout.Parent = dropdownMenu
+            listLayout.FillDirection = Enum.FillDirection.Vertical
+            listLayout.Padding = UDim.new(0, 5)
+
+            for _, option in ipairs(options) do
                 local optionButton = Instance.new("TextButton")
                 optionButton.Size = UDim2.new(1, 0, 0, 30)
-                optionButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-                optionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
                 optionButton.Text = option
-                optionButton.Font = Enum.Font.GothamBold
-                optionButton.TextSize = 14
-                optionButton.Parent = listFrame
+                optionButton.Parent = dropdownMenu
+
                 optionButton.MouseButton1Click:Connect(function()
-                    dropdown.Text = option
-                    listFrame.Visible = false
+                    dropdownButton.Text = option
+                    dropdownMenu.Visible = false
                     callback(option)
                 end)
             end
 
-            dropdown.MouseButton1Click:Connect(function()
-                listFrame.Visible = not listFrame.Visible
+            dropdownButton.MouseButton1Click:Connect(function()
+                dropdownMenu.Visible = not dropdownMenu.Visible
             end)
         end
 
