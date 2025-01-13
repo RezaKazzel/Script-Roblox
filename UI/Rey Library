@@ -305,11 +305,11 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
         return true
     end
     
-	for _, option in ipairs(options) do
-	if check(options, option) then 
-		createOption(option)
-		end
-	end
+        for _, option in ipairs(options) do
+        if check(options, option) then 
+	    createOption(option)
+	    end
+        end
 
     dropdownButton.MouseButton1Click:Connect(function()
         dropdownList.Visible = not dropdownList.Visible
