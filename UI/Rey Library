@@ -53,6 +53,32 @@ function ReyUILib:CreateUI(uiName)
     header.TextXAlignment = Enum.TextXAlignment.Center
     header.Parent = panel
 
+    local leftFrame = Instance.new("Frame")
+    leftFrame.Size = UDim2.new(0, 130, 1, -30)
+    leftFrame.Position = UDim2.new(0, 0, 0, 30)
+    leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    leftFrame.BorderSizePixel = 0
+    leftFrame.Parent = panel
+
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Size = UDim2.new(1, 0, 1, 0)
+    tabContainer.BackgroundTransparency = 1
+    tabContainer.Parent = leftFrame
+
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.FillDirection = Enum.FillDirection.Vertical
+    tabLayout.Padding = UDim.new(0, 5)
+    tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    tabLayout.Parent = tabContainer
+
+    local rightFrame = Instance.new("Frame")
+    rightFrame.Size = UDim2.new(1, -130, 1, -30)
+    rightFrame.Position = UDim2.new(0, 130, 0, 30)
+    rightFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    rightFrame.BorderSizePixel = 0
+    rightFrame.Parent = panel
+
     mainButton.MouseButton1Click:Connect(function()
         panel.Visible = not panel.Visible
     end)
@@ -60,28 +86,13 @@ function ReyUILib:CreateUI(uiName)
     return {
         ScreenGui = screenGui,
         Panel = panel,
-        Header = header,
+        TabContainer = tabContainer,
+        RightFrame = rightFrame,
+        Tabs = {}
     }
 end
 
-function ReyUILib:CreateTabContainer(parent)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(0, 130, 1, -30)
-    container.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    container.BorderSizePixel = 0
-    container.Parent = parent
-
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Vertical
-    layout.Padding = UDim.new(0, 5)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    layout.VerticalAlignment = Enum.VerticalAlignment.Top
-    layout.Parent = container
-
-    return container
-end
-
-function ReyUILib:CreateTabButton(name, parent, callback)
+function ReyUILib:AddTab(ui, name)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, -10, 0, 25)
     button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
@@ -90,67 +101,24 @@ function ReyUILib:CreateTabButton(name, parent, callback)
     button.TextSize = 14
     button.BorderSizePixel = 0
     button.Text = name
-    button.Parent = parent
+    button.Parent = ui.TabContainer
 
-    if callback then
-        button.MouseButton1Click:Connect(callback)
-    end
+    local tabContent = Instance.new("Frame")
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.BackgroundTransparency = 1
+    tabContent.Visible = false
+    tabContent.Parent = ui.RightFrame
 
-    return button
-end
+    table.insert(ui.Tabs, tabContent)
 
-function ReyUILib:CreateToggle(name, description, parent, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 50)
-    frame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    frame.BorderSizePixel = 2
-    frame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    frame.Parent = parent
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 0.5, 0)
-    label.Position = UDim2.new(0, 10, 0, 5)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
-
-    local toggle = Instance.new("Frame")
-    toggle.Size = UDim2.new(0, 60, 0, 25)
-    toggle.Position = UDim2.new(1, -70, 0, 12)
-    toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    toggle.BorderSizePixel = 0
-    toggle.Parent = frame
-
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 20, 0, 20)
-    circle.Position = UDim2.new(0, 2, 0, 2)
-    circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    circle.BorderSizePixel = 0
-    circle.Parent = toggle
-
-    local toggled = false
-
-    toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            toggled = not toggled
-            if toggled then
-                circle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-                circle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            else
-                circle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-                circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-            end
-            if callback then
-                callback(toggled)
-            end
+    button.MouseButton1Click:Connect(function()
+        for _, tab in ipairs(ui.Tabs) do
+            tab.Visible = false
         end
+        tabContent.Visible = true
     end)
 
-    return frame
+    return tabContent
 end
 
 return ReyUILib
