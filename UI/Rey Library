@@ -81,7 +81,7 @@ function ReyUILib:CreateUI(uiName)
     }
 end
 
-function ReyUILib:CreateTab(UI, tabName)
+function ReyUILib:AddTab(UI, tabName)
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
@@ -208,21 +208,21 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
     toggleCircle.BorderSizePixel = 0
     toggleCircle.Parent = toggleContainer
 
-    local isToggled = false
+    local state = false
 
     -- Callback default
     callback = callback or function() end
 
     local function toggle()
-        isToggled = not isToggled
-        if isToggled then
+        state = not state
+        if state then
             toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
             toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         else
             toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
             toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
         end
-        callback(isToggled)
+        callback(state)
     end
 
     toggleContainer.InputBegan:Connect(function(input)
