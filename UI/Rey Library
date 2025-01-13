@@ -1,4 +1,6 @@
-local ReyUILib = {}
+end
+
+return ReyUILiblocal ReyUILib = {}
 
 function ReyUILib:CreateUI(uiName)
     local CoreGui = game:GetService("CoreGui")
@@ -299,18 +301,18 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
     
     local function check(tbl, value)
     for _, v in ipairs(tbl) do
-      if v == value then
-        return false
-      end
+        if v == value then
+            return false
+        end
         return true
-      end
+        end
     end
     
-        for _, option in ipairs(options) do
-        if check(options, option) then 
-	    createOption(option)
-	    end
-        end
+	for _, option in ipairs(options) do
+	if check(options, option) then 
+		createOption(option)
+		end
+	end
 
     dropdownButton.MouseButton1Click:Connect(function()
         dropdownList.Visible = not dropdownList.Visible
