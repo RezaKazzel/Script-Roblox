@@ -31,39 +31,12 @@ function ReyUILib:CreateUI(uiName)
     panel.Active = true
     panel.Draggable = true
 
-    local shadow = Instance.new("ImageLabel")
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0, -10, 0, -10)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.5
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Parent = panel
-
-    local header = Instance.new("TextLabel")
-    header.Size = UDim2.new(1, 0, 0, 30)
-    header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    header.Text = uiName or "Rey UI"
-    header.TextColor3 = Color3.fromRGB(255, 255, 255)
-    header.BorderSizePixel = 0
-    header.Font = Enum.Font.GothamBold
-    header.TextSize = 16
-    header.TextXAlignment = Enum.TextXAlignment.Center
-    header.Parent = panel
-
-    local leftFrame = Instance.new("Frame")
-    leftFrame.Size = UDim2.new(0, 130, 1, -30)
-    leftFrame.Position = UDim2.new(0, 0, 0, 30)
-    leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    leftFrame.BorderSizePixel = 0
-    leftFrame.Parent = panel
-
     local tabContainer = Instance.new("Frame")
-    tabContainer.Size = UDim2.new(1, 0, 1, 0)
-    tabContainer.BackgroundTransparency = 1
-    tabContainer.Parent = leftFrame
+    tabContainer.Size = UDim2.new(0, 130, 1, -30)
+    tabContainer.Position = UDim2.new(0, 0, 0, 30)
+    tabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    tabContainer.BorderSizePixel = 0
+    tabContainer.Parent = panel
 
     local tabLayout = Instance.new("UIListLayout")
     tabLayout.FillDirection = Enum.FillDirection.Vertical
@@ -88,20 +61,18 @@ function ReyUILib:CreateUI(uiName)
         Panel = panel,
         TabContainer = tabContainer,
         RightFrame = rightFrame,
-        Tabs = {}
     }
 end
 
-function ReyUILib:AddTab(ui, name)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -10, 0, 25)
-    button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
-    button.BorderSizePixel = 0
-    button.Text = name
-    button.Parent = ui.TabContainer
+function ReyUILib:AddTab(ui, tabName)
+    local tabButton = Instance.new("TextButton")
+    tabButton.Size = UDim2.new(1, -10, 0, 25)
+    tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabButton.Font = Enum.Font.GothamBold
+    tabButton.TextSize = 14
+    tabButton.Text = tabName
+    tabButton.Parent = ui.TabContainer
 
     local tabContent = Instance.new("Frame")
     tabContent.Size = UDim2.new(1, 0, 1, 0)
@@ -109,11 +80,11 @@ function ReyUILib:AddTab(ui, name)
     tabContent.Visible = false
     tabContent.Parent = ui.RightFrame
 
-    table.insert(ui.Tabs, tabContent)
-
-    button.MouseButton1Click:Connect(function()
-        for _, tab in ipairs(ui.Tabs) do
-            tab.Visible = false
+    tabButton.MouseButton1Click:Connect(function()
+        for _, sibling in ipairs(ui.RightFrame:GetChildren()) do
+            if sibling:IsA("Frame") then
+                sibling.Visible = false
+            end
         end
         tabContent.Visible = true
     end)
