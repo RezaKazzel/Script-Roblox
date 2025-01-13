@@ -130,6 +130,18 @@ function ReyUILib:AddTab(ui, tabName)
 end
 
 function ReyUILib:CreateButton(tab, name, description, buttonText, callback)
+    -- Tambahkan UIListLayout jika belum ada
+    if not tab:FindFirstChild("UIListLayout") then
+        local layout = Instance.new("UIListLayout")
+        layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
+        layout.FillDirection = Enum.FillDirection.Vertical
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        layout.VerticalAlignment = Enum.VerticalAlignment.Top
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Parent = tab
+    end
+
+    -- Buat tombol
     local buttonFrame = Instance.new("Frame")
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
