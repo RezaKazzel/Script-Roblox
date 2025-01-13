@@ -31,6 +31,28 @@ function ReyUILib:CreateUI(uiName)
     panel.Active = true
     panel.Draggable = true
 
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.5
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Parent = panel
+
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    header.Text = uiName or "Rey UI"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.BorderSizePixel = 0
+    header.Font = Enum.Font.GothamBold
+    header.TextSize = 16
+    header.TextXAlignment = Enum.TextXAlignment.Center
+    header.Parent = panel
+
     local leftFrame = Instance.new("Frame")
     leftFrame.Size = UDim2.new(0, 130, 1, -30)
     leftFrame.Position = UDim2.new(0, 0, 0, 30)
