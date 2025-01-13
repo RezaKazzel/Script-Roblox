@@ -81,7 +81,7 @@ function ReyUILib:CreateUI(uiName)
     }
 end
 
-function ReyUILib:AddTab(UI, tabName)
+function ReyUILib:CreateTab(UI, tabName)
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
