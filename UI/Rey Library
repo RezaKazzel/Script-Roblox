@@ -8,6 +8,7 @@ function ReyUILib:CreateUI(uiName)
     screenGui.Parent = CoreGui
     screenGui.ResetOnSpawn = false
 
+    -- Tombol utama untuk membuka panel
     local mainButton = Instance.new("TextButton")
     mainButton.Size = UDim2.new(0, 70, 0, 30)
     mainButton.Position = UDim2.new(1, -80, 0, 10)
@@ -21,6 +22,7 @@ function ReyUILib:CreateUI(uiName)
     mainButton.Active = true
     mainButton.Draggable = true
 
+    -- Panel utama
     local panel = Instance.new("Frame")
     panel.Size = UDim2.new(0, 500, 0, 350)
     panel.Position = UDim2.new(0.5, -250, 0.5, -175)
@@ -31,6 +33,7 @@ function ReyUILib:CreateUI(uiName)
     panel.Active = true
     panel.Draggable = true
 
+    -- Shadow untuk panel
     local shadow = Instance.new("ImageLabel")
     shadow.Size = UDim2.new(1, 20, 1, 20)
     shadow.Position = UDim2.new(0, -10, 0, -10)
@@ -42,6 +45,7 @@ function ReyUILib:CreateUI(uiName)
     shadow.SliceCenter = Rect.new(10, 10, 118, 118)
     shadow.Parent = panel
 
+    -- Header panel
     local header = Instance.new("TextLabel")
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -53,6 +57,7 @@ function ReyUILib:CreateUI(uiName)
     header.TextXAlignment = Enum.TextXAlignment.Center
     header.Parent = panel
 
+    -- Frame untuk tab dan konten
     local leftFrame = Instance.new("Frame")
     leftFrame.Size = UDim2.new(0, 130, 1, -30)
     leftFrame.Position = UDim2.new(0, 0, 0, 30)
@@ -79,6 +84,7 @@ function ReyUILib:CreateUI(uiName)
     rightFrame.BorderSizePixel = 0
     rightFrame.Parent = panel
 
+    -- Tombol untuk membuka/menutup panel
     mainButton.MouseButton1Click:Connect(function()
         panel.Visible = not panel.Visible
     end)
@@ -86,12 +92,14 @@ function ReyUILib:CreateUI(uiName)
     return {
         ScreenGui = screenGui,
         Panel = panel,
+        Header = header,
         TabContainer = tabContainer,
         RightFrame = rightFrame,
     }
 end
 
 function ReyUILib:AddTab(ui, tabName)
+    -- Membuat tombol tab
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
@@ -101,12 +109,14 @@ function ReyUILib:AddTab(ui, tabName)
     tabButton.Text = tabName
     tabButton.Parent = ui.TabContainer
 
+    -- Membuat konten tab
     local tabContent = Instance.new("Frame")
     tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
     tabContent.Visible = false
     tabContent.Parent = ui.RightFrame
 
+    -- Menambahkan logika untuk menampilkan tab
     tabButton.MouseButton1Click:Connect(function()
         for _, sibling in ipairs(ui.RightFrame:GetChildren()) do
             if sibling:IsA("Frame") then
