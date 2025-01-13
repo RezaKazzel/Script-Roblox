@@ -97,6 +97,16 @@ function ReyUILib:AddTab(UI, tabName)
     tabContent.BackgroundTransparency = 1
     tabContent.Visible = false
     tabContent.Parent = UI.RightFrame
+    
+    if not tabContent:FindFirstChild("UIListLayout") then
+	    local layout = Instance.new("UIListLayout")
+	    layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
+	    layout.FillDirection = Enum.FillDirection.Vertical
+	    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	    layout.SortOrder = Enum.SortOrder.LayoutOrder
+	    layout.Parent = tabContent
+	end
 
     tabButton.MouseButton1Click:Connect(function()
         for _, tab in ipairs(UI.RightFrame:GetChildren()) do
