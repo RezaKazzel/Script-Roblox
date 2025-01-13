@@ -8,18 +8,18 @@ function ReyUILib:CreateUI(uiName)
     screenGui.Parent = CoreGui
     screenGui.ResetOnSpawn = false
 
-    local mainButton = Instance.new("TextButton")
-    mainButton.Size = UDim2.new(0, 70, 0, 30)
-    mainButton.Position = UDim2.new(1, -80, 0, 10)
-    mainButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
-    mainButton.Text = "Rey"
-    mainButton.TextColor3 = Color3.new(1, 1, 1)
-    mainButton.BorderSizePixel = 0
-    mainButton.Font = Enum.Font.GothamBold
-    mainButton.TextSize = 14
-    mainButton.Parent = screenGui
-    mainButton.Active = true
-    mainButton.Draggable = true
+    local ReyBtn = Instance.new("TextButton")
+    ReyBtn.Size = UDim2.new(0, 70, 0, 30)
+    ReyBtn.Position = UDim2.new(1, -80, 0, 10)
+    ReyBtn.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
+    ReyBtn.Text = "Rey"
+    ReyBtn.TextColor3 = Color3.new(1, 1, 1)
+    ReyBtn.BorderSizePixel = 0
+    ReyBtn.Font = Enum.Font.GothamBold
+    ReyBtn.TextSize = 14
+    ReyBtn.Parent = screenGui
+    ReyBtn.Active = true
+    ReyBtn.Draggable = true
 
     local panel = Instance.new("Frame")
     panel.Size = UDim2.new(0, 500, 0, 350)
@@ -68,7 +68,7 @@ function ReyUILib:CreateUI(uiName)
     rightFrame.BorderSizePixel = 0
     rightFrame.Parent = panel
 
-    mainButton.MouseButton1Click:Connect(function()
+    ReyBtn.MouseButton1Click:Connect(function()
         panel.Visible = not panel.Visible
     end)
 
@@ -154,7 +154,7 @@ function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
     actionButton.MouseButton1Click:Connect(callback)
 end
 
-function ReyUILib:CreateToggle(name, description, parent, callback)
+function ReyUILib:CreateToggle(parent, name, description, callback)
     local buttonFrame = Instance.new("Frame")
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -200,25 +200,37 @@ function ReyUILib:CreateToggle(name, description, parent, callback)
 
     local isToggled = false
 
+    -- Callback default
+    callback = callback or function() end
+
     local function toggle()
         isToggled = not isToggled
-	        if isToggled then
-	            toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-				toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Warna ON
-			else
-				toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-				toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Warna OFF
-			end
-		callback(isToggled)
-	end
-toggleContainer.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        toggle()
+        if isToggled then
+            toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+            toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+            toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        end
+        callback(isToggled)
     end
-end)
+
+    toggleContainer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            toggle()
+        end
+    end)
+
+    return buttonFrame
 end
 
-function ReyUILib:CreateDropdown(name, options, parent, callback) local dropdownFrame = Instance.new("Frame") dropdownFrame.Size = UDim2.new(1, -10, 0, 40) dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60) dropdownFrame.BorderSizePixel = 2 dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30) dropdownFrame.Parent = parent
+function ReyUILib:CreateDropdown(parent, name, options, callback)
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(1, -10, 0, 40)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+dropdownFrame.BorderSizePixel = 2
+dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+dropdownFrame.Parent = parent
 
 local dropdownButton = Instance.new("TextButton")
 dropdownButton.Size = UDim2.new(1, 0, 1, 0)
