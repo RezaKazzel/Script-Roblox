@@ -8,7 +8,6 @@ function ReyUILib:CreateUI(uiName)
     screenGui.Parent = CoreGui
     screenGui.ResetOnSpawn = false
 
-    -- Tombol utama untuk membuka panel
     local mainButton = Instance.new("TextButton")
     mainButton.Size = UDim2.new(0, 70, 0, 30)
     mainButton.Position = UDim2.new(1, -80, 0, 10)
@@ -22,7 +21,6 @@ function ReyUILib:CreateUI(uiName)
     mainButton.Active = true
     mainButton.Draggable = true
 
-    -- Panel utama
     local panel = Instance.new("Frame")
     panel.Size = UDim2.new(0, 500, 0, 350)
     panel.Position = UDim2.new(0.5, -250, 0.5, -175)
@@ -33,19 +31,6 @@ function ReyUILib:CreateUI(uiName)
     panel.Active = true
     panel.Draggable = true
 
-    -- Shadow untuk panel
-    local shadow = Instance.new("ImageLabel")
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0, -10, 0, -10)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.5
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Parent = panel
-
-    -- Header panel
     local header = Instance.new("TextLabel")
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -57,7 +42,6 @@ function ReyUILib:CreateUI(uiName)
     header.TextXAlignment = Enum.TextXAlignment.Center
     header.Parent = panel
 
-    -- Frame untuk tab dan konten
     local leftFrame = Instance.new("Frame")
     leftFrame.Size = UDim2.new(0, 130, 1, -30)
     leftFrame.Position = UDim2.new(0, 0, 0, 30)
@@ -84,7 +68,6 @@ function ReyUILib:CreateUI(uiName)
     rightFrame.BorderSizePixel = 0
     rightFrame.Parent = panel
 
-    -- Tombol untuk membuka/menutup panel
     mainButton.MouseButton1Click:Connect(function()
         panel.Visible = not panel.Visible
     end)
@@ -92,14 +75,13 @@ function ReyUILib:CreateUI(uiName)
     return {
         ScreenGui = screenGui,
         Panel = panel,
-        Header = header,
-        TabContainer = tabContainer,
+        LeftFrame = leftFrame,
         RightFrame = rightFrame,
+        TabContainer = tabContainer,
     }
 end
 
-function ReyUILib:AddTab(ui, tabName)
-    -- Membuat tombol tab
+function ReyUILib:AddTab(UI, tabName)
     local tabButton = Instance.new("TextButton")
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
@@ -107,20 +89,19 @@ function ReyUILib:AddTab(ui, tabName)
     tabButton.Font = Enum.Font.GothamBold
     tabButton.TextSize = 14
     tabButton.Text = tabName
-    tabButton.Parent = ui.TabContainer
+    tabButton.BorderSizePixel = 0
+    tabButton.Parent = UI.TabContainer
 
-    -- Membuat konten tab
     local tabContent = Instance.new("Frame")
     tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
     tabContent.Visible = false
-    tabContent.Parent = ui.RightFrame
+    tabContent.Parent = UI.RightFrame
 
-    -- Menambahkan logika untuk menampilkan tab
     tabButton.MouseButton1Click:Connect(function()
-        for _, sibling in ipairs(ui.RightFrame:GetChildren()) do
-            if sibling:IsA("Frame") then
-                sibling.Visible = false
+        for _, tab in ipairs(UI.RightFrame:GetChildren()) do
+            if tab:IsA("Frame") then
+                tab.Visible = false
             end
         end
         tabContent.Visible = true
@@ -129,25 +110,13 @@ function ReyUILib:AddTab(ui, tabName)
     return tabContent
 end
 
-function ReyUILib:CreateButton(tab, name, description, buttonText, callback)
-    -- Tambahkan UIListLayout jika belum ada
-    if not tab:FindFirstChild("UIListLayout") then
-        local layout = Instance.new("UIListLayout")
-        layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
-        layout.FillDirection = Enum.FillDirection.Vertical
-        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        layout.VerticalAlignment = Enum.VerticalAlignment.Top
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Parent = tab
-    end
-
-    -- Buat tombol
+function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
     local buttonFrame = Instance.new("Frame")
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     buttonFrame.BorderSizePixel = 2
     buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    buttonFrame.Parent = tab
+    buttonFrame.Parent = parent
 
     local buttonName = Instance.new("TextLabel")
     buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
@@ -164,7 +133,7 @@ function ReyUILib:CreateButton(tab, name, description, buttonText, callback)
     buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
     buttonDesc.Position = UDim2.new(0, 10, 0, 30)
     buttonDesc.BackgroundTransparency = 1
-    buttonDesc.Text = description or ""
+    buttonDesc.Text = description
     buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
     buttonDesc.Font = Enum.Font.Gotham
     buttonDesc.TextSize = 12
@@ -173,26 +142,143 @@ function ReyUILib:CreateButton(tab, name, description, buttonText, callback)
 
     local actionButton = Instance.new("TextButton")
     actionButton.Size = UDim2.new(0, 65, 0, 25)
-    actionButton.Position = UDim2.new(1, -40, 0.3, 11)
-    actionButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    if name == "DESTROY GUI" then
-        actionButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        actionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-    else
-        actionButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
-        actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
+    actionButton.Position = UDim2.new(1, -70, 0, 12)
+    actionButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+    actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     actionButton.Font = Enum.Font.GothamBold
     actionButton.TextSize = 14
-    actionButton.Text = buttonText or "Run"
+    actionButton.Text = buttonText
     actionButton.BorderSizePixel = 0
     actionButton.Parent = buttonFrame
 
-    actionButton.MouseButton1Click:Connect(function()
-        if callback then
-            callback()
-        end
+    actionButton.MouseButton1Click:Connect(callback)
+end
+
+function ReyUILib:CreateToggle(name, description, parent, callback)
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Size = UDim2.new(1, -10, 0, 50)
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    buttonFrame.BorderSizePixel = 2
+    buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    buttonFrame.Parent = parent
+
+    local buttonName = Instance.new("TextLabel")
+    buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
+    buttonName.Position = UDim2.new(0, 10, 0, 5)
+    buttonName.BackgroundTransparency = 1
+    buttonName.Text = name
+    buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    buttonName.Font = Enum.Font.GothamBold
+    buttonName.TextSize = 14
+    buttonName.TextXAlignment = Enum.TextXAlignment.Left
+    buttonName.Parent = buttonFrame
+
+    local buttonDesc = Instance.new("TextLabel")
+    buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
+    buttonDesc.Position = UDim2.new(0, 10, 0, 30)
+    buttonDesc.BackgroundTransparency = 1
+    buttonDesc.Text = description
+    buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+    buttonDesc.Font = Enum.Font.Gotham
+    buttonDesc.TextSize = 12
+    buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
+    buttonDesc.Parent = buttonFrame
+
+    local toggleContainer = Instance.new("Frame")
+    toggleContainer.Size = UDim2.new(0, 60, 0, 25)
+    toggleContainer.Position = UDim2.new(1, -70, 0, 12)
+    toggleContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    toggleContainer.BorderSizePixel = 0
+    toggleContainer.Parent = buttonFrame
+
+    local toggleCircle = Instance.new("Frame")
+    toggleCircle.Size = UDim2.new(0, 20, 0, 20)
+    toggleCircle.Position = UDim2.new(0, 2, 0, 2)
+    toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    toggleCircle.BorderSizePixel = 0
+    toggleCircle.Parent = toggleContainer
+
+    local isToggled = false
+
+    local function toggle()
+        isToggled = not isToggled
+	        if isToggled then
+	            toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+				toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Warna ON
+			else
+				toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+				toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Warna OFF
+			end
+		callback(isToggled)
+	end
+toggleContainer.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        toggle()
+    end
+end)
+end
+
+function ReyUILib:CreateDropdown(name, options, parent, callback) local dropdownFrame = Instance.new("Frame") dropdownFrame.Size = UDim2.new(1, -10, 0, 40) dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60) dropdownFrame.BorderSizePixel = 2 dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30) dropdownFrame.Parent = parent
+
+local dropdownButton = Instance.new("TextButton")
+dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+dropdownButton.Font = Enum.Font.GothamBold
+dropdownButton.TextSize = 14
+dropdownButton.Text = name
+dropdownButton.BorderSizePixel = 0
+dropdownButton.Parent = dropdownFrame
+
+local dropdownList = Instance.new("ScrollingFrame")
+dropdownList.Size = UDim2.new(1, 0, 0, 150)
+dropdownList.Position = UDim2.new(0, 0, 1, 0)
+dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+dropdownList.BorderSizePixel = 0
+dropdownList.Visible = false
+dropdownList.ClipsDescendants = true
+dropdownList.ScrollBarThickness = 6
+dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+dropdownList.Parent = dropdownFrame
+
+local dropdownLayout = Instance.new("UIListLayout")
+dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+dropdownLayout.Padding = UDim.new(0, 5)
+dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+dropdownLayout.Parent = dropdownList
+
+local function updateCanvasSize()
+    dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+end
+
+dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+
+local function createOption(option)
+    local optionButton = Instance.new("TextButton")
+    optionButton.Size = UDim2.new(1, -10, 0, 30)
+    optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    optionButton.Font = Enum.Font.Gotham
+    optionButton.TextSize = 12
+    optionButton.Text = option
+    optionButton.BorderSizePixel = 0
+    optionButton.Parent = dropdownList
+
+    optionButton.MouseButton1Click:Connect(function()
+        dropdownButton.Text = option
+        dropdownList.Visible = false
+        callback(option)
     end)
+end
+
+for _, option in ipairs(options) do
+    createOption(option)
+end
+
+dropdownButton.MouseButton1Click:Connect(function()
+    dropdownList.Visible = not dropdownList.Visible
+end)
+updateCanvasSize()
 end
 
 return ReyUILib
