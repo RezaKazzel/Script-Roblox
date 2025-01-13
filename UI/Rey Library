@@ -129,4 +129,58 @@ function ReyUILib:AddTab(ui, tabName)
     return tabContent
 end
 
+function ReyUILib:CreateButton(tab, name, description, buttonText, callback)
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Size = UDim2.new(1, -10, 0, 50)
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    buttonFrame.BorderSizePixel = 2
+    buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    buttonFrame.Parent = tab
+
+    local buttonName = Instance.new("TextLabel")
+    buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
+    buttonName.Position = UDim2.new(0, 10, 0, 5)
+    buttonName.BackgroundTransparency = 1
+    buttonName.Text = name
+    buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    buttonName.Font = Enum.Font.GothamBold
+    buttonName.TextSize = 14
+    buttonName.TextXAlignment = Enum.TextXAlignment.Left
+    buttonName.Parent = buttonFrame
+
+    local buttonDesc = Instance.new("TextLabel")
+    buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
+    buttonDesc.Position = UDim2.new(0, 10, 0, 30)
+    buttonDesc.BackgroundTransparency = 1
+    buttonDesc.Text = description or ""
+    buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+    buttonDesc.Font = Enum.Font.Gotham
+    buttonDesc.TextSize = 12
+    buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
+    buttonDesc.Parent = buttonFrame
+
+    local actionButton = Instance.new("TextButton")
+    actionButton.Size = UDim2.new(0, 65, 0, 25)
+    actionButton.Position = UDim2.new(1, -40, 0.3, 11)
+    actionButton.AnchorPoint = Vector2.new(0.5, 0.5)
+    if name == "DESTROY GUI" then
+        actionButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        actionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    else
+        actionButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+        actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+    actionButton.Font = Enum.Font.GothamBold
+    actionButton.TextSize = 14
+    actionButton.Text = buttonText or "Run"
+    actionButton.BorderSizePixel = 0
+    actionButton.Parent = buttonFrame
+
+    actionButton.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+end
+
 return ReyUILib
