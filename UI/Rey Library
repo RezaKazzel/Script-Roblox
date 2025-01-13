@@ -297,10 +297,8 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
         end)
     end
     
-    if not type(option) == "table" then
-       for _, option in ipairs(options) do
-          createOption(option)
-       end
+    for _, option in ipairs(options) do
+	createOption(option)
     end
 
     dropdownButton.MouseButton1Click:Connect(function()
