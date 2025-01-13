@@ -31,12 +31,17 @@ function ReyUILib:CreateUI(uiName)
     panel.Active = true
     panel.Draggable = true
 
+    local leftFrame = Instance.new("Frame")
+    leftFrame.Size = UDim2.new(0, 130, 1, -30)
+    leftFrame.Position = UDim2.new(0, 0, 0, 30)
+    leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    leftFrame.BorderSizePixel = 0
+    leftFrame.Parent = panel
+
     local tabContainer = Instance.new("Frame")
-    tabContainer.Size = UDim2.new(0, 130, 1, -30)
-    tabContainer.Position = UDim2.new(0, 0, 0, 30)
-    tabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    tabContainer.BorderSizePixel = 0
-    tabContainer.Parent = panel
+    tabContainer.Size = UDim2.new(1, 0, 1, 0)
+    tabContainer.BackgroundTransparency = 1
+    tabContainer.Parent = leftFrame
 
     local tabLayout = Instance.new("UIListLayout")
     tabLayout.FillDirection = Enum.FillDirection.Vertical
