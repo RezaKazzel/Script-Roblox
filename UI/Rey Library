@@ -306,8 +306,10 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 		end
 	end
 	
+	local daftar = {}
 	for _, option in ipairs(options) do
-		if checkT(options, option) then
+		if checkT(daftar, option) then
+			table.insert(daftar, option)
 			createOption(option)
 		end
 	end
