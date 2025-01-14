@@ -349,10 +349,10 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 			createOption(option)
 		end
 		updateCanvasSize()
+		debounce = false
 	end)
 
 	updateCanvasSize()
-	debounce = false
 	return containerFrame
 end
 
