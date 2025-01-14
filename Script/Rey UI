@@ -98,7 +98,7 @@ pcall(function()
 		activeConnections["Auto Grab Items"] = game:GetService("RunService").RenderStepped:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(game.Workspace:GetDescendants()) do
-				if v:IsA("Tool") and v.Handle then
+				if v:IsA("Tool") and v:FindFirstChild("Handle") then
 					v.Handle.CFrame = player.CFrame
 				end
 			end
