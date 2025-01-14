@@ -299,7 +299,7 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		optionButton.Font = Enum.Font.Gotham
 		optionButton.TextSize = 12
-		optionButton.Text = option or option.Name
+		optionButton.Text = option.Name
 		optionButton.BorderSizePixel = 0
 		optionButton.ZIndex = 2
 		optionButton.Parent = dropdownList
