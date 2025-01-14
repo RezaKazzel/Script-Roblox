@@ -7,19 +7,47 @@ local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
 
 activeConnections = {}
+
+function TP(P)
+	 Distance = (P.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+	 if Distance < 10 then
+		 Speed = 1000
+	 elseif Distance < 170 then
+		 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = P
+		 Speed = 350
+	 elseif Distance < 1000 then
+		 Speed = 350
+	 elseif Distance >= 1000 then
+		 Speed = 300
+	 end
+	 game:GetService("TweenService"):Create(
+		 game.Players.LocalPlayer.Character.HumanoidRootPart,
+		 TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear),
+		 {CFrame = P}
+	 ):Play()
+ end
+ 
 Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob", function(state)
 pcall(function()
+	local plr = game.Players.LocalPlayer
+	local torso = plr.Character.Torso
 	if state and AutoFarmMob then
-		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait(0.1)
+		if not torso:FindFirstChild("BodyVelocity") then
+			bv = Instance.new("BodyVelocity", torso)
+			bv.velocity = Vector3.new(0,0.1,0)
+			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		end
+		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(game.Workspace:GetDescendants()) do
 				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
 					local wwd = v:FindFirstChild("HumanoidRootPart")
 					if wwd and player and v.Humanoid.Health > 0 then
-						-- Teleport 11 studs above NPC's head and point towards the floor
+						-- Teleport 5 studs above NPC's head and point towards the floor
 						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 5, 0) -- Adjust to NPC's head position + 11 studs up
 						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-						wait() -- Wait briefly (default interval)
+						--wait() -- Wait briefly (default interval)
+						break
 					end
 				end
 			end
@@ -28,6 +56,10 @@ pcall(function()
 		if activeConnections["AutoFarm"] then
 			activeConnections["AutoFarm"]:Disconnect()
 			activeConnections["AutoFarm"] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
 		end
 	end
 end)
