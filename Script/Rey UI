@@ -134,6 +134,13 @@ end)
 Rey:CreateToggle(Main, "One Hit", "1 hit enemies", function(state)
 pcall(function()
 	local player = game.Players.LocalPlayer
+	local humanoidRootPart = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+
+	local function isWithinRange(target)
+		if not humanoidRootPart or not target then return false end
+		local distance = (humanoidRootPart.Position - target.Position).Magnitude
+		return distance < 100
+	end
 	_G.OneHit = state
 	while _G.OneHit do wait()
 		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
