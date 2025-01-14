@@ -235,78 +235,114 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
 end
 
 function ReyUILib:CreateDropdown(parent, name, options, callback)
-    callback = callback or function() end
+	callback = callback or function() end
 
-    local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Size = UDim2.new(1, -10, 0, 40)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    dropdownFrame.BorderSizePixel = 2
-    dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    dropdownFrame.Parent = parent
+	-- Frame untuk Dropdown + Refresh Button
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Size = UDim2.new(1, -10, 0, 40)
+	containerFrame.BackgroundTransparency = 1
+	containerFrame.Parent = parent
 
-    local dropdownButton = Instance.new("TextButton")
-    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
-    dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dropdownButton.Font = Enum.Font.GothamBold
-    dropdownButton.TextSize = 14
-    dropdownButton.Text = name
-    dropdownButton.BorderSizePixel = 0
-    dropdownButton.Parent = dropdownFrame
+	-- Dropdown Frame
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.Size = UDim2.new(0.85, -5, 1, 0) -- Lebar 87% dari container (sesuai sisa refreshFrame)
+	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownFrame.BorderSizePixel = 2
+	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	dropdownFrame.Parent = containerFrame
 
-    local dropdownList = Instance.new("ScrollingFrame")
-    dropdownList.Size = UDim2.new(1, 0, 0, 150)
-    dropdownList.Position = UDim2.new(0, 0, 1, 0)
-    dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    dropdownList.BorderSizePixel = 0
-    dropdownList.Visible = false
-    dropdownList.ClipsDescendants = true
-    dropdownList.ScrollBarThickness = 6
-    dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-    dropdownList.ZIndex = 2 -- Prioritas render lebih tinggi
-    dropdownList.Parent = dropdownFrame
+	local dropdownButton = Instance.new("TextButton")
+	dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+	dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dropdownButton.Font = Enum.Font.GothamBold
+	dropdownButton.TextSize = 14
+	dropdownButton.Text = name
+	dropdownButton.BorderSizePixel = 0
+	dropdownButton.Parent = dropdownFrame
 
-    local dropdownLayout = Instance.new("UIListLayout")
-    dropdownLayout.FillDirection = Enum.FillDirection.Vertical
-    dropdownLayout.Padding = UDim.new(0, 5)
-    dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    dropdownLayout.Parent = dropdownList
-
-    local function updateCanvasSize()
-        dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
-    end
-
-    dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
-
-    local function createOption(option)
-        local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, -10, 0, 30)
-        optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        optionButton.Font = Enum.Font.Gotham
-        optionButton.TextSize = 12
-        optionButton.Text = option
-        optionButton.BorderSizePixel = 0
-        optionButton.ZIndex = 2
-        optionButton.Parent = dropdownList
-
-        optionButton.MouseButton1Click:Connect(function()
-            dropdownButton.Text = option
-            dropdownList.Visible = false
-            callback(option)
-        end)
-    end
+	local dropdownList = Instance.new("ScrollingFrame")
+	dropdownList.Size = UDim2.new(1, 0, 0, 150)
+	dropdownList.Position = UDim2.new(0, 0, 1, 0)
+	dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	dropdownList.BorderSizePixel = 0
+	dropdownList.Visible = false
+	dropdownList.ClipsDescendants = true
+	dropdownList.ScrollBarThickness = 6
+	dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+	dropdownList.ZIndex = 2
+	dropdownList.Parent = dropdownFrame
 	
+	local dropdownLayout = Instance.new("UIListLayout")
+	dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+	dropdownLayout.Padding = UDim.new(0, 5)
+	dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	dropdownLayout.Parent = dropdownList
+	
+	local function updateCanvasSize()
+		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+	end
+	
+	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+
+	local function createOption(option)
+		local optionButton = Instance.new("TextButton")
+		optionButton.Size = UDim2.new(1, -10, 0, 30)
+		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		optionButton.Font = Enum.Font.Gotham
+		optionButton.TextSize = 12
+		optionButton.Text = option
+		optionButton.BorderSizePixel = 0
+		optionButton.ZIndex = 2
+		optionButton.Parent = dropdownList
+
+		optionButton.MouseButton1Click:Connect(function()
+			dropdownButton.Text = option
+			dropdownList.Visible = false
+			callback(option)
+		end)
+	end
+
 	for _, option in ipairs(options) do
 		createOption(option)
 	end
 
-    dropdownButton.MouseButton1Click:Connect(function()
-        dropdownList.Visible = not dropdownList.Visible
-    end)
+	dropdownButton.MouseButton1Click:Connect(function()
+		dropdownList.Visible = not dropdownList.Visible
+	end)
 
-    updateCanvasSize()
-    return dropdownFrame
+	-- Refresh Button + Frame
+	local refreshFrame = Instance.new("Frame")
+	refreshFrame.Size = UDim2.new(0.13, 0, 1, 0) -- Lebar 13% dari container
+	refreshFrame.Position = UDim2.new(0.85, 5, 0, 0) -- Setelah dropdownFrame
+	refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	refreshFrame.BorderSizePixel = 2
+	refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	refreshFrame.Parent = containerFrame
+
+	local refreshButton = Instance.new("ImageButton")
+	refreshButton.Size = UDim2.new(1, -8, 1, -8) -- Memberikan padding agar terlihat proporsional
+	refreshButton.Position = UDim2.new(0, 4, 0, 4) -- Posisi di tengah refreshFrame
+	refreshButton.BackgroundTransparency = 1
+	refreshButton.Image = "rbxassetid://122032243989747" -- Ganti ID ini sesuai kebutuhan
+	refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	refreshButton.Parent = refreshFrame
+
+	refreshButton.MouseButton1Click:Connect(function()
+		for _, child in ipairs(dropdownList:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
+			end
+		end
+		for _, option in ipairs(options) do
+			createOption(option)
+		end
+		updateCanvasSize()
+	end)
+
+	updateCanvasSize()
+	return containerFrame
 end
 
 return ReyUILib
