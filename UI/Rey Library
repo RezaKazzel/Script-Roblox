@@ -299,13 +299,13 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		optionButton.Font = Enum.Font.Gotham
 		optionButton.TextSize = 12
-		optionButton.Text = option or option.Name
+		optionButton.Text = option.Name or option
 		optionButton.BorderSizePixel = 0
 		optionButton.ZIndex = 2
 		optionButton.Parent = dropdownList
 
 		optionButton.MouseButton1Click:Connect(function()
-			dropdownButton.Text = option
+			dropdownButton.Text = option.Name or option
 			dropdownList.Visible = false
 			callback(option)
 		end)
