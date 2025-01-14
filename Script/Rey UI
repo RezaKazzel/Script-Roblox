@@ -1,372 +1,115 @@
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
+-- Rey UI Library
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ReyUI"
-screenGui.Parent = CoreGui
-screenGui.ResetOnSpawn = false
+local UI = Rey:CreateUI("Rey UI")
+local Main = Rey:CreateTab(UI, "Main")
+local Misc = Rey:CreateTab(UI, "Misc")
+local Settings = Rey:CreateTab(UI, "Settings")
 
-local ReyButton = Instance.new("TextButton")
-ReyButton.Size = UDim2.new(0, 70, 0, 30)
-ReyButton.Position = UDim2.new(1, -80, 0, 10)
-ReyButton.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
-ReyButton.Text = "Rey"
-ReyButton.TextColor3 = Color3.new(1, 1, 1)
-ReyButton.BorderSizePixel = 0
-ReyButton.Font = Enum.Font.GothamBold
-ReyButton.TextSize = 14
-ReyButton.Parent = screenGui
-ReyButton.Active = true
-ReyButton.Draggable = true
-
-local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0, 500, 0, 350)  -- Ukuran panel dikurangi
-panel.Position = UDim2.new(0.5, -250, 0.5, -175)
-panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-panel.BackgroundTransparency = 0.05
-panel.BorderSizePixel = 0
-panel.Visible = false
-panel.Parent = screenGui
-panel.Active = true
-panel.Draggable = true
-
-local shadow = Instance.new("ImageLabel")
-shadow.Size = UDim2.new(1, 20, 1, 20)
-shadow.Position = UDim2.new(0, -10, 0, -10)
-shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://1316045217"
-shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-shadow.ImageTransparency = 0.5
-shadow.ScaleType = Enum.ScaleType.Slice
-shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-shadow.Parent = panel
-
-local header = Instance.new("TextLabel")
-header.Size = UDim2.new(1, 0, 0, 30)
-header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-header.Text = "Rey UI"
-header.TextColor3 = Color3.fromRGB(255, 255, 255)
-header.BorderSizePixel = 0
-header.Font = Enum.Font.GothamBold
-header.TextSize = 16
-header.TextXAlignment = Enum.TextXAlignment.Center
-header.Parent = panel
-
-local leftFrame = Instance.new("Frame")
-leftFrame.Size = UDim2.new(0, 130, 1, -30)  -- Ukuran lebar frame lebih kecil
-leftFrame.Position = UDim2.new(0, 0, 0, 30)
-leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-leftFrame.BorderSizePixel = 0
-leftFrame.Parent = panel
-
-local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(1, 0, 1, 0)
-tabContainer.BackgroundTransparency = 1
-tabContainer.Parent = leftFrame
-
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.FillDirection = Enum.FillDirection.Vertical
-tabLayout.Padding = UDim.new(0, 5)  -- Padding lebih kecil
-tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-tabLayout.Parent = tabContainer
-
-local function createTabButton(name, parent)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -10, 0, 25)  -- Ukuran lebih kecil
-    button.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
-    button.BorderSizePixel = 0
-    button.Text = name
-    button.Parent = parent
-    return button
-end
-
-local autoFarmButton = createTabButton("AutoFarm", tabContainer)
-local utilitiesButton = createTabButton("Utilities", tabContainer)
-local settingsButton = createTabButton("Settings", tabContainer)
-
-local rightFrame = Instance.new("Frame")
-rightFrame.Size = UDim2.new(1, -130, 1, -30)  -- Sesuaikan ukuran dengan leftFrame
-rightFrame.Position = UDim2.new(0, 130, 0, 30)
-rightFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-rightFrame.BorderSizePixel = 0
-rightFrame.Parent = panel
-
-local autoFarmPage = Instance.new("Frame")
-autoFarmPage.Size = UDim2.new(1, 0, 1, 0)
-autoFarmPage.BackgroundTransparency = 1
-autoFarmPage.Parent = rightFrame
-
-local autoFarmLayout = Instance.new("UIListLayout")
-autoFarmLayout.FillDirection = Enum.FillDirection.Vertical
-autoFarmLayout.Padding = UDim.new(0, 10)
-autoFarmLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-autoFarmLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-autoFarmLayout.Parent = autoFarmPage
-
--- Toggle Button Function
-local function createToggle(name, description, parent)
-    local buttonFrame = Instance.new("Frame")
-    buttonFrame.Size = UDim2.new(1, -10, 0, 50)
-    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    buttonFrame.BorderSizePixel = 2
-    buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    buttonFrame.Parent = parent
-
-    local buttonName = Instance.new("TextLabel")
-    buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
-    buttonName.Position = UDim2.new(0, 10, 0, 5)
-    buttonName.BackgroundTransparency = 1
-    buttonName.Text = name
-    buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    buttonName.Font = Enum.Font.GothamBold
-    buttonName.TextSize = 14
-    buttonName.TextXAlignment = Enum.TextXAlignment.Left
-    buttonName.Parent = buttonFrame
-
-    local buttonDesc = Instance.new("TextLabel")
-    buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
-    buttonDesc.Position = UDim2.new(0, 10, 0, 30)
-    buttonDesc.BackgroundTransparency = 1
-    buttonDesc.Text = description
-    buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
-    buttonDesc.Font = Enum.Font.Gotham
-    buttonDesc.TextSize = 12
-    buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
-    buttonDesc.Parent = buttonFrame
-
-    -- Toggle switch container
-    local toggleContainer = Instance.new("Frame")
-    toggleContainer.Size = UDim2.new(0, 60, 0, 25)
-    toggleContainer.Position = UDim2.new(1, -70, 0, 12)
-    toggleContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    toggleContainer.BorderSizePixel = 0
-    toggleContainer.Parent = buttonFrame
-
-    local toggleCircle = Instance.new("Frame")
-    toggleCircle.Size = UDim2.new(0, 20, 0, 20)
-    toggleCircle.Position = UDim2.new(0, 2, 0, 2) -- Default posisi kiri
-    toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Default warna OFF
-    toggleCircle.BorderSizePixel = 0
-    toggleCircle.BackgroundTransparency = 0
-    toggleCircle.Parent = toggleContainer
-
-    local isToggled = false
-
-    -- Fungsi untuk mengubah status tombol
-    local function toggle()
-        isToggled = not isToggled
-        if isToggled then
-            toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-            toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Warna ON
-            print(name .. " is ON")
-        else
-            toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
-            toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Warna OFF
-            print(name .. " is OFF")
-        end
-    end
-
-    -- Deteksi input untuk mobile & PC
-    toggleContainer.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            toggle()
-        end
-    end)
-end
-
-local function createDropdown(name, options, parent)
-    local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Size = UDim2.new(1, -10, 0, 40) -- Awalnya hanya tombol dropdown
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    dropdownFrame.BorderSizePixel = 2
-    dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    dropdownFrame.Parent = parent
-
-    local dropdownButton = Instance.new("TextButton")
-    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
-    dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dropdownButton.Font = Enum.Font.GothamBold
-    dropdownButton.TextSize = 14
-    dropdownButton.Text = name
-    dropdownButton.BorderSizePixel = 0
-    dropdownButton.Parent = dropdownFrame
-
-    local dropdownList = Instance.new("ScrollingFrame")
-    dropdownList.Size = UDim2.new(1, 0, 0, 150) -- Tinggi maksimal dropdown
-    dropdownList.Position = UDim2.new(0, 0, 1, 0)
-    dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    dropdownList.BorderSizePixel = 0
-    dropdownList.Visible = false
-    dropdownList.ClipsDescendants = true
-    dropdownList.ScrollBarThickness = 6
-    dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-    dropdownList.Parent = dropdownFrame
-
-    local dropdownLayout = Instance.new("UIListLayout")
-    dropdownLayout.FillDirection = Enum.FillDirection.Vertical
-    dropdownLayout.Padding = UDim.new(0, 5)
-    dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    dropdownLayout.Parent = dropdownList
-
-    local function updateCanvasSize()
-        local totalHeight = dropdownLayout.AbsoluteContentSize.Y
-        dropdownList.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-    end
-
-    dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
-
-    local function createOption(option)
-        local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, -10, 0, 30)
-        optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        optionButton.Font = Enum.Font.Gotham
-        optionButton.TextSize = 12
-        optionButton.Text = option
-        optionButton.BorderSizePixel = 0
-        optionButton.Parent = dropdownList
-
-        optionButton.MouseButton1Click:Connect(function()
-            dropdownButton.Text = option -- Set teks dropdown sesuai pilihan
-            dropdownList.Visible = false -- Sembunyikan daftar
-            print("Selected: " .. option) -- Debug output
-        end)
-    end
-
-    for _, option in ipairs(options) do
-        createOption(option)
-    end
-
-    dropdownButton.MouseButton1Click:Connect(function()
-        dropdownList.Visible = not dropdownList.Visible -- Toggle daftar
-    end)
-
-    updateCanvasSize() -- Pastikan ukuran awal sesuai
-    return dropdownFrame
-end
-
-local function createButton(name, description, parent, buttonText, callback)
-    local buttonFrame = Instance.new("Frame")
-    buttonFrame.Size = UDim2.new(1, -10, 0, 50)
-    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    buttonFrame.BorderSizePixel = 2
-    buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    buttonFrame.Parent = parent
-
-    local buttonName = Instance.new("TextLabel")
-    buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
-    buttonName.Position = UDim2.new(0, 10, 0, 5)
-    buttonName.BackgroundTransparency = 1
-    buttonName.Text = name
-    buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    buttonName.Font = Enum.Font.GothamBold
-    buttonName.TextSize = 14
-    buttonName.TextXAlignment = Enum.TextXAlignment.Left
-    buttonName.Parent = buttonFrame
-
-    local buttonDesc = Instance.new("TextLabel")
-    buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
-    buttonDesc.Position = UDim2.new(0, 10, 0, 30)
-    buttonDesc.BackgroundTransparency = 1
-    buttonDesc.Text = description
-    buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
-    buttonDesc.Font = Enum.Font.Gotham
-    buttonDesc.TextSize = 12
-    buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
-    buttonDesc.Parent = buttonFrame
-
-    local actionButton = Instance.new("TextButton")
-    actionButton.Size = UDim2.new(0, 65, 0, 25)
-    actionButton.Position = UDim2.new(1, -40, 0.3, 11)
-    actionButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    if name == "DESTROY GUI" then
-	    actionButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-		actionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+activeConnections = {}
+Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob", function(state)
+pcall(function()
+	if state and AutoFarmMob then
+		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+			for _, v in ipairs(game.Workspace:GetDescendants()) do
+				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
+					local wwd = v:FindFirstChild("HumanoidRootPart")
+					if wwd and player and v.Humanoid.Health > 0 then
+						-- Teleport 11 studs above NPC's head and point towards the floor
+						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 11, 0) -- Adjust to NPC's head position + 11 studs up
+						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+						wait() -- Wait briefly (default interval)
+					end
+				end
+			end
+		end)
 	else
-		actionButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
-		actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		if activeConnections["AutoFarm"] then
+			activeConnections["AutoFarm"]:Disconnect()
+			activeConnections["AutoFarm"] = nil
+		end
 	end
-    actionButton.Font = Enum.Font.GothamBold
-    actionButton.TextSize = 14
-    actionButton.Text = buttonText or "Run"
-    actionButton.BorderSizePixel = 0
-    actionButton.Parent = buttonFrame
+end)
+end)
 
-    actionButton.MouseButton1Click:Connect(function()
-        if callback then
-            callback()
-        end
-    end)
+
+
+local function checksTable(tbl, value)
+	for _, v in ipairs(tbl) do
+		if v == value then
+			return false
+		end
+	end
+	return true
 end
 
--- Menambahkan tombol toggle di AutoFarmPage
-createToggle("AutoFarm 1", "Description 1", autoFarmPage)
-createToggle("AutoFarm 2", "Description 2", autoFarmPage)
-local dropdown = createDropdown("Choose NPC", {"NPC 1", "NPC 2", "NPC 3", "NPC 4", "NPC 5", "NPC 6", "NPC 7", "NPC 8"}, autoFarmPage)
-
-local utilitiesPage = Instance.new("Frame")
-utilitiesPage.Size = UDim2.new(1, 0, 1, 0)
-utilitiesPage.BackgroundTransparency = 1
-utilitiesPage.Visible = false
-utilitiesPage.Parent = rightFrame
-
-createButton("Test Button", "Ini tombol uji coba", utilitiesPage, "Run", function()
-    print("Tombol uji coba ditekan!")
-end)
-
-local utilitiesLayout = Instance.new("UIListLayout")
-utilitiesLayout.FillDirection = Enum.FillDirection.Vertical
-utilitiesLayout.Padding = UDim.new(0, 10)
-utilitiesLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-utilitiesLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-utilitiesLayout.Parent = utilitiesPage
-
--- Menambahkan tombol toggle di UtilitiesPage
-createToggle("Utility 1", "Utility 1 description", utilitiesPage)
-createToggle("Utility 2", "Utility 2 description", utilitiesPage)
-
-local settingsPage = Instance.new("Frame")
-settingsPage.Size = UDim2.new(1, 0, 1, 0)
-settingsPage.BackgroundTransparency = 1
-settingsPage.Visible = false
-settingsPage.Parent = rightFrame
-
-local settingsLayout = Instance.new("UIListLayout")
-settingsLayout.FillDirection = Enum.FillDirection.Vertical
-settingsLayout.Padding = UDim.new(0, 10)
-settingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-settingsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-settingsLayout.Parent = settingsPage
-
--- Menambahkan tombol toggle di SettingsPage
-createButton("DESTROY GUI", "*WARNING* THIS WILL DESTROY GUI", settingsPage, "Destroy!", function()
-    screenGui:Destroy()
-end)
-createToggle("Setting 2", "Setting 2 description", settingsPage)
-
-local function switchPage(pageToActivate)
-    autoFarmPage.Visible = (pageToActivate == autoFarmPage)
-    utilitiesPage.Visible = (pageToActivate == utilitiesPage)
-    settingsPage.Visible = (pageToActivate == settingsPage)
+local function populateDropdown()
+	local options = {}
+	for _, v in ipairs(game.Workspace.Monster:GetDescendants()) do
+		if v:FindFirstChild("HumanoidRootPart") then
+			if checksTable(options, v.Name) then
+				table.insert(options, v.Name)
+			end
+		end
+	end
+	return options
 end
 
-autoFarmButton.MouseButton1Click:Connect(function()
-    switchPage(autoFarmPage)
+Rey:CreateDropdown(Main, "▼ Select Mob ▼", populateDropdown(), function(selectedOption)
+	AutoFarmMob = selectedOption
 end)
 
-utilitiesButton.MouseButton1Click:Connect(function()
-    switchPage(utilitiesPage)
+Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
+pcall(function()
+	if state then
+		activeConnections["Auto Grab Items"] = game:GetService("RunService").Heartbeat:Connect(function()
+			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+			for _, v in ipairs(game.Workspace:GetDescendants()) do
+				if v:IsA("Tool") and v.Handle then
+					v.Handle.CFrame = player.CFrame
+				end
+			end
+		end)
+	else
+		if activeConnections["Auto Grab Items"] then
+			activeConnections["Auto Grab Items"]:Disconnect()
+			activeConnections["Auto Grab Items"] = nil
+		end
+	end
+end)
 end)
 
-settingsButton.MouseButton1Click:Connect(function()
-    switchPage(settingsPage)
+Rey:CreateToggle(Main, "Equip all tools", "sesuai nama yh", function(state)
+pcall(function()
+	if state then
+		activeConnections["Equip All Tools"] = game:GetService("RunService").Heartbeat:Connect(function()
+			for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+				if v:IsA("Tool") then
+					v.Parent = game.Players.LocalPlayer.Character
+				end
+			end
+		end)
+	else
+		if activeConnections["Equip All Tools"] then
+			activeConnections["Equip All Tools"]:Disconnect()
+			activeConnections["Equip All Tools"] = nil
+		end
+	end
+end)
 end)
 
-ReyButton.MouseButton1Click:Connect(function()
-	panel.Visible = not panel.Visible
+Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
+pcall(function()
+	while state then wait()
+		local VirtualUser = game:GetService("VirtualUser")
+		VirtualUser:CaptureController()
+		VirtualUser:Button1Down(Vector2.new(0, 0))
+		VirtualUser:Button1Up(Vector2.new(0, 0))
+	end
+end)
+end)
+
+Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
+	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
