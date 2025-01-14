@@ -131,6 +131,25 @@ pcall(function()
 end)
 end)
 
+Rey:CreateToggle(Main, "One Hit", "1 hit enemies", function(state)
+pcall(function()
+	_G.OneHit = state
+	while _G.OneHit do wait()
+		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
+		sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
+
+		for _, object in pairs(game.Workspace:GetDescendants()) do
+			if object:IsA("Humanoid") and object.Health < object.MaxHealth and object.Parent.Name ~= player.Name then
+				local humanoidRoot = object.Parent:FindFirstChild("HumanoidRootPart")
+				if humanoidRoot and isWithinRange(humanoidRoot) then
+					object.Health = 0
+				end
+			end
+		end
+	end
+end)
+end)
+
 Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
 pcall(function()
 	_G.AutoClick = state
