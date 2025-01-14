@@ -133,6 +133,7 @@ end)
 
 Rey:CreateToggle(Main, "One Hit", "1 hit enemies", function(state)
 pcall(function()
+	local player = game.Players.LocalPlayer
 	_G.OneHit = state
 	while _G.OneHit do wait()
 		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
