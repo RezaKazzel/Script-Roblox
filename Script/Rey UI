@@ -10,14 +10,14 @@ activeConnections = {}
 Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob", function(state)
 pcall(function()
 	if state and AutoFarmMob then
-		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait(0.1)
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(game.Workspace:GetDescendants()) do
 				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
 					local wwd = v:FindFirstChild("HumanoidRootPart")
 					if wwd and player and v.Humanoid.Health > 0 then
 						-- Teleport 11 studs above NPC's head and point towards the floor
-						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 11, 0) -- Adjust to NPC's head position + 11 studs up
+						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 5, 0) -- Adjust to NPC's head position + 11 studs up
 						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
 						wait() -- Wait briefly (default interval)
 					end
@@ -63,7 +63,7 @@ end)
 Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
 pcall(function()
 	if state then
-		activeConnections["Auto Grab Items"] = game:GetService("RunService").Heartbeat:Connect(function()
+		activeConnections["Auto Grab Items"] = game:GetService("RunService").RenderStepped:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(game.Workspace:GetDescendants()) do
 				if v:IsA("Tool") and v.Handle then
@@ -83,7 +83,7 @@ end)
 Rey:CreateToggle(Main, "Equip all tools", "sesuai nama yh", function(state)
 pcall(function()
 	if state then
-		activeConnections["Equip All Tools"] = game:GetService("RunService").Heartbeat:Connect(function()
+		activeConnections["Equip All Tools"] = game:GetService("RunService").RenderStepped:Connect(function()
 			for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
 				if v:IsA("Tool") then
 					v.Parent = game.Players.LocalPlayer.Character
@@ -101,11 +101,12 @@ end)
 
 Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
 pcall(function()
-	while state do wait()
+	_G.AutoClick = state
+	while _G.AutoClick do wait()
 		local VirtualUser = game:GetService("VirtualUser")
 		VirtualUser:CaptureController()
-		VirtualUser:Button1Down(Vector2.new(0, 0))
-		VirtualUser:Button1Up(Vector2.new(0, 0))
+		VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+		VirtualUser:Button1Up(Vector2.new(0,1,0,1))
 	end
 end)
 end)
