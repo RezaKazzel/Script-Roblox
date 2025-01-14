@@ -297,21 +297,8 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
         end)
     end
 	
-	local function checkT(tbl, value)
-		for _, v in ipairs(tbl) do
-			if v == value then
-				return false
-			end
-			return true
-		end
-	end
-	
-	local daftar = {}
 	for _, option in ipairs(options) do
-		if checkT(daftar, option) then
-			table.insert(daftar, option)
-			createOption(option)
-		end
+		createOption(option)
 	end
 
     dropdownButton.MouseButton1Click:Connect(function()
