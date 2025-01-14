@@ -78,7 +78,7 @@ end
 
 local function populateDropdown()
 	local options = {}
-	for _, v in ipairs(game.Workspace.Monster:GetDescendants()) do
+	for _, v in ipairs(game.Workspace:GetDescendants()) do
 		if v:FindFirstChild("HumanoidRootPart") then
 			if checksTable(options, v.Name) then
 				table.insert(options, v.Name)
