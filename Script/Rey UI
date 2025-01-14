@@ -101,7 +101,7 @@ end)
 
 Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
 pcall(function()
-	while state then wait()
+	while state do wait()
 		local VirtualUser = game:GetService("VirtualUser")
 		VirtualUser:CaptureController()
 		VirtualUser:Button1Down(Vector2.new(0, 0))
