@@ -92,25 +92,32 @@ function ReyUILib:CreateTab(UI, tabName)
     tabButton.BorderSizePixel = 0
     tabButton.Parent = UI.TabContainer
 
-    local tabContent = Instance.new("Frame")
+    local tabContent = Instance.new("ScrollingFrame") -- Menggunakan ScrollingFrame
     tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
     tabContent.Visible = false
+    tabContent.ScrollBarThickness = 6 -- Ketebalan scrollbar
+    tabContent.ScrollBarImageColor3 = Color3.fromRGB(85, 85, 255) -- Warna scrollbar
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 0) -- Akan diatur dinamis
+    tabContent.ScrollingDirection = Enum.ScrollingDirection.Y -- Scroll hanya vertikal
     tabContent.Parent = UI.RightFrame
-    
-    if not tabContent:FindFirstChild("UIListLayout") then
-	    local layout = Instance.new("UIListLayout")
-	    layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
-	    layout.FillDirection = Enum.FillDirection.Vertical
-	    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	    layout.VerticalAlignment = Enum.VerticalAlignment.Top
-	    layout.SortOrder = Enum.SortOrder.LayoutOrder
-	    layout.Parent = tabContent
-	end
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
+    layout.FillDirection = Enum.FillDirection.Vertical
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = tabContent
+
+    -- Atur CanvasSize secara dinamis saat elemen bertambah
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+    end)
 
     tabButton.MouseButton1Click:Connect(function()
         for _, tab in ipairs(UI.RightFrame:GetChildren()) do
-            if tab:IsA("Frame") then
+            if tab:IsA("Frame") or tab:IsA("ScrollingFrame") then
                 tab.Visible = false
             end
         end
@@ -329,7 +336,10 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 	refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
 	refreshButton.Parent = refreshFrame
 
+	local debounce = false
 	refreshButton.MouseButton1Click:Connect(function()
+		if debounce then return end
+		debounce = true
 		for _, child in ipairs(dropdownList:GetChildren()) do
 			if child:IsA("TextButton") then
 				child:Destroy()
@@ -342,6 +352,7 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 	end)
 
 	updateCanvasSize()
+	debounce = false
 	return containerFrame
 end
 
