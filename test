@@ -1,0 +1,3 @@
+Rey:CreateButton(Main, "Button 1", "Test", "Click", function()
+	print("gedagedi")
+end)
