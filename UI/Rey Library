@@ -13,6 +13,7 @@ function ReyUILib:CreateUI(uiName)
     screenGui.ResetOnSpawn = false
 
     local ReyBtn = Instance.new("TextButton")
+    ReyBtn.Name = "Rey"
     ReyBtn.Size = UDim2.new(0, 70, 0, 30)
     ReyBtn.Position = UDim2.new(1, -80, 0, 10)
     ReyBtn.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
@@ -36,6 +37,7 @@ function ReyUILib:CreateUI(uiName)
     panel.Draggable = true
 
     local header = Instance.new("TextLabel")
+    header.Name = uiName or "Rey UI"
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     header.Text = uiName or "Rey UI"
@@ -87,6 +89,7 @@ end
 
 function ReyUILib:CreateTab(UI, tabName)
     local tabButton = Instance.new("TextButton")
+    tabButton.Name = tabName
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
     tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -96,25 +99,24 @@ function ReyUILib:CreateTab(UI, tabName)
     tabButton.BorderSizePixel = 0
     tabButton.Parent = UI.TabContainer
 
-    local tabContent = Instance.new("ScrollingFrame") -- Menggunakan ScrollingFrame
+    local tabContent = Instance.new("ScrollingFrame")
     tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
     tabContent.Visible = false
-    tabContent.ScrollBarThickness = 6 -- Ketebalan scrollbar
-    tabContent.ScrollBarImageColor3 = Color3.fromRGB(85, 85, 255) -- Warna scrollbar
-    tabContent.CanvasSize = UDim2.new(0, 0, 0, 0) -- Akan diatur dinamis
-    tabContent.ScrollingDirection = Enum.ScrollingDirection.Y -- Scroll hanya vertikal
+    tabContent.ScrollBarThickness = 6
+    tabContent.ScrollBarImageColor3 = Color3.fromRGB(85, 85, 255)
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabContent.ScrollingDirection = Enum.ScrollingDirection.Y
     tabContent.Parent = UI.RightFrame
 
     local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 5) -- Jarak antar tombol
+    layout.Padding = UDim.new(0, 5)
     layout.FillDirection = Enum.FillDirection.Vertical
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     layout.VerticalAlignment = Enum.VerticalAlignment.Top
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Parent = tabContent
 
-    -- Atur CanvasSize secara dinamis saat elemen bertambah
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
     end)
@@ -133,6 +135,7 @@ end
 
 function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
     local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = name
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     buttonFrame.BorderSizePixel = 2
@@ -177,6 +180,7 @@ end
 
 function ReyUILib:CreateToggle(parent, name, description, callback)
     local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = name
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     buttonFrame.BorderSizePixel = 2
@@ -247,16 +251,15 @@ end
 
 function ReyUILib:CreateDropdown(parent, name, options, callback)
 	callback = callback or function() end
-
-	-- Frame untuk Dropdown + Refresh Button
+	
 	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = name
 	containerFrame.Size = UDim2.new(1, -10, 0, 40)
 	containerFrame.BackgroundTransparency = 1
 	containerFrame.Parent = parent
 
-	-- Dropdown Frame
 	local dropdownFrame = Instance.new("Frame")
-	dropdownFrame.Size = UDim2.new(0.85, -5, 1, 0) -- Lebar 87% dari container (sesuai sisa refreshFrame)
+	dropdownFrame.Size = UDim2.new(0.85, -5, 1, 0)
 	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	dropdownFrame.BorderSizePixel = 2
 	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -323,20 +326,19 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 		dropdownList.Visible = not dropdownList.Visible
 	end)
 
-	-- Refresh Button + Frame
 	local refreshFrame = Instance.new("Frame")
-	refreshFrame.Size = UDim2.new(0.13, 0, 1, 0) -- Lebar 13% dari container
-	refreshFrame.Position = UDim2.new(0.85, 5, 0, 0) -- Setelah dropdownFrame
+	refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
+	refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
 	refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	refreshFrame.BorderSizePixel = 2
 	refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
 	refreshFrame.Parent = containerFrame
 
 	local refreshButton = Instance.new("ImageButton")
-	refreshButton.Size = UDim2.new(1, -8, 1, -8) -- Memberikan padding agar terlihat proporsional
-	refreshButton.Position = UDim2.new(0, 4, 0, 4) -- Posisi di tengah refreshFrame
+	refreshButton.Size = UDim2.new(1, -8, 1, -8)
+	refreshButton.Position = UDim2.new(0, 4, 0, 4)
 	refreshButton.BackgroundTransparency = 1
-	refreshButton.Image = "rbxassetid://122032243989747" -- Ganti ID ini sesuai kebutuhan
+	refreshButton.Image = "rbxassetid://122032243989747"
 	refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
 	refreshButton.Parent = refreshFrame
 
@@ -359,5 +361,17 @@ function ReyUILib:CreateDropdown(parent, name, options, callback)
 	updateCanvasSize()
 	return containerFrame
 end
+
+function ReyUILib:RemoveElement(tab, name)
+    if not tab or not name then
+        return
+    end
+
+    local element = tab:FindFirstChild(name)
+    if element then
+        element:Destroy()
+    end
+end
+
 
 return ReyUILib
