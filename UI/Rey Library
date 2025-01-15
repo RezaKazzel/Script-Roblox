@@ -1,14 +1,14 @@
 local ReyUILib = {}
 
-function ReyUILib:CreateUI(uiName)
+function ReyUILib:CreateUI(Name)
     local CoreGui = game:GetService("CoreGui")
-    if CoreGui:FindFirstChild(uiName) then
-	    CoreGui:FindFirstChild(uiName):Destroy()
+    if CoreGui:FindFirstChild(Name) then
+	    CoreGui:FindFirstChild(Name):Destroy()
 	elseif CoreGui:FindFirstChild("ReyUI") then
 		CoreGui:FindFirstChild("ReyUI"):Destroy()
 	end
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = uiName or "ReyUI"
+    screenGui.Name = Name or "ReyUI"
     screenGui.Parent = CoreGui
     screenGui.ResetOnSpawn = false
 
@@ -37,10 +37,10 @@ function ReyUILib:CreateUI(uiName)
     panel.Draggable = true
 
     local header = Instance.new("TextLabel")
-    header.Name = uiName or "Rey UI"
+    header.Name = Name or "Rey UI"
     header.Size = UDim2.new(1, 0, 0, 30)
     header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    header.Text = uiName or "Rey UI"
+    header.Text = Name or "Rey UI"
     header.TextColor3 = Color3.fromRGB(255, 255, 255)
     header.BorderSizePixel = 0
     header.Font = Enum.Font.GothamBold
@@ -87,15 +87,15 @@ function ReyUILib:CreateUI(uiName)
     }
 end
 
-function ReyUILib:CreateTab(UI, tabName)
+function ReyUILib:CreateTab(UI, Name)
     local tabButton = Instance.new("TextButton")
-    tabButton.Name = tabName
+    tabButton.Name = Name
     tabButton.Size = UDim2.new(1, -10, 0, 25)
     tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
     tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     tabButton.Font = Enum.Font.GothamBold
     tabButton.TextSize = 14
-    tabButton.Text = tabName
+    tabButton.Text = Name
     tabButton.BorderSizePixel = 0
     tabButton.Parent = UI.TabContainer
 
@@ -133,20 +133,20 @@ function ReyUILib:CreateTab(UI, tabName)
     return tabContent
 end
 
-function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
+function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
     local buttonFrame = Instance.new("Frame")
-    buttonFrame.Name = name
+    buttonFrame.Name = Name
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     buttonFrame.BorderSizePixel = 2
     buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    buttonFrame.Parent = parent
+    buttonFrame.Parent = Parent
 
     local buttonName = Instance.new("TextLabel")
     buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
     buttonName.Position = UDim2.new(0, 10, 0, 5)
     buttonName.BackgroundTransparency = 1
-    buttonName.Text = name
+    buttonName.Text = Name
     buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
     buttonName.Font = Enum.Font.GothamBold
     buttonName.TextSize = 14
@@ -157,7 +157,7 @@ function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
     buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
     buttonDesc.Position = UDim2.new(0, 10, 0, 30)
     buttonDesc.BackgroundTransparency = 1
-    buttonDesc.Text = description
+    buttonDesc.Text = Description
     buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
     buttonDesc.Font = Enum.Font.Gotham
     buttonDesc.TextSize = 12
@@ -175,23 +175,23 @@ function ReyUILib:CreateButton(parent, name, description, buttonText, callback)
     actionButton.BorderSizePixel = 0
     actionButton.Parent = buttonFrame
 
-    actionButton.MouseButton1Click:Connect(callback)
+    actionButton.MouseButton1Click:Connect(Callback)
 end
 
-function ReyUILib:CreateToggle(parent, name, description, callback)
+function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
     local buttonFrame = Instance.new("Frame")
-    buttonFrame.Name = name
+    buttonFrame.Name = Name
     buttonFrame.Size = UDim2.new(1, -10, 0, 50)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     buttonFrame.BorderSizePixel = 2
     buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    buttonFrame.Parent = parent
+    buttonFrame.Parent = Parent
 
     local buttonName = Instance.new("TextLabel")
     buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
     buttonName.Position = UDim2.new(0, 10, 0, 5)
     buttonName.BackgroundTransparency = 1
-    buttonName.Text = name
+    buttonName.Text = Name
     buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
     buttonName.Font = Enum.Font.GothamBold
     buttonName.TextSize = 14
@@ -202,7 +202,7 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
     buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
     buttonDesc.Position = UDim2.new(0, 10, 0, 30)
     buttonDesc.BackgroundTransparency = 1
-    buttonDesc.Text = description
+    buttonDesc.Text = Description
     buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
     buttonDesc.Font = Enum.Font.Gotham
     buttonDesc.TextSize = 12
@@ -226,7 +226,7 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
     local state = false
 
     -- Callback default
-    callback = callback or function() end
+    Callback = Callback or function() end
 
     local function toggle()
         state = not state
@@ -237,7 +237,7 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
             toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
             toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
         end
-        callback(state)
+        Callback(state)
     end
 
     toggleContainer.InputBegan:Connect(function(input)
@@ -249,127 +249,189 @@ function ReyUILib:CreateToggle(parent, name, description, callback)
     return buttonFrame
 end
 
-function ReyUILib:CreateDropdown(parent, name, options, callback)
-	callback = callback or function() end
-	
-	local containerFrame = Instance.new("Frame")
-	containerFrame.Name = name
-	containerFrame.Size = UDim2.new(1, -10, 0, 40)
-	containerFrame.BackgroundTransparency = 1
-	containerFrame.Parent = parent
+function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
+    Callback = Callback or function() end
+    Refresh = Refresh or false
 
-	local dropdownFrame = Instance.new("Frame")
-	dropdownFrame.Size = UDim2.new(0.85, -5, 1, 0)
-	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	dropdownFrame.BorderSizePixel = 2
-	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-	dropdownFrame.Parent = containerFrame
+    local containerFrame = Instance.new("Frame")
+    containerFrame.Name = Name
+    containerFrame.Size = UDim2.new(1, -10, 0, 40)
+    containerFrame.BackgroundTransparency = 1
+    containerFrame.Parent = Tab
 
-	local dropdownButton = Instance.new("TextButton")
-	dropdownButton.Size = UDim2.new(1, 0, 1, 0)
-	dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	dropdownButton.Font = Enum.Font.GothamBold
-	dropdownButton.TextSize = 14
-	dropdownButton.Text = name
-	dropdownButton.BorderSizePixel = 0
-	dropdownButton.Parent = dropdownFrame
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    dropdownFrame.BorderSizePixel = 2
+    dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+    dropdownFrame.Parent = containerFrame
 
-	local dropdownList = Instance.new("ScrollingFrame")
-	dropdownList.Size = UDim2.new(1, 0, 0, 150)
-	dropdownList.Position = UDim2.new(0, 0, 1, 0)
-	dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	dropdownList.BorderSizePixel = 0
-	dropdownList.Visible = false
-	dropdownList.ClipsDescendants = true
-	dropdownList.ScrollBarThickness = 6
-	dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-	dropdownList.ZIndex = 2
-	dropdownList.Parent = dropdownFrame
-	
-	local dropdownLayout = Instance.new("UIListLayout")
-	dropdownLayout.FillDirection = Enum.FillDirection.Vertical
-	dropdownLayout.Padding = UDim.new(0, 5)
-	dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	dropdownLayout.Parent = dropdownList
-	
-	local function updateCanvasSize()
-		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
-	end
-	
-	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    local dropdownButton = Instance.new("TextButton")
+    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+    dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    dropdownButton.Font = Enum.Font.GothamBold
+    dropdownButton.TextSize = 14
+    dropdownButton.Text = Name
+    dropdownButton.BorderSizePixel = 0
+    dropdownButton.Parent = dropdownFrame
 
-	local function createOption(option)
-		local optionButton = Instance.new("TextButton")
-		optionButton.Size = UDim2.new(1, -10, 0, 30)
-		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-		optionButton.Font = Enum.Font.Gotham
-		optionButton.TextSize = 12
-		optionButton.Text = option.Name or option
-		optionButton.BorderSizePixel = 0
-		optionButton.ZIndex = 2
-		optionButton.Parent = dropdownList
+    local dropdownList = Instance.new("ScrollingFrame")
+    dropdownList.Name = Name
+    dropdownList.Size = UDim2.new(1, 0, 0, 150)
+    dropdownList.Position = UDim2.new(0, 0, 1, 0)
+    dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    dropdownList.BorderSizePixel = 0
+    dropdownList.Visible = false
+    dropdownList.ClipsDescendants = true
+    dropdownList.ScrollBarThickness = 6
+    dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+    dropdownList.ZIndex = 2
+    dropdownList.Parent = dropdownFrame
 
-		optionButton.MouseButton1Click:Connect(function()
-			dropdownButton.Text = option.Name or option
-			dropdownList.Visible = false
-			callback(option)
-		end)
-	end
+    local dropdownLayout = Instance.new("UIListLayout")
+    dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+    dropdownLayout.Padding = UDim.new(0, 5)
+    dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    dropdownLayout.Parent = dropdownList
 
-	for _, option in ipairs(options) do
-		createOption(option)
-	end
+    local function updateCanvasSize()
+        dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+    end
 
-	dropdownButton.MouseButton1Click:Connect(function()
-		dropdownList.Visible = not dropdownList.Visible
-	end)
+    dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
 
-	local refreshFrame = Instance.new("Frame")
-	refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
-	refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
-	refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	refreshFrame.BorderSizePixel = 2
-	refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-	refreshFrame.Parent = containerFrame
+    local function createOption(option)
+        local optionButton = Instance.new("TextButton")
+        optionButton.Size = UDim2.new(1, -10, 0, 30)
+        optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 12
+        optionButton.Text = option.Name or option
+        optionButton.BorderSizePixel = 0
+        optionButton.ZIndex = 2
+        optionButton.Parent = dropdownList
 
-	local refreshButton = Instance.new("ImageButton")
-	refreshButton.Size = UDim2.new(1, -8, 1, -8)
-	refreshButton.Position = UDim2.new(0, 4, 0, 4)
-	refreshButton.BackgroundTransparency = 1
-	refreshButton.Image = "rbxassetid://122032243989747"
-	refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
-	refreshButton.Parent = refreshFrame
+        optionButton.MouseButton1Click:Connect(function()
+            dropdownButton.Text = option.Name or option
+            dropdownList.Visible = false
+            Callback(option)
+        end)
+    end
 
-	local debounce = false
-	refreshButton.MouseButton1Click:Connect(function()
-		if debounce then return end
-		debounce = true
-		for _, child in ipairs(dropdownList:GetChildren()) do
-			if child:IsA("TextButton") then
-				child:Destroy()
-			end
-		end
-		for _, option in ipairs(options) do
-			createOption(option)
-		end
-		updateCanvasSize()
-		debounce = false
-	end)
+    for _, option in ipairs(Options()) do
+        createOption(option)
+    end
 
-	updateCanvasSize()
-	return containerFrame
+    dropdownButton.MouseButton1Click:Connect(function()
+        dropdownList.Visible = not dropdownList.Visible
+    end)
+
+    if Refresh then
+        local refreshFrame = Instance.new("Frame")
+        refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
+        refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
+        refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        refreshFrame.BorderSizePixel = 2
+        refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+        refreshFrame.Parent = containerFrame
+
+        local refreshButton = Instance.new("ImageButton")
+        refreshButton.Size = UDim2.new(1, -8, 1, -8)
+        refreshButton.Position = UDim2.new(0, 4, 0, 4)
+        refreshButton.BackgroundTransparency = 1
+        refreshButton.Image = "rbxassetid://122032243989747"
+        refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+        refreshButton.Parent = refreshFrame
+
+        local debounce = false
+        refreshButton.MouseButton1Click:Connect(function()
+            if debounce then return end
+            debounce = true
+            for _, child in ipairs(dropdownList:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child:Destroy()
+                end
+            end
+            for _, option in ipairs(Options()) do
+                createOption(option)
+            end
+            updateCanvasSize()
+            debounce = false
+        end)
+    end
+
+    updateCanvasSize()
+    return containerFrame
 end
 
-function ReyUILib:RemoveElement(tab, name)
-    if not tab or not name then
+function ReyUILib:RemoveElement(tab, Name)
+    if not tab or not Name then
         return
     end
 
-    local element = tab:FindFirstChild(name)
+    local element = tab:FindFirstChild(Name)
     if element then
         element:Destroy()
+    end
+end
+
+function ReyUILib:UpdateElement(tab, elementName, properties)
+    if not tab or not tab:IsA("Frame") then
+        warn("Invalid tab passed to UpdateElement")
+        return
+    end
+
+    local element = tab:FindFirstChild(elementName)
+    if not element then
+        warn("Element with name '" .. elementName .. "' not found in the specified tab")
+        return
+    end
+
+    for property, value in pairs(properties) do
+        if property == "Callback" then
+            if element:IsA("TextButton") or element:IsA("TextBox") then
+                -- Disconnect existing Callbacks
+                for _, connection in ipairs(element.MouseButton1Click:GetConnections()) do
+                    connection:Disconnect()
+                end
+                -- Add new Callback
+                element.MouseButton1Click:Connect(value)
+            elseif element:IsA("Frame") and element:FindFirstChild("DropdownButton") then
+                local dropdownButton = element:FindFirstChild("DropdownButton")
+                for _, connection in ipairs(dropdownButton.MouseButton1Click:GetConnections()) do
+                    connection:Disconnect()
+                end
+                dropdownButton.MouseButton1Click:Connect(value)
+            elseif element:IsA("Frame") and element:FindFirstChild("ToggleButton") then
+                local toggleButton = element:FindFirstChild("ToggleButton")
+                for _, connection in ipairs(toggleButton.MouseButton1Click:GetConnections()) do
+                    connection:Disconnect()
+                end
+                toggleButton.MouseButton1Click:Connect(value)
+            else
+                warn("Callback is not applicable for this element")
+            end
+        elseif property == "Description" and element:FindFirstChild("Description") then
+            -- Update Description text
+            element.Description.Text = value
+        elseif property == "Options" and element:FindFirstChild("DropdownList") then
+            -- Update dropdown options
+            local dropdownList = element:FindFirstChild("DropdownList")
+            dropdownList:ClearAllChildren()
+            for _, option in ipairs(value) do
+                local newOption = Instance.new("TextLabel")
+                newOption.Text = option
+                newOption.Size = UDim2.new(1, 0, 0, 25)
+                newOption.Parent = dropdownList
+            end
+        elseif element[property] ~= nil then
+            -- Update standard properties like Text, BackgroundColor3, etc.
+            element[property] = value
+        else
+            warn("Property '" .. property .. "' does not exist or is not supported for this element")
+        end
     end
 end
 
