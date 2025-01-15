@@ -323,7 +323,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	status = pcall(function()
 		for _, option in ipairs(Options()) do
 			createOption(option)
-		end)
+		end
+	end)
 	if status == false then
 		for _, option in ipairs(Options) do
 			createOption(option)
