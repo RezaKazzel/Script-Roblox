@@ -15,7 +15,9 @@ end
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 
 Rey:CreateButton(Exclusive, "Start Mission", "-", "Start", function()
-	player.CFrame = workspace.Npc.Quest.Mission.HumanoidRootPart.CFrame
+	Megumi = workspace.Npc.Quest.Mission
+	player.CFrame = Megumi.HumanoidRootPart.CFrame
+	Megumi.ProximityPrompt.HoldDuration = 0
 	wait(0.1)
 	FP()
 end)
