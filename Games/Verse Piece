@@ -22,7 +22,7 @@ Rey:CreateButton(Exclusive, "Start Mission", "-", "Start", function()
 	FP()
 end)
 
-Rey:CreateButton(Exclusive, "Auto Collect Curse Items", "-", "Start", function()
+Rey:CreateButton(Exclusive, "Auto Collect Curse Object", "-", "Start", function()
 	player.CFrame = workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame
 	wait(0.1)
 	for i=1,10 do
@@ -30,7 +30,7 @@ Rey:CreateButton(Exclusive, "Auto Collect Curse Items", "-", "Start", function()
 	end
 end)
 
-Rey:CreateButton(Exclusive, "Auto Civilian", "-", "Start", function()
+Rey:CreateButton(Exclusive, "Auto Rescue Civilian", "-", "Start", function()
 	player.CFrame = workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame
 	wait(0.1)
 	for i=1,10 do
@@ -103,6 +103,28 @@ end)
 
 Rey:CreateToggle(Exclusive, "Auto Kashimo", "-", function(state)
 	AutoMob("Kashimo", state)
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Goblet", "versi toggle dari yg atas tdi", function(state)
+_G.acg = state
+while _G.acg do
+	player.CFrame = player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+	wait(0.1)
+	for i=1,1000 do
+		FP()
+	end
+end
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Close Gate", "versi toggle dari yg atas tdi", function(state)
+_G.acg = state
+while _G.acg do
+	player.CFrame = workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame
+	wait(0.1)
+	for i=1,1000 do
+		FP()
+	end
+end
 end)
 
 Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
