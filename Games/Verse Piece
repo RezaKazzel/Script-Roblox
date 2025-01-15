@@ -101,7 +101,7 @@ Rey:CreateToggle(Exclusive, "Auto Kashimo", "-", function(state)
 	AutoMob("Kashimo", state)
 end)
 
-Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
+Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "TP", function()
 	pcall(function()
 	player.CFrame = workspace.Npc["Adventure Shop"]["Adventure Shop"].HumanoidRootPart.CFrame
 	end)
