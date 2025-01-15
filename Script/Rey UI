@@ -7,27 +7,8 @@ local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
 
 activeConnections = {}
-
-function TP(P)
-	 Distance = (P.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-	 if Distance < 10 then
-		 Speed = 1000
-	 elseif Distance < 170 then
-		 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = P
-		 Speed = 350
-	 elseif Distance < 1000 then
-		 Speed = 350
-	 elseif Distance >= 1000 then
-		 Speed = 300
-	 end
-	 game:GetService("TweenService"):Create(
-		 game.Players.LocalPlayer.Character.HumanoidRootPart,
-		 TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear),
-		 {CFrame = P}
-	 ):Play()
- end
- 
-Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob", function(state)
+Folder = game.Workspace
+Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob dan folder", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
 	local torso = plr.Character.Torso
@@ -78,7 +59,7 @@ end
 
 local function populateDropdown()
 	local options = {}
-	for _, v in ipairs(game.Workspace:GetDescendants()) do
+	for _, v in ipairs(Folder:GetDescendants()) do
 		if v:FindFirstChild("HumanoidRootPart") then
 			if checksTable(options, v.Name) then
 				table.insert(options, v.Name)
@@ -88,9 +69,9 @@ local function populateDropdown()
 	return options
 end
 
-Rey:CreateDropdown(Main, "▼ Select Mob ▼", populateDropdown(), function(selectedOption)
+Rey:CreateDropdown(Main, "▼ Select Mob ▼", populateDropdown, function(selectedOption)
 	AutoFarmMob = selectedOption
-end)
+end, true)
 
 Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
 pcall(function()
@@ -98,8 +79,12 @@ pcall(function()
 		activeConnections["Auto Grab Items"] = game:GetService("RunService").RenderStepped:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(game.Workspace:GetDescendants()) do
-				if v:IsA("Tool") and v:FindFirstChild("Handle") then
-					v.Handle.CFrame = player.CFrame
+				if v:IsA("Tool") then
+					if v.Handle then
+						v.Handle.CFrame = player.CFrame
+					elseif v.CFrame then
+						v.CFrame = player.CFrame
+					end
 				end
 			end
 		end)
@@ -142,7 +127,7 @@ pcall(function()
 		return distance < 100
 	end
 	_G.OneHit = state
-	while _G.OneHit do wait()
+	while _G.OneHit do wait(0.2)
 		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
 		sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
 
@@ -173,3 +158,17 @@ end)
 Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
 	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
+
+local function getFolders(parent)
+    local folders = {}
+    for _, descendant in ipairs(parent:GetDescendants()) do
+        if descendant:IsA("Folder") then
+            table.insert(folders, descendant)
+        end
+    end
+    return folders
+end
+
+Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders(workspace), function(selectedOption)
+	Folder = selectedOption
+end, true)
