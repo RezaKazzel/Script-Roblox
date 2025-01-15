@@ -75,23 +75,18 @@ end, true)
 
 Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
 pcall(function()
-	if state then
-		activeConnections["Auto Grab Items"] = game:GetService("RunService").RenderStepped:Connect(function()
-			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-			for _, v in ipairs(game.Workspace:GetDescendants()) do
-				if v:IsA("Tool") then
-					if v.Handle then
-						v.Handle.CFrame = player.CFrame
-					elseif v.CFrame then
-						v.CFrame = player.CFrame
-					end
+	_G.AutoGrab = state
+	while _G.AutoGrab do
+		task.wait(0.8)
+		local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+		for _, v in ipairs(game.Workspace:GetDescendants()) do
+			if v:IsA("Tool") then
+				if v:FindFirstChild("Handle") then
+					v.Handle.CFrame = player.CFrame
+				elseif v:FindFirstChild("CFrame") then
+					v.CFrame = player.CFrame
 				end
 			end
-		end)
-	else
-		if activeConnections["Auto Grab Items"] then
-			activeConnections["Auto Grab Items"]:Disconnect()
-			activeConnections["Auto Grab Items"] = nil
 		end
 	end
 end)
@@ -127,7 +122,7 @@ pcall(function()
 		return distance < 100
 	end
 	_G.OneHit = state
-	while _G.OneHit do wait(0.2)
+	while _G.OneHit do wait(0.3)
 		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
 		sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
 
