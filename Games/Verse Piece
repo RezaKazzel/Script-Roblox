@@ -74,10 +74,13 @@ local torso = plr.Character.Torso
 			activeConnections[mob] = game:GetService("RunService").Heartbeat:Connect(function()
 				task.wait()
 				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-				if player and target:FindFirstChild("HumanoidRootPart") and target.Humanoid.Health > 0 then
-					local targetPosition = target.HumanoidRootPart.Position + Vector3.new(0, wwd.Size.Y/2 + 3, 0)
-					player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-					Attack()
+				for _,v in ipairs (target:GetChildren()) do
+					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+						local targetPosition = v.HumanoidRootPart.Position + Vector3.new(0, v.HumanoidRootPart.Size.Y/2 + 3, 0)
+						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+						Attack()
+						break
+					end
 				end
 			end)
 		end)
