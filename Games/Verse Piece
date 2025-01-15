@@ -6,7 +6,6 @@ local key = "E"
     VirtualUser:SetKeyDown(key:lower())
     VirtualUser:SetKeyUp(key:lower())
 end
---advshop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
 
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 for _,v in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
@@ -62,10 +61,10 @@ end
 
 local function AutoMob(mob, state)
 local target = game.Workspace.Main.Forest:FindFirstChild(mob)
+local plr = game.Players.LocalPlayer
+local torso = plr.Character.Torso
 	if target and state then
 		pcall(function()
-			local plr = game.Players.LocalPlayer
-			local torso = plr.Character.Torso
 			if not torso:FindFirstChild("BodyVelocity") then
 				bv = Instance.new("BodyVelocity", torso)
 				bv.velocity = Vector3.new(0,0.1,0)
@@ -100,4 +99,10 @@ end)
 
 Rey:CreateToggle(Exclusive, "Auto Kashimo", "-", function(state)
 	AutoMob("Kashimo", state)
+end)
+
+Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
+	pcall(function()
+	player.CFrame = workspace.Npc["Adventure Shop"]["Adventure Shop"].HumanoidRootPart.CFrame
+	end)
 end)
