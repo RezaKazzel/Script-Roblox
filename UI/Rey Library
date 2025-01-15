@@ -2,7 +2,11 @@ local ReyUILib = {}
 
 function ReyUILib:CreateUI(uiName)
     local CoreGui = game:GetService("CoreGui")
-
+    if CoreGui:FindFirstChild(uiName) then
+	    CoreGui:FindFirstChild(uiName):Destroy()
+	elseif CoreGui:FindFirstChild("ReyUI") then
+		CoreGui:FindFirstChild("ReyUI"):Destroy()
+	end
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = uiName or "ReyUI"
     screenGui.Parent = CoreGui
