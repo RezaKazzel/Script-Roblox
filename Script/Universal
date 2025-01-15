@@ -1,0 +1,191 @@
+-- Rey UI Library
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
+
+local UI = Rey:CreateUI("Rey UI")
+local Main = Rey:CreateTab(UI, "Main")
+local Misc = Rey:CreateTab(UI, "Misc")
+local Settings = Rey:CreateTab(UI, "Settings")
+
+activeConnections = {}
+Folder = game.Workspace
+Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob dan folder", function(state)
+pcall(function()
+	local plr = game.Players.LocalPlayer
+	local torso = plr.Character.Torso
+	if state and AutoFarmMob then
+		if not torso:FindFirstChild("BodyVelocity") then
+			bv = Instance.new("BodyVelocity", torso)
+			bv.velocity = Vector3.new(0,0.1,0)
+			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		end
+		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+			for _, v in ipairs(game.Workspace:GetDescendants()) do
+				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
+					local wwd = v:FindFirstChild("HumanoidRootPart")
+					if wwd and player and v.Humanoid.Health > 0 then
+						-- Teleport 5 studs above NPC's head and point towards the floor
+						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 5, 0) -- Adjust to NPC's head position + 11 studs up
+						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+						--wait() -- Wait briefly (default interval)
+						break
+					end
+				end
+			end
+		end)
+	else
+		if activeConnections["AutoFarm"] then
+			activeConnections["AutoFarm"]:Disconnect()
+			activeConnections["AutoFarm"] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
+		end
+	end
+end)
+end)
+
+
+
+local function checksTable(tbl, value)
+	for _, v in ipairs(tbl) do
+		if v == value then
+			return false
+		end
+	end
+	return true
+end
+
+local function populateDropdown()
+	local options = {}
+	for _, v in ipairs(Folder:GetDescendants()) do
+		if v:FindFirstChild("HumanoidRootPart") then
+			if checksTable(options, v.Name) then
+				table.insert(options, v.Name)
+			end
+		end
+	end
+	return options
+end
+
+Rey:CreateDropdown(Main, "▼ Select Mob ▼", populateDropdown, function(selectedOption)
+	AutoFarmMob = selectedOption
+end, true)
+
+Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
+pcall(function()
+	_G.AutoGrab = state
+	while _G.AutoGrab do
+		task.wait(0.8)
+		local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+		for _, v in ipairs(game.Workspace:GetDescendants()) do
+			if v:IsA("Tool") then
+				if v:FindFirstChild("Handle") then
+					v.Handle.CFrame = player.CFrame
+				elseif v:FindFirstChild("CFrame") then
+					v.CFrame = player.CFrame
+				end
+			end
+		end
+	end
+end)
+end)
+
+Rey:CreateToggle(Main, "Equip all tools", "sesuai nama yh", function(state)
+pcall(function()
+	if state then
+		activeConnections["Equip All Tools"] = game:GetService("RunService").RenderStepped:Connect(function()
+			for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+				if v:IsA("Tool") then
+					v.Parent = game.Players.LocalPlayer.Character
+				end
+			end
+		end)
+	else
+		if activeConnections["Equip All Tools"] then
+			activeConnections["Equip All Tools"]:Disconnect()
+			activeConnections["Equip All Tools"] = nil
+		end
+	end
+end)
+end)
+
+Rey:CreateToggle(Main, "One Hit", "1 hit enemies", function(state)
+pcall(function()
+	local player = game.Players.LocalPlayer
+	local humanoidRootPart = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+
+	local function isWithinRange(target)
+		if not humanoidRootPart or not target then return false end
+		local distance = (humanoidRootPart.Position - target.Position).Magnitude
+		return distance < 100
+	end
+	_G.OneHit = state
+	while _G.OneHit do wait(0.3)
+		sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
+		sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
+
+		for _, object in pairs(game.Workspace:GetDescendants()) do
+			if object:IsA("Humanoid") and object.Health < object.MaxHealth and object.Parent.Name ~= player.Name then
+				local humanoidRoot = object.Parent:FindFirstChild("HumanoidRootPart")
+				if humanoidRoot and isWithinRange(humanoidRoot) then
+					object.Health = 0
+				end
+			end
+		end
+	end
+end)
+end)
+
+Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
+pcall(function()
+	_G.AutoClick = state
+	while _G.AutoClick do wait()
+		local VirtualUser = game:GetService("VirtualUser")
+		VirtualUser:CaptureController()
+		VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+		VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+	end
+end)
+end)
+
+Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
+	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
+end)
+
+local function getFolders(parent)
+    local folders = {}
+    for _, descendant in ipairs(parent:GetDescendants()) do
+        if descendant:IsA("Folder") then
+            table.insert(folders, descendant)
+        end
+    end
+    return folders
+end
+
+local function getPlayerList()
+    local playerNames = {}
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        table.insert(playerNames, player.Name)
+    end
+    return playerNames
+end
+
+-- Dropdown untuk teleport
+Rey:CreateDropdown(Misc, "Teleport to Player", getPlayerList, function(selectedPlayer)
+    local localPlayer = game.Players.LocalPlayer
+    local targetPlayer = game.Players:FindFirstChild(selectedPlayer)
+    
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        end
+    end
+end, true)
+
+
+Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders(workspace), function(selectedOption)
+	Folder = selectedOption
+end, true)
