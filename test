@@ -1,3 +1,4 @@
+local Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library')))()
 Rey:CreateButton(Main, "Button 1", "Test", "Click", function()
 	print("gedagedi")
 end)
