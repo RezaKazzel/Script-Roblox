@@ -1,0 +1,12 @@
+local Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library')))()
+local ListGame = {
+	-- Verse Piece
+	[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
+}
+
+UI = Rey:CreateUI("Rey UI")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
+
+if ListGame[game.GameId] ~= nil then
+	loadstring(ListGame[tonumber(game.GameId)])()
+end
