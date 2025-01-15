@@ -1,0 +1,102 @@
+local VirtualUser = game:GetService("VirtualUser")
+
+local function FP()
+    VirtualUser:CaptureController()
+    VirtualUser:SetKeyDown("E":lower())
+    VirtualUser:SetKeyUp("E":lower())
+end
+--advshop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
+
+Exclusive = Rey:CreateTab(UI, "Exclusive+")
+for _,v in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
+	if v.Name == "ProximityPrompt" then
+	v.HoldDuration = 0
+	end
+end
+local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+
+Rey:CreateButton(Exclusive, "Start Mission", "-", "Start", function()
+	player.CFrame = workspace.Npc.Quest.Mission.HumanoidRootPart.CFrame
+	wait(0.1)
+	FP()
+end)
+
+Rey:CreateButton(Exclusive, "Auto Collect Curse Items", "-", "Start", function()
+	player.CFrame = workspace.Main["Mission Quest"]["1"]:GetChildren()[6].CFrame
+	wait(0.1)
+	for i=1,10 do
+		FP()
+	end
+end)
+
+Rey:CreateButton(Exclusive, "Auto Civilian", "-", "Start", function()
+	player.CFrame = workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame
+	wait(0.1)
+	for i=1,10 do
+		FP()
+	end
+end)
+
+Rey:CreateButton(Exclusive, "Auto Goblet [OP]", "farm diamond cik", "Start", function()
+	player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+	wait(0.1)
+	for i=1,1000 do
+		FP()
+	end
+end)
+
+Rey:CreateButton(Exclusive, "Auto Close Gate [OP]", "farm diamond cik", "Start", function()
+	player.CFrame = workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame
+	wait(0.1)
+	for i=1,1000 do
+		FP()
+	end
+end)
+
+local function Attack()
+VirtualUser:CaptureController()
+VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+end
+
+local function AutoMob(mob, state)
+local target = game.Workspace.Main.Forest:FindFirstChild(mob)
+	if target and state then
+		pcall(function()
+			local plr = game.Players.LocalPlayer
+			local torso = plr.Character.Torso
+			if not torso:FindFirstChild("BodyVelocity") then
+				bv = Instance.new("BodyVelocity", torso)
+				bv.velocity = Vector3.new(0,0.1,0)
+				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+			end
+			activeConnections[mob] = game:GetService("RunService").Heartbeat:Connect(function()
+				task.wait()
+				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+				if player and target:FindFirstChild("HumanoidRootPart") and target.Humanoid.Health > 0 then
+					local targetPosition = target.HumanoidRootPart.Position + Vector3.new(0, wwd.Size.Y/2 + 3, 0)
+					player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+					Attack()
+				end
+			end)
+		end)
+	else
+		if activeConnections[mob] then
+			activeConnections[mob]:Disconnect()
+			activeConnections[mob] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
+		end
+	end
+end
+
+activeConnections = {}
+Rey:CreateToggle(Exclusive, "Auto Curse Spirit", "-", function(state)
+	AutoMob("Curse Spirit", state)
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Kashimo", "-", function(state)
+	AutoMob("Kashimo", state)
+end)
