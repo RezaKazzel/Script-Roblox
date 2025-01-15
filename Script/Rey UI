@@ -164,6 +164,28 @@ local function getFolders(parent)
     return folders
 end
 
+local function getPlayerList()
+    local playerNames = {}
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        table.insert(playerNames, player.Name)
+    end
+    return playerNames
+end
+
+-- Dropdown untuk teleport
+Rey:CreateDropdown(Misc, "Teleport to Player", getPlayerList, function(selectedPlayer)
+    local localPlayer = game.Players.LocalPlayer
+    local targetPlayer = game.Players:FindFirstChild(selectedPlayer)
+    
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        end
+    end
+end, true)
+
+
 Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders(workspace), function(selectedOption)
 	Folder = selectedOption
 end, true)
