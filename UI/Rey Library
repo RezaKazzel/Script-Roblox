@@ -171,7 +171,7 @@ function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
     actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     actionButton.Font = Enum.Font.GothamBold
     actionButton.TextSize = 14
-    actionButton.Text = buttonText
+    actionButton.Text = ButtonText
     actionButton.BorderSizePixel = 0
     actionButton.Parent = buttonFrame
 
