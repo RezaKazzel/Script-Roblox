@@ -1,9 +1,10 @@
 local VirtualUser = game:GetService("VirtualUser")
 
 local function FP()
+local key = "E"
     VirtualUser:CaptureController()
-    VirtualUser:SetKeyDown("E":lower())
-    VirtualUser:SetKeyUp("E":lower())
+    VirtualUser:SetKeyDown(key:lower())
+    VirtualUser:SetKeyUp(key:lower())
 end
 --advshop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
 
