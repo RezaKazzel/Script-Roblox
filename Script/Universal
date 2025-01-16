@@ -228,7 +228,7 @@ local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
 		if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
-			if checksTable(npc, v) then
+			if checksTable(npc, v.Name) then
 				table.insert(npc, v)
 			end
 		end
