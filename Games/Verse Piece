@@ -78,7 +78,7 @@ local torso = plr.Character.Torso
 					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
 						local healthPercentage = (v.Humanoid.Health / v.Humanoid.MaxHealth) * 100
 						if healthPercentage < 80 then
-							object.Health = 0
+							v.Humanoid.Health = 0
 						end
 						local targetPosition = v.HumanoidRootPart.Position + Vector3.new(0, v.HumanoidRootPart.Size.Y/2 + 3, 0)
 						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
