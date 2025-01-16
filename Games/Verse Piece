@@ -112,7 +112,7 @@ end)
 Rey:CreateToggle(Exclusive, "Auto Goblet *bug & lag*", "versi toggle dari yg atas tdi", function(state)
 _G.ag = state
 while _G.ag do
-	player.CFrame = player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+	player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 	wait(0.5)
 	for i=1,1000 do
 		FP()
