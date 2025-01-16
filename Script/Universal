@@ -140,6 +140,7 @@ end)
 
 Rey:CreateToggle(Main, "One Hit [BUTTON]", "one shot one kill", function(state)
 local CoreGui = game:GetService("CoreGui")
+local player = game.Players.LocalPlayer
 	if state then
 		local screenGui = Instance.new("ScreenGui")
 		screenGui.Name = "Kill All Button"
