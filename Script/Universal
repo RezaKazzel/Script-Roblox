@@ -227,8 +227,10 @@ local NpcFolder = game.Workspace
 local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if v:FindFirstChild("HumanoidRootPart") then
-		   table.insert(npc, v)
+		if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
+			if checksTable(tbl, value) then
+				table.insert(npc, v)
+			end
 		end
 	end
 	return npc
@@ -236,7 +238,12 @@ end
 
 Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 	local localPlayer = game.Players.LocalPlayer
-	local targetPosition = selectedNpc.HumanoidRootPart.Position
+	local target = selectedNpc
+	if target:FindFirstChild("CFrame") then
+		targetPosition = target.CFrame
+	elseif target:FindFirstChild("HumanoidRootPart") then
+		targetPosition = target.HumanoidRootPart.Position
+	end
 	if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
 		localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
 	end
