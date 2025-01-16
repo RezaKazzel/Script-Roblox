@@ -1,5 +1,4 @@
 -- Rey UI Library
-pcall(function()
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
 
 local Main = Rey:CreateTab(UI, "Main")
@@ -141,13 +140,12 @@ end)
 
 Rey:CreateToggle(Main, "One Hit [BUTTON]", "one shot one kill", function(state)
 local CoreGui = game:GetService("CoreGui")
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "Kill All Button"
-screenGui.Parent = CoreGui
-screenGui.ResetOnSpawn = false
 	if state then
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "Kill All Button"
+		screenGui.Parent = CoreGui
+		screenGui.ResetOnSpawn = false
 		local KillAll = Instance.new("TextButton")
-		KillAll.Name = "Kill All Button"
 		KillAll.Size = UDim2.new(0, 70, 0, 30)
 		KillAll.Position = UDim2.new(1, -130, 0, -10)
 		KillAll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -224,6 +222,7 @@ Rey:CreateDropdown(Misc, "Teleport to Player", getPlayerList, function(selectedP
 	end
 end, true)
 
+local NpcFolder = game.Workspace
 local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
@@ -236,11 +235,9 @@ end
 
 Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 	local localPlayer = game.Players.LocalPlayer
-	
 	local targetPosition = selectedNpc.Character.HumanoidRootPart.Position
-		if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
-		end
+	if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
 	end
 end, true)
 
@@ -252,4 +249,3 @@ end, true)
 Rey:CreateDropdown(Settings, "▼ Select Folder for Tp NPC ▼", getFolders(workspace), function(selectedOption)
 	NpcFolder = selectedOption
 end, true)
-end)
