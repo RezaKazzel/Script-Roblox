@@ -236,7 +236,7 @@ end
 
 Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 	local localPlayer = game.Players.LocalPlayer
-	local targetPosition = selectedNpc.Character.HumanoidRootPart.Position
+	local targetPosition = selectedNpc.HumanoidRootPart.Position
 	if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
 		localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
 	end
