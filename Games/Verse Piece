@@ -76,6 +76,10 @@ local torso = plr.Character.Torso
 				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 				for _,v in ipairs (target:GetChildren()) do
 					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+						local healthPercentage = (v.Humanoid.Health / v.Humanoid.MaxHealth) * 100
+						if healthPercentage < 80 then
+							object.Health = 0
+						end
 						local targetPosition = v.HumanoidRootPart.Position + Vector3.new(0, v.HumanoidRootPart.Size.Y/2 + 3, 0)
 						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
 						Attack()
@@ -105,11 +109,11 @@ Rey:CreateToggle(Exclusive, "Auto Kashimo", "-", function(state)
 	AutoMob("Kashimo", state)
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Goblet", "versi toggle dari yg atas tdi", function(state)
+Rey:CreateToggle(Exclusive, "Auto Goblet *bug & lag*", "versi toggle dari yg atas tdi", function(state)
 _G.ag = state
 while _G.ag do
-	player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-	wait(0.2)
+	player.CFrame = player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+	wait(0.5)
 	for i=1,1000 do
 		FP()
 	end
@@ -120,7 +124,7 @@ Rey:CreateToggle(Exclusive, "Auto Close Gate", "versi toggle dari yg atas tdi", 
 _G.acg = state
 while _G.acg do
 	player.CFrame = workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame
-	wait(0.2)
+	wait(0.5)
 	for i=1,1000 do
 		FP()
 	end
@@ -130,5 +134,12 @@ end)
 Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
 	pcall(function()
 	player.CFrame = workspace.Npc["Adventure Shop"]["Adventure Shop"].HumanoidRootPart.CFrame
+	wait(0.1)
+	local args = {
+    [1] = "750"
+	}
+	
+	game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
+
 	end)
 end)
