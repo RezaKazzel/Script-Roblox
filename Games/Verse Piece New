@@ -6,6 +6,8 @@ local key = "E"
     VirtualUser:SetKeyUp(key:lower())
 end
 miaw = 0
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
+local UI = Rey:CreateUI("Rey UI")
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -55,7 +57,6 @@ local status = game:GetService("Players").LocalPlayer.MissionData.Active.Value
 		if miaw > 5 then wait(1) miaw = 0 end
 		return
 	end
-wait(1)
 local quest = game:GetService("Players").LocalPlayer.MissionData["Quest Title"].Value
 	if quest:find("Curse object") then
 		player.CFrame = workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame
@@ -128,7 +129,7 @@ Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Tel
 	end)
 end)
 
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wakðŸ˜¹", function(state)
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹😹", function(state)
 _G.FarmGems = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
@@ -184,7 +185,7 @@ _G.AutoBM1 = state
 	end
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Brutal)", "kalo lag ga nanggung", function(state)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
 _G.AutoBM2 = state
 	if _G.AutoBM2 then
 		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait()
@@ -203,7 +204,7 @@ _G.AutoBM2 = state
 	end
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "ðŸ’€", function(state)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
 _G.AutoBM3 = state
 while _G.AutoBM3 do wait(0.1)
 	pcall(function()
