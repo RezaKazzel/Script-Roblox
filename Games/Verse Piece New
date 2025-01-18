@@ -45,10 +45,6 @@ if activeConnections["AuM"] then
 	activeConnections["AuM"]:Disconnect()
 	activeConnections["AuM"] = nil
 end
-wait(0.1)
-if torso:FindFirstChild("BodyVelocity") then
-	torso:FindFirstChild("BodyVelocity"):Destroy()
-end
 local status = game:GetService("Players").LocalPlayer.MissionData.Active.Value
 	if not status then miaw = miaw + 1
 		Megumi = workspace.Npc.Quest.Mission
