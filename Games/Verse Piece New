@@ -6,6 +6,8 @@ local key = "E"
     VirtualUser:SetKeyUp(key:lower())
 end
 miaw = 0
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
+local UI = Rey:CreateUI("Rey UI")
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -125,44 +127,52 @@ pcall(function()target = game.Workspace.Main.Forest:FindFirstChild(mob)end)
 	end
 end
 
-Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
+Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Teleport", function()
 	pcall(function()
 	player.CFrame = workspace.Npc["Adventure Shop"]["Adventure Shop"].HumanoidRootPart.CFrame
 	end)
 end)
 
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹", function(state)
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wakðŸ˜¹", function(state)
 _G.FarmGems = state
 	while _G.FarmGems do wait()
 		if not SGoblet then
 			AutoMission()
 		else
-		if activeConnections["AuM"] then
-			activeConnections["AuM"]:Disconnect()
-			activeConnections["AuM"] = nil
-		end
-		wait(0.1)
-		if torso:FindFirstChild("BodyVelocity") then
-			torso:FindFirstChild("BodyVelocity"):Destroy()
-		end
-		sfg = pcall(function()
-			AdvShop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
-			AdvShop.ProximityPrompt.HoldDuration = 0
-			player.CFrame = AdvShop.HumanoidRootPart.CFrame
+			if activeConnections["AuM"] then
+				activeConnections["AuM"]:Disconnect()
+				activeConnections["AuM"] = nil
+			end
 			wait(0.1)
-			FP()
-			player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-			wait(0.1)
-			for i=1,770 do FP() end
-			wait(3.5)
-		end)
+			if torso:FindFirstChild("BodyVelocity") then
+				torso:FindFirstChild("BodyVelocity"):Destroy()
+			end
+			sfg = pcall(function()
+				AdvShop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
+				AdvShop.ProximityPrompt.HoldDuration = 0
+				player.CFrame = AdvShop.HumanoidRootPart.CFrame
+				wait(0.1)
+				FP()
+				player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+				wait(0.1)
+				for i=1,770 do FP() end
+				wait(3.5)
+			end)
 		end
+	end
+end)
+
+Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
+	player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+	wait(0.1)
+	for i=1,1000 do
+		FP()
 	end
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
 _G.AutoBM1 = state
-	while _G.AutoBM do wait()
+	while _G.AutoBM1 do wait()
 		pcall(function()
 			BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 			BlackMerchant.ProximityPrompt.HoldDuration = 0
@@ -191,7 +201,7 @@ _G.AutoBM2 = state
 	end
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "ðŸ’€", function(state)
 _G.AutoBM3 = state
 while _G.AutoBM3 do wait(0.1)
 	pcall(function()
