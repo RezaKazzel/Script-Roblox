@@ -1,0 +1,195 @@
+local VirtualUser = game:GetService("VirtualUser")
+local function FP()
+local key = "E"
+    VirtualUser:CaptureController()
+    VirtualUser:SetKeyDown(key:lower())
+    VirtualUser:SetKeyUp(key:lower())
+end
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
+local UI = Rey:CreateUI("Rey UI")
+Exclusive = Rey:CreateTab(UI, "Exclusive+")
+
+local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+local plr = game.Players.LocalPlayer
+local torso = plr.Character.Torso
+activeConnections = {}
+local function Attack()
+
+VirtualUser:CaptureController()
+VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+end
+
+Rey:CreateToggle(Exclusive, "Auto Mission (Lvl. 1.000+)", "-", function(state)
+_G.AutoMissions = state
+for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
+	if v.Name == "ProximityPrompt" then
+		v.HoldDuration = 0
+	end
+end
+	while _G.AutoMissions do wait()
+		SGoblet = nil
+		AutoMission()
+	end
+	if activeConnections["AuM"] then
+		activeConnections["AuM"]:Disconnect()
+		activeConnections["AuM"] = nil
+	end
+	wait(0.1)
+	if torso:FindFirstChild("BodyVelocity") then
+		torso:FindFirstChild("BodyVelocity"):Destroy()
+	end
+end)
+
+function AutoMission()
+local quest = game:GetService("Players").LocalPlayer.MissionData["Quest Title"].Value
+local status = game:GetService("Players").LocalPlayer.MissionData.Active.Value
+	if not status then miaw = miaw + 1
+		if miaw > 5 then wait(5) miaw = 0 end
+		Megumi = workspace.Npc.Quest.Mission
+		player.CFrame = Megumi.HumanoidRootPart.CFrame
+		Megumi.ProximityPrompt.HoldDuration = 0
+		wait(0.1)
+		FP()
+		return
+	end
+	if quest:find("Curse object") then
+		player.CFrame = workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame
+		wait(0.1)
+		for i=1,10 do FP() end
+		return
+	elseif quest:find("Civilains") then
+		player.CFrame = workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame
+		wait(0.1)
+		for i=1,10 do FP() end
+		return
+	elseif quest:find("Goblet") then
+		player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+		wait(0.1)
+		for i=1,770 do FP() end
+		SGoblet = true
+		return
+	elseif quest:find("Shadow Portal") then
+		player.CFrame = workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame
+		wait(0.1)
+		for i=1,770 do FP() end
+		return
+	elseif quest:find("Curse Spirit") then
+		AutoMob("Curse Spirit", true)
+		return
+	elseif quest:find("Lightning Sorceror") then
+		AutoMob("Kashimo", true)
+		return
+	end
+	if activeConnections["AuM"] then
+		activeConnections["AuM"]:Disconnect()
+		activeConnections["AuM"] = nil
+	end
+	wait(0.1)
+	if torso:FindFirstChild("BodyVelocity") then
+		torso:FindFirstChild("BodyVelocity"):Destroy()
+	end
+end
+
+function AutoMob(mob, state)
+pcall(function()target = game.Workspace.Main.Forest:FindFirstChild(mob)end)
+	if target and state then
+		pcall(function()
+			if activeConnections["AuM"] then return end
+			if not torso:FindFirstChild("BodyVelocity") then
+				bv = Instance.new("BodyVelocity", torso)
+				bv.velocity = Vector3.new(0,0.1,0)
+				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+			end
+			activeConnections["AuM"] = game:GetService("RunService").Heartbeat:Connect(function()
+				task.wait()
+				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+				for _,v in ipairs (target:GetChildren()) do
+					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+						local targetPosition = v.HumanoidRootPart.Position + Vector3.new(0, v.HumanoidRootPart.Size.Y/2 + 3, 0)
+						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+						Attack()
+						break
+					end
+				end
+			end)
+		end)
+	else
+		if activeConnections["AuM"] then
+			activeConnections["AuM"]:Disconnect()
+			activeConnections["AuM"] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
+		end
+	end
+end
+
+Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Start", function()
+	pcall(function()
+	player.CFrame = workspace.Npc["Adventure Shop"]["Adventure Shop"].HumanoidRootPart.CFrame
+	end)
+end)
+
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹", function(state)
+_G.FarmGems = state
+	while _G.FarmGems do wait()
+		if not SGoblet then
+			AutoMission()
+		else
+			AdvShop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
+			AdvShop.ProximityPrompt.HoldDuration = 0
+			player.CFrame = AdvShop.HumanoidRootPart.CFrame
+			wait(0.1)
+			FP()
+			player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+			wait(0.1)
+			for i=1,770 do FP() end
+			wait(3.5)
+		end
+	end
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
+_G.AutoBM1 = state
+	while _G.AutoBM do wait()
+		pcall(function()
+			BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
+			BlackMerchant.ProximityPrompt.HoldDuration = 0
+			player.CFrame = BlackMerchant.HumanoidRootPart.CFrame
+			FP()
+		end)
+	end
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Brutal)", "kalo lag ga nanggung", function(state)
+_G.AutoBM2 = state
+	if _G.AutoBM2 then
+		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function()
+			pcall(function()
+				BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
+				BlackMerchant.ProximityPrompt.HoldDuration = 0
+				player.CFrame = BlackMerchant.HumanoidRootPart.CFrame
+				FP()
+			end)
+		end)
+	else
+		if activeConnections["AutoBM"] then
+			activeConnections["AutoBM"]:Disconnect()
+			activeConnections["AutoBM"] = nil
+		end
+	end
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
+_G.AutoBM3 = state
+while _G.AutoBM3 do
+	pcall(function()
+		BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
+		BlackMerchant.ProximityPrompt.HoldDuration = 0
+		player.CFrame = BlackMerchant.HumanoidRootPart.CFrame
+		for i=1, 1000 do FP() end
+	end)
+end
+end)
