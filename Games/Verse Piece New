@@ -6,6 +6,8 @@ local key = "E"
     VirtualUser:SetKeyUp(key:lower())
 end
 miaw = 0
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
+local UI = Rey:CreateUI("Rey UI")
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -137,6 +139,15 @@ _G.FarmGems = state
 		if not SGoblet then
 			AutoMission()
 		else
+		if activeConnections["AuM"] then
+			activeConnections["AuM"]:Disconnect()
+			activeConnections["AuM"] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
+		end
+		sfg = pcall(function()
 			AdvShop = workspace.Npc["Adventure Shop"]["Adventure Shop"]
 			AdvShop.ProximityPrompt.HoldDuration = 0
 			player.CFrame = AdvShop.HumanoidRootPart.CFrame
@@ -146,6 +157,7 @@ _G.FarmGems = state
 			wait(0.1)
 			for i=1,770 do FP() end
 			wait(3.5)
+		end)
 		end
 	end
 end)
@@ -165,7 +177,7 @@ end)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Brutal)", "kalo lag ga nanggung", function(state)
 _G.AutoBM2 = state
 	if _G.AutoBM2 then
-		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function()
+		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait()
 			pcall(function()
 				BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 				BlackMerchant.ProximityPrompt.HoldDuration = 0
@@ -183,7 +195,7 @@ end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
 _G.AutoBM3 = state
-while _G.AutoBM3 do
+while _G.AutoBM3 do wait(0.1)
 	pcall(function()
 		BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 		BlackMerchant.ProximityPrompt.HoldDuration = 0
