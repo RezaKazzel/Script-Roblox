@@ -44,12 +44,12 @@ function AutoMission()
 local quest = game:GetService("Players").LocalPlayer.MissionData["Quest Title"].Value
 local status = game:GetService("Players").LocalPlayer.MissionData.Active.Value
 	if not status then miaw = miaw + 1
-		if miaw > 5 then wait(5) miaw = 0 end
 		Megumi = workspace.Npc.Quest.Mission
 		player.CFrame = Megumi.HumanoidRootPart.CFrame
 		Megumi.ProximityPrompt.HoldDuration = 0
 		wait(0.1)
 		FP()
+		if miaw > 5 then wait(5) miaw = 0 end
 		return
 	end
 	if quest:find("Curse object") then
