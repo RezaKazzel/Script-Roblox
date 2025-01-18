@@ -6,8 +6,6 @@ local key = "E"
     VirtualUser:SetKeyUp(key:lower())
 end
 miaw = 0
-local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library"))()
-local UI = Rey:CreateUI("Rey UI")
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
