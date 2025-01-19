@@ -1,5 +1,5 @@
 local ReyUILib = {}
-Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))
+Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 
 function ReyUILib:CreateUI(Name)
 	local CoreGui = game:GetService("CoreGui")
