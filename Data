@@ -1,0 +1,16 @@
+local httpService = game:GetService('HttpService')
+local x = pcall(function() files = readfile("Reylib.json")end)
+
+if not x then
+	Data = {
+		["Execute"] = 1
+	}
+	local Encode = httpService:JSONEncode(Data)
+	writefile("Reylib.json", tostring(Encode))
+	return
+end
+
+Data = httpService:JSONDecode(files)
+Data["Execute"] = Data["Execute"] + 1
+local Encode = httpService:JSONEncode(Data)
+writefile("Reylib.json", tostring(Encode))
