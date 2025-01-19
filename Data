@@ -14,3 +14,5 @@ Data = httpService:JSONDecode(files)
 Data["Execute"] = Data["Execute"] + 1
 local Encode = httpService:JSONEncode(Data)
 writefile("Reylib.json", tostring(Encode))
+
+return Data
