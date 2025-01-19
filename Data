@@ -7,7 +7,7 @@ if not x then
 	}
 	local Encode = httpService:JSONEncode(Data)
 	writefile("Reylib.json", tostring(Encode))
-	return
+	return Data
 end
 
 Data = httpService:JSONDecode(files)
