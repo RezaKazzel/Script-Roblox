@@ -1,7 +1,11 @@
 local ReyUILib = {}
+Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))
 
 function ReyUILib:CreateUI(Name)
 	local CoreGui = game:GetService("CoreGui")
+	local Players = game:GetService("Players")
+	local Player = Players.LocalPlayer
+	
 	if CoreGui:FindFirstChild(Name) then
 		CoreGui:FindFirstChild(Name):Destroy()
 	elseif CoreGui:FindFirstChild("ReyUI") then
@@ -93,6 +97,50 @@ function ReyUILib:CreateUI(Name)
 	local rightFrameCorner = Instance.new("UICorner")
 	rightFrameCorner.CornerRadius = UDim.new(0, 10)
 	rightFrameCorner.Parent = rightFrame
+	
+	local startframe = Instance.new("Frame")
+	startframe.Size = UDim2.new(1, -130, 1, -30)
+	startframe.Position = UDim2.new(0, 130, 0, 30)
+	startframe.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	startframe.BorderSizePixel = 2
+	startframe.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	startframe.Parent = panel
+
+	local startframeCorner = Instance.new("UICorner")
+	startframeCorner.CornerRadius = UDim.new(0, 10)
+	startframeCorner.Parent = startframe
+
+	local AvatarBorder = Instance.new("Frame")
+	AvatarBorder.Size = UDim2.new(0,70,0,70)
+	AvatarBorder.Position = UDim2.new(0,20,0,20)
+	AvatarBorder.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	AvatarBorder.Parent = startframe
+	
+	local AvatarBorderCorner = Instance.new("UICorner")
+	AvatarBorderCorner.CornerRadius = UDim.new(0, 10)
+	AvatarBorderCorner.Parent = AvatarBorder
+	
+	local greetingLabel = Instance.new("TextLabel")
+	greetingLabel.Size = UDim2.new(1, -50, 0, 40)
+	greetingLabel.Position = UDim2.new(0, -30, 0, 10)
+	greetingLabel.BackgroundTransparency = 1
+	greetingLabel.Text = "Halo, " .. Player.DisplayName .. "!\nKamu Telah menggunakan Rey UI sebanyak: "..Data["Execute"]
+	greetingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	greetingLabel.Font = Enum.Font.Gotham
+	greetingLabel.TextSize = 18
+	greetingLabel.Parent = startframe
+
+	-- Foto profil
+	local profileImage = Instance.new("ImageLabel")
+	profileImage.Size = UDim2.new(0, 65, 0, 65)
+	profileImage.Position = UDim2.new(0, 23, 0, 23)
+	profileImage.BackgroundTransparency = 1
+	profileImage.Image = Players:GetUserThumbnailAsync(
+		Player.UserId,
+		Enum.ThumbnailType.HeadShot,
+		Enum.ThumbnailSize.Size100x100
+	)
+	profileImage.Parent = startframe
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		panel.Visible = not panel.Visible
@@ -151,6 +199,7 @@ function ReyUILib:CreateTab(UI, Name)
 				tab.Visible = false
 			end
 		end
+		startframe.Visible = true
 		tabContent.Visible = true
 	end)
 
