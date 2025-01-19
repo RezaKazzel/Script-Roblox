@@ -1,3 +1,5 @@
+ReyUILib = {}
+
 function ReyUILib:CreateUI(Name)
 	local CoreGui = game:GetService("CoreGui")
 	if CoreGui:FindFirstChild(Name) then
