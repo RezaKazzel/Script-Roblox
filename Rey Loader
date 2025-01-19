@@ -2,7 +2,7 @@ Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Scr
 local ListGame = {
 	-- Verse Piece
 	--[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
-        [6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece%20New'))()"
+	[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece%20New'))()"
 }
 
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
