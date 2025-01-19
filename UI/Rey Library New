@@ -1,4 +1,4 @@
-ReyUILib = {}
+local ReyUILib = {}
 
 function ReyUILib:CreateUI(Name)
 	local CoreGui = game:GetService("CoreGui")
