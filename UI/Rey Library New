@@ -468,133 +468,133 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 end
 
 function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
-    callback = callback or function() end
+	callback = callback or function() end
 
-    local containerFrame = Instance.new("Frame")
-    containerFrame.Name = name
-    containerFrame.Size = UDim2.new(1, -10, 0, 60) -- Tinggi container lebih besar
-    containerFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    containerFrame.BorderSizePixel = 2
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = name
+	containerFrame.Size = UDim2.new(1, -10, 0, 60) -- Tinggi container lebih besar
+	containerFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	containerFrame.BorderSizePixel = 2
 	containerFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
-    containerFrame.Parent = parent
+	containerFrame.Parent = parent
 
-    -- Label
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = 16
-    label.TextStrokeTransparency = 0.8
-    label.TextStrokeColor3 = Color3.fromRGB(100, 0, 150)
-    label.Text = name .. " - " .. default
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = containerFrame
+	-- Label
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Position = UDim2.new(0, 10, 0, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 16
+	label.TextStrokeTransparency = 0.8
+	label.TextStrokeColor3 = Color3.fromRGB(100, 0, 150)
+	label.Text = name .. " - " .. default
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = containerFrame
 
-    -- Slider Frame
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Size = UDim2.new(0.9, -20, 0, 30) -- Ukuran sliderFrame lebih besar
-    sliderFrame.Position = UDim2.new(0, 10, 0, 25) -- Posisi digeser sedikit
-    sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
-    sliderFrame.BorderSizePixel = 0
-    sliderFrame.Parent = containerFrame
+	-- Slider Frame
+	local sliderFrame = Instance.new("Frame")
+	sliderFrame.Size = UDim2.new(0.9, -20, 0, 30) -- Ukuran sliderFrame lebih besar
+	sliderFrame.Position = UDim2.new(0, 10, 0, 25) -- Posisi digeser sedikit
+	sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
+	sliderFrame.BorderSizePixel = 0
+	sliderFrame.Parent = containerFrame
 
-    -- Add rounded corners to the slider
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 15)
-    sliderCorner.Parent = sliderFrame
+	-- Add rounded corners to the slider
+	local sliderCorner = Instance.new("UICorner")
+	sliderCorner.CornerRadius = UDim.new(0, 15)
+	sliderCorner.Parent = sliderFrame
 
-    -- Fill Frame
-    local fillFrame = Instance.new("Frame")
-    fillFrame.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fillFrame.BackgroundColor3 = Color3.fromRGB(140, 50, 220)
-    fillFrame.BorderSizePixel = 0
-    fillFrame.Parent = sliderFrame
+	-- Fill Frame
+	local fillFrame = Instance.new("Frame")
+	fillFrame.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+	fillFrame.BackgroundColor3 = Color3.fromRGB(140, 50, 220)
+	fillFrame.BorderSizePixel = 0
+	fillFrame.Parent = sliderFrame
 
-    -- Add rounded corners to the fill
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 15)
-    fillCorner.Parent = fillFrame
+	-- Add rounded corners to the fill
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(0, 15)
+	fillCorner.Parent = fillFrame
 
-    -- Slider Button
-    local sliderButton = Instance.new("ImageButton")
-    sliderButton.Size = UDim2.new(0, 25, 1, 0) -- Besar sliderButton
-    sliderButton.Position = UDim2.new((default - min) / (max - min), -15, 0, 0)
-    sliderButton.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
-    sliderButton.BackgroundTransparency = 1
-    sliderButton.Image = "rbxassetid://3570695787"
-    sliderButton.ScaleType = Enum.ScaleType.Slice
-    sliderButton.SliceCenter = Rect.new(100, 100, 100, 100)
-    sliderButton.Parent = sliderFrame
+	-- Slider Button
+	local sliderButton = Instance.new("ImageButton")
+	sliderButton.Size = UDim2.new(0, 25, 1, 0) -- Besar sliderButton
+	sliderButton.Position = UDim2.new((default - min) / (max - min), -15, 0, 0)
+	sliderButton.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
+	sliderButton.BackgroundTransparency = 1
+	sliderButton.Image = "rbxassetid://3570695787"
+	sliderButton.ScaleType = Enum.ScaleType.Slice
+	sliderButton.SliceCenter = Rect.new(100, 100, 100, 100)
+	sliderButton.Parent = sliderFrame
 
-    -- Input Box
-    local inputBox = Instance.new("TextBox")
-    inputBox.Size = UDim2.new(0.1, 0, 0, 30) -- Ukuran inputBox
-    inputBox.Position = UDim2.new(0.9, -5, 0, 25) -- Disesuaikan dengan sliderFrame
-    inputBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    inputBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-    inputBox.Font = Enum.Font.GothamBold
-    inputBox.TextSize = 16
-    inputBox.Text = tostring(default)
-    inputBox.TextStrokeTransparency = 0.8
-    inputBox.BackgroundTransparency = 0.2
-    inputBox.TextXAlignment = Enum.TextXAlignment.Center
-    inputBox.TextYAlignment = Enum.TextYAlignment.Center
-    inputBox.Parent = containerFrame
+	-- Input Box
+	local inputBox = Instance.new("TextBox")
+	inputBox.Size = UDim2.new(0.1, 0, 0, 30) -- Ukuran inputBox
+	inputBox.Position = UDim2.new(0.9, -5, 0, 25) -- Disesuaikan dengan sliderFrame
+	inputBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	inputBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+	inputBox.Font = Enum.Font.GothamBold
+	inputBox.TextSize = 16
+	inputBox.Text = tostring(default)
+	inputBox.TextStrokeTransparency = 0.8
+	inputBox.BackgroundTransparency = 0.2
+	inputBox.TextXAlignment = Enum.TextXAlignment.Center
+	inputBox.TextYAlignment = Enum.TextYAlignment.Center
+	inputBox.Parent = containerFrame
 
-    -- Add rounded corners to the input box using UICorner
-    local inputCorner = Instance.new("UICorner")
-    inputCorner.CornerRadius = UDim.new(0, 12)
-    inputCorner.Parent = inputBox
+	-- Add rounded corners to the input box using UICorner
+	local inputCorner = Instance.new("UICorner")
+	inputCorner.CornerRadius = UDim.new(0, 12)
+	inputCorner.Parent = inputBox
 
-    local function updateSlider(input)
-        local sliderPos = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
-        local value = math.floor(sliderPos * (max - min) + min)
-        fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
-        sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-        label.Text = name .. " - " .. value
-        inputBox.Text = tostring(value)
-        callback(value)
-    end
+	local function updateSlider(input)
+		local sliderPos = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
+		local value = math.floor(sliderPos * (max - min) + min)
+		fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+		sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+		label.Text = name .. " - " .. value
+		inputBox.Text = tostring(value)
+		callback(value)
+	end
 
-    sliderButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local connection
-            connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
-                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
-                    updateSlider(moveInput)
-                end
-            end)
-            game:GetService("UserInputService").InputEnded:Connect(function(endInput)
-                if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
-                    connection:Disconnect()
-                end
-            end)
-        end
-    end)
+	sliderButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			local connection
+			connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+				if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+					updateSlider(moveInput)
+				end
+			end)
+			game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+				if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+					connection:Disconnect()
+				end
+			end)
+		end
+	end)
 
-    sliderFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            updateSlider(input)
-        end
-    end)
+	sliderFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			updateSlider(input)
+		end
+	end)
 
-    inputBox.FocusLost:Connect(function()
-        local value = tonumber(inputBox.Text)
-        if value then
-            value = math.clamp(value, min, max)
-            local sliderPos = (value - min) / (max - min)
-            fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
-            sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-            label.Text = name .. " - " .. value
-            callback(value)
-        else
-            inputBox.Text = tostring(default)
-        end
-    end)
+	inputBox.FocusLost:Connect(function()
+		local value = tonumber(inputBox.Text)
+		if value then
+			value = math.clamp(value, min, max)
+			local sliderPos = (value - min) / (max - min)
+			fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+			sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+			label.Text = name .. " - " .. value
+			callback(value)
+		else
+			inputBox.Text = tostring(default)
+		end
+	end)
 
-    return containerFrame
+	return containerFrame
 end
 
 
