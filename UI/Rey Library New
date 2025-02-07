@@ -1,3 +1,5 @@
+-- 133
+
 local ReyUILib = {}
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 
@@ -122,9 +124,9 @@ function ReyUILib:CreateUI(Name)
 	
 	local greetingLabel = Instance.new("TextLabel")
 	greetingLabel.Size = UDim2.new(1, -50, 0, 40)
-	greetingLabel.Position = UDim2.new(0, -30, 0, 10)
+	greetingLabel.Position = UDim2.new(0, 100, 0, 35)
 	greetingLabel.BackgroundTransparency = 1
-	greetingLabel.Text = "Halo, " .. Player.DisplayName .. "!\nKamu Telah menggunakan Rey UI sebanyak: "..Data["Execute"]
+	greetingLabel.Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..Data["Execute"]
 	greetingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	greetingLabel.Font = Enum.Font.Gotham
 	greetingLabel.TextSize = 18
@@ -529,7 +531,6 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	containerFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
 	containerFrame.Parent = parent
 
-	-- Label
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, 0, 0, 20)
 	label.Position = UDim2.new(0, 10, 0, 0)
@@ -543,7 +544,6 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = containerFrame
 
-	-- Slider Frame
 	local sliderFrame = Instance.new("Frame")
 	sliderFrame.Size = UDim2.new(0.9, -20, 0, 30) -- Ukuran sliderFrame lebih besar
 	sliderFrame.Position = UDim2.new(0, 10, 0, 25) -- Posisi digeser sedikit
@@ -551,26 +551,22 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	sliderFrame.BorderSizePixel = 0
 	sliderFrame.Parent = containerFrame
 
-	-- Add rounded corners to the slider
 	local sliderCorner = Instance.new("UICorner")
 	sliderCorner.CornerRadius = UDim.new(0, 15)
 	sliderCorner.Parent = sliderFrame
 
-	-- Fill Frame
 	local fillFrame = Instance.new("Frame")
 	fillFrame.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
 	fillFrame.BackgroundColor3 = Color3.fromRGB(140, 50, 220)
 	fillFrame.BorderSizePixel = 0
 	fillFrame.Parent = sliderFrame
 
-	-- Add rounded corners to the fill
 	local fillCorner = Instance.new("UICorner")
 	fillCorner.CornerRadius = UDim.new(0, 15)
 	fillCorner.Parent = fillFrame
 
-	-- Slider Button
 	local sliderButton = Instance.new("ImageButton")
-	sliderButton.Size = UDim2.new(0, 25, 1, 0) -- Besar sliderButton
+	sliderButton.Size = UDim2.new(0, 25, 1, 0)
 	sliderButton.Position = UDim2.new((default - min) / (max - min), -15, 0, 0)
 	sliderButton.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
 	sliderButton.BackgroundTransparency = 1
@@ -579,7 +575,6 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	sliderButton.SliceCenter = Rect.new(100, 100, 100, 100)
 	sliderButton.Parent = sliderFrame
 
-	-- Input Box
 	local inputBox = Instance.new("TextBox")
 	inputBox.Size = UDim2.new(0.1, 0, 0, 30) -- Ukuran inputBox
 	inputBox.Position = UDim2.new(0.9, -5, 0, 25) -- Disesuaikan dengan sliderFrame
@@ -594,7 +589,6 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	inputBox.TextYAlignment = Enum.TextYAlignment.Center
 	inputBox.Parent = containerFrame
 
-	-- Add rounded corners to the input box using UICorner
 	local inputCorner = Instance.new("UICorner")
 	inputCorner.CornerRadius = UDim.new(0, 12)
 	inputCorner.Parent = inputBox
@@ -646,6 +640,49 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	end)
 
 	return containerFrame
+end
+
+function ReyUILib:CreateNote(parent, text)
+    local noteFrame = Instance.new("Frame")
+    noteFrame.Size = UDim2.new(1, -10, 0, 30)
+    noteFrame.Position = UDim2.new(0, 5, 0, 5)
+    noteFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    noteFrame.BorderSizePixel = 0
+    noteFrame.AutomaticSize = Enum.AutomaticSize.Y
+    noteFrame.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = noteFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.5
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Parent = noteFrame
+
+    local note = Instance.new("TextLabel")
+    note.Size = UDim2.new(1, -10, 0, 0)
+    note.Position = UDim2.new(0, 5, 0, 5)
+    note.BackgroundTransparency = 1
+    note.Text = text or "Note"
+    note.TextColor3 = Color3.fromRGB(255, 255, 255)
+    note.Font = Enum.Font.Gotham
+    note.TextSize = 14
+    note.TextWrapped = true
+    note.TextXAlignment = Enum.TextXAlignment.Left
+    note.TextYAlignment = Enum.TextYAlignment.Top
+    note.AutomaticSize = Enum.AutomaticSize.Y
+    note.Parent = noteFrame
+
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = noteFrame
+    layout.FillDirection = Enum.FillDirection.Vertical
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+
+    return noteFrame
 end
 
 
