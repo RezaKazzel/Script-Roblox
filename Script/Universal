@@ -257,3 +257,7 @@ end, true)
 Rey:CreateDropdown(Settings, "▼ Select Folder for Tp NPC ▼", getFolders(workspace), function(selectedOption)
 	NpcFolder = selectedOption
 end, true)
+
+Rey:CreateButton(Settings, "BOOST FPS🔥", "-", "Tap", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
+end)
