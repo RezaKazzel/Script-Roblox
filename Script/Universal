@@ -6,6 +6,21 @@ local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
 
+local function GetFolder(miaw)
+	for _, v in ipairs(Folder:GetDescendants()) do
+		if v:IsA("Model") and v.Name == miaw and v:FindFirstChild("HumanoidRootPart") then
+			local obj = v
+			while obj and not obj:IsA("Folder") do
+				if obj.Parent and obj.Parent:IsA("Folder") then
+					return obj.Parent
+				end
+				obj = obj.Parent
+			end
+		end
+	end
+	return nil -- Jika tidak menemukan folder
+end
+
 activeConnections = {}
 Distance = 10
 Folder = game.Workspace
@@ -19,9 +34,10 @@ pcall(function()
 			bv.velocity = Vector3.new(0,0.1,0)
 			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
 		end
+		SelectedMob = GetFolder(AutoFarmMob)
 		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-			for _, v in ipairs(Folder:GetDescendants()) do
+			for _, v in ipairs(SelectedMob:GetChildren()) do
 				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
 					local wwd = v:FindFirstChild("HumanoidRootPart")
 					if wwd and player and v.Humanoid.Health > 0 then
@@ -229,7 +245,7 @@ local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
 		if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
-			if checksTable(tbl, value) then
+			if checksTable(npc, v) then
 				table.insert(npc, v)
 			end
 		end
@@ -296,4 +312,4 @@ end)
 
 Rey:CreateButton(Settings, "Rejoin", "-", "Tap", function()
 	game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
-end
+end)
