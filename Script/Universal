@@ -208,7 +208,8 @@ Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
 	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
 
-local function getFolders(parent)
+local function getFolders()
+	local parent = game.Workspace
 	local folders = {}
 	for _, descendant in ipairs(parent:GetDescendants()) do
 		if descendant:IsA("Folder") then
@@ -266,11 +267,11 @@ Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 end, true)
 
 
-Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders(workspace), function(selectedOption)
+Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders, function(selectedOption)
 	Folder = selectedOption
 end, true)
 
-Rey:CreateDropdown(Settings, "▼ Select Folder for Tp NPC ▼", getFolders(workspace), function(selectedOption)
+Rey:CreateDropdown(Settings, "▼ Select Folder for Tp NPC ▼", getFolders, function(selectedOption)
 	NpcFolder = selectedOption
 end, true)
 
