@@ -1,5 +1,3 @@
--- 133
-
 local ReyUILib = {}
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 
