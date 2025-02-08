@@ -1,7 +1,9 @@
+repeat wait() until game:IsLoaded()
 local ReyUILib = {}
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 
-function ReyUILib:CreateUI(Name)
+function ReyUILib:CreateUI(Name, Note)
+	local Note = Note or false
 	local CoreGui = game:GetService("CoreGui")
 	local Players = game:GetService("Players")
 	local Player = Players.LocalPlayer
@@ -109,6 +111,66 @@ function ReyUILib:CreateUI(Name)
 	local startframeCorner = Instance.new("UICorner")
 	startframeCorner.CornerRadius = UDim.new(0, 10)
 	startframeCorner.Parent = startframe
+	
+	if Note then	
+		local sFrame = Instance.new("ScrollingFrame")
+		sFrame.Size = UDim2.new(1, -25, 0, 50)
+		sFrame.Position = UDim2.new(0, 20, 0.3, 0)
+		sFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		sFrame.BorderSizePixel = 0
+		sFrame.AutomaticSize = Enum.AutomaticSize.Y
+		sFrame.ScrollBarThickness = 6
+		sFrame.ClipsDescendants = true
+		sFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+		sFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Diperbarui otomatis
+		sFrame.Parent = startframe
+		
+		local FFCorner = Instance.new("UICorner")
+		FFCorner.CornerRadius = UDim.new(0, 8)
+		FFCorner.Parent = sFrame
+		
+		local stroke = Instance.new("UIStroke")
+		stroke.Thickness = 1.5
+		stroke.Color = Color3.fromRGB(255, 255, 255)
+		stroke.Parent = sFrame
+		
+		local note = Instance.new("TextLabel")
+		note.Size = UDim2.new(1, -10, 0, 0)
+		note.Position = UDim2.new(0, 5, 0, 5)
+		note.BackgroundTransparency = 1
+		note.Text = Note or "-"
+		note.TextColor3 = Color3.fromRGB(255, 255, 255)
+		note.Font = Enum.Font.Gotham
+		note.TextSize = 14
+		note.TextWrapped = true
+		note.TextXAlignment = Enum.TextXAlignment.Left
+		note.TextYAlignment = Enum.TextYAlignment.Top
+		note.AutomaticSize = Enum.AutomaticSize.Y
+		note.Parent = sFrame
+		
+		local layout = Instance.new("UIListLayout")
+		layout.Parent = sFrame
+		layout.FillDirection = Enum.FillDirection.Vertical
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.VerticalAlignment = Enum.VerticalAlignment.Top
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 5)
+		
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			sFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+		end)
+	end
+	
+	local FTextFrame = Instance.new("Frame")
+	FTextFrame.Size = UDim2.new(0.8, -25, 0, 70)
+	FTextFrame.Position = UDim2.new(0, 95, 0, 20)
+	FTextFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	FTextFrame.BorderSizePixel = 0
+	FTextFrame.Parent = startframe
+
+	local FTextCorner = Instance.new("UICorner")
+	FTextCorner.CornerRadius = UDim.new(0, 8)
+	FTextCorner.Parent = FTextFrame
 
 	local AvatarBorder = Instance.new("Frame")
 	AvatarBorder.Size = UDim2.new(0,70,0,70)
@@ -120,21 +182,21 @@ function ReyUILib:CreateUI(Name)
 	AvatarBorderCorner.CornerRadius = UDim.new(0, 10)
 	AvatarBorderCorner.Parent = AvatarBorder
 	
-	local greetingLabel = Instance.new("TextLabel")
-	greetingLabel.Size = UDim2.new(1, -50, 0, 40)
-	greetingLabel.Position = UDim2.new(0, 100, 0, 35)
-	greetingLabel.BackgroundTransparency = 1
-	greetingLabel.Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..Data["Execute"]
-	greetingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	greetingLabel.Font = Enum.Font.Gotham
-	greetingLabel.TextSize = 18
-	greetingLabel.TextXAlignment = Enum.TextXAlignment.Left
-	greetingLabel.Parent = startframe
+	local FGLabel = Instance.new("TextLabel")
+	FGLabel.Size = UDim2.new(1, -50, 0, 40)
+	FGLabel.Position = UDim2.new(0, 100, 0, 35)
+	FGLabel.BackgroundTransparency = 1
+	FGLabel.Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..Data["Execute"]
+	FGLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FGLabel.Font = Enum.Font.Gotham
+	FGLabel.TextSize = 17
+	FGLabel.TextXAlignment = Enum.TextXAlignment.Left
+	FGLabel.Parent = startframe
 
 	-- Foto profil
 	local profileImage = Instance.new("ImageLabel")
-	profileImage.Size = UDim2.new(0, 65, 0, 65)
-	profileImage.Position = UDim2.new(0, 23, 0, 23)
+	profileImage.Size = UDim2.new(0, 70, 0, 70)
+	profileImage.Position = UDim2.new(0, 20, 0, 20)
 	profileImage.BackgroundTransparency = 1
 	profileImage.Image = Players:GetUserThumbnailAsync(
 		Player.UserId,
@@ -142,6 +204,20 @@ function ReyUILib:CreateUI(Name)
 		Enum.ThumbnailSize.Size100x100
 	)
 	profileImage.Parent = startframe
+	
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Parent = AvatarBorder
+	
+	local AvatarBorderCorner = Instance.new("UICorner")
+	AvatarBorderCorner.CornerRadius = UDim.new(0, 10)
+	AvatarBorderCorner.Parent = profileImage
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Parent = FTextFrame
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		panel.Visible = not panel.Visible
