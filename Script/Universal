@@ -23,7 +23,7 @@ end
 activeConnections = {}
 Distance = 10
 Folder = game.Workspace
-Rey:CreateToggle(Main, "AutoFarm", "janlupa pilih mob dan folder", function(state)
+Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
 	local torso = plr.Character.Torso
@@ -59,6 +59,8 @@ pcall(function()
 	end
 end)
 end)
+
+Rey:CreateNote(Main, "V1 diapus karna terlalu lag dan diupdate menjadi V2")
 
 local function checksTable(tbl, value)
 	for _, v in ipairs(tbl) do
