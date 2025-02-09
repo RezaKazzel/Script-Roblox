@@ -36,7 +36,7 @@ local function getNearby(range)
 
 	local rootPart = Character.HumanoidRootPart
 	for _, obj in ipairs(Folder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChild("Enemy") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and not obj.Parent.Name:lower() == "npc" or not obj.Parent.Name:lower() == "shop" and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
