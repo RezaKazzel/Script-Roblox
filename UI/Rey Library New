@@ -717,46 +717,42 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 end
 
 function ReyUILib:CreateNote(parent, text)
-    local noteFrame = Instance.new("Frame")
-    noteFrame.Size = UDim2.new(1, -10, 0, 30)
-    noteFrame.Position = UDim2.new(0, 5, 0, 5)
-    noteFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    noteFrame.BorderSizePixel = 0
-    noteFrame.AutomaticSize = Enum.AutomaticSize.Y
-    noteFrame.Parent = parent
+	local noteFrame = Instance.new("Frame")
+	noteFrame.Size = UDim2.new(1, -10, 0, 30)
+	noteFrame.Position = UDim2.new(0, 5, 0, 5)
+	noteFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	noteFrame.BorderSizePixel = 0
+	noteFrame.AutomaticSize = Enum.AutomaticSize.Y
+	noteFrame.Parent = parent
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = noteFrame
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(30, 30, 30)
+	stroke.Parent = noteFrame
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1.5
-    stroke.Color = Color3.fromRGB(30, 30, 30)
-    stroke.Parent = noteFrame
+	local note = Instance.new("TextLabel")
+	note.Size = UDim2.new(1, -10, 0, 0)
+	note.Position = UDim2.new(0, 5, 0, 5)
+	note.BackgroundTransparency = 1
+	note.Text = text or "Note"
+	note.TextColor3 = Color3.fromRGB(255, 255, 255)
+	note.Font = Enum.Font.Gotham
+	note.TextSize = 14
+	note.TextWrapped = true
+	note.TextXAlignment = Enum.TextXAlignment.Left
+	note.TextYAlignment = Enum.TextYAlignment.Top
+	note.AutomaticSize = Enum.AutomaticSize.Y
+	note.Parent = noteFrame
 
-    local note = Instance.new("TextLabel")
-    note.Size = UDim2.new(1, -10, 0, 0)
-    note.Position = UDim2.new(0, 5, 0, 5)
-    note.BackgroundTransparency = 1
-    note.Text = text or "Note"
-    note.TextColor3 = Color3.fromRGB(255, 255, 255)
-    note.Font = Enum.Font.Gotham
-    note.TextSize = 14
-    note.TextWrapped = true
-    note.TextXAlignment = Enum.TextXAlignment.Left
-    note.TextYAlignment = Enum.TextYAlignment.Top
-    note.AutomaticSize = Enum.AutomaticSize.Y
-    note.Parent = noteFrame
+	local layout = Instance.new("UIListLayout")
+	layout.Parent = noteFrame
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 5)
 
-    local layout = Instance.new("UIListLayout")
-    layout.Parent = noteFrame
-    layout.FillDirection = Enum.FillDirection.Vertical
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    layout.VerticalAlignment = Enum.VerticalAlignment.Top
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 5)
-
-    return noteFrame
+	return noteFrame
 end
 
 
