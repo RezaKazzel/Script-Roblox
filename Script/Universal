@@ -5,7 +5,12 @@ local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
 
-local function GetFolder(miaw)
+local activeConnections = {}
+local Distance = 10
+local Folder = game.Workspace
+local range = 50
+
+local function getFolder(miaw)
 	for _, v in ipairs(Folder:GetDescendants()) do
 		if v:IsA("Model") and v.Name == miaw and v:FindFirstChild("HumanoidRootPart") then
 			local obj = v
@@ -17,12 +22,97 @@ local function GetFolder(miaw)
 			end
 		end
 	end
-	return nil -- Jika tidak menemukan folder
+	return nil
 end
 
-activeConnections = {}
-Distance = 10
-Folder = game.Workspace
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+local function getNearby(range)
+	local enemies = {}
+	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
+
+	local rootPart = Character.HumanoidRootPart
+	for _, obj in ipairs(Folder:GetDescendants()) do
+		if obj:IsA("Model") and obj:FindFirstChild("Enemy") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+			local humanoid = obj.Humanoid
+			local enemyRootPart = obj.HumanoidRootPart
+			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
+			
+			if humanoid and humanoid.Health > 0 and distance <= range then
+				table.insert(enemies, obj)
+			end
+		end
+	end
+	
+	table.sort(enemies, function(a, b)
+		return a.Humanoid.Health < b.Humanoid.Health
+	end)
+
+	return enemies
+end
+
+Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
+pcall(function()
+	_G.AutoClick = state
+	while _G.AutoClick do wait()
+		local VirtualUser = game:GetService("VirtualUser")
+		VirtualUser:CaptureController()
+		VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+		VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+	end
+end)
+end)
+
+Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
+pcall(function()
+	local plr = game.Players.LocalPlayer
+	local torso = plr.Character.Torso
+	if state then
+		if not torso:FindFirstChild("BodyVelocity") then
+			bv = Instance.new("BodyVelocity", torso)
+			bv.velocity = Vector3.new(0,0.1,0)
+			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		end
+		local nearbyEnemies = getNearby(range)
+		activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
+			task.spawn(function()
+				if not proses then
+					proses = true
+					wait(3)
+					nearbyEnemies = getNearby(range)
+					proses = false
+				end
+			end)
+
+			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+			for _, v in ipairs(nearbyEnemies) do
+				if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
+					local wwd = v:FindFirstChild("HumanoidRootPart")
+					if wwd and player and v.Humanoid.Health > 0 then
+						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + Distance, 0)
+						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+						break
+					end
+				end
+			end
+		end)
+	else
+		if activeConnections["AutoFarmNearby"] then
+			activeConnections["AutoFarmNearby"]:Disconnect()
+			activeConnections["AutoFarmNearby"] = nil
+		end
+		wait(0.1)
+		if torso:FindFirstChild("BodyVelocity") then
+			torso:FindFirstChild("BodyVelocity"):Destroy()
+		end
+	end
+end)
+end)
+
+
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
@@ -33,7 +123,7 @@ pcall(function()
 			bv.velocity = Vector3.new(0,0.1,0)
 			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
 		end
-		SelectedMob = GetFolder(AutoFarmMob)
+		SelectedMob = getFolder(AutoFarmMob)
 		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(SelectedMob:GetChildren()) do
@@ -60,8 +150,6 @@ pcall(function()
 end)
 end)
 
-Rey:CreateNote(Main, "V1 diapus karna terlalu lag dan diupdate menjadi V2")
-
 local function checksTable(tbl, value)
 	for _, v in ipairs(tbl) do
 		if v == value then
@@ -86,6 +174,7 @@ end
 Rey:CreateDropdown(Main, "▼ Select Mob ▼", Monsters, function(selectedOption)
 	AutoFarmMob = selectedOption
 end, true)
+
 
 Rey:CreateSlider(Main, "Distance from Mob", 1, 20, 11, function(value)
 	Distance = value
@@ -192,18 +281,6 @@ local player = game.Players.LocalPlayer
 			CoreGui:FindFirstChild("Kill All Button"):Destroy()
 		end
 	end
-end)
-
-Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
-pcall(function()
-	_G.AutoClick = state
-	while _G.AutoClick do wait()
-		local VirtualUser = game:GetService("VirtualUser")
-		VirtualUser:CaptureController()
-		VirtualUser:Button1Down(Vector2.new(0,1,0,1))
-		VirtualUser:Button1Up(Vector2.new(0,1,0,1))
-	end
-end)
 end)
 
 Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
