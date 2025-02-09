@@ -56,9 +56,14 @@ end
 
 local function OneHits(object)
 pcall(function()
+repeat
+local before = object.Humanoid.Health
 	if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * OneHitHealth then
 		object.Humanoid.Health = 0
 	end
+	wait(1.5)
+	object.Humanoid.Health = before
+until not object
 end)
 end
 
