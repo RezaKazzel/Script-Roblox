@@ -8,7 +8,7 @@ local Settings = Rey:CreateTab(UI, "Settings")
 local activeConnections = {}
 local Distance = 10
 local Folder = game.Workspace
-local range = 50
+local range = 100
 
 local function getFolder(miaw)
 	for _, v in ipairs(Folder:GetDescendants()) do
@@ -110,6 +110,10 @@ pcall(function()
 		end
 	end
 end)
+end)
+
+Rey:CreateSlider(Main, "Nearby Distance", 1, 100, 10, function(value)
+	range = value * 10
 end)
 
 
