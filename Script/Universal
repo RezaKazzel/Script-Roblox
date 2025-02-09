@@ -56,8 +56,8 @@ end
 
 local function OneHits(object)
 pcall(function()
-	if object and object.Health > 0 and object.Health < object.MaxHealth * OneHitHealth then
-		object.Health = 0
+	if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * OneHitHealth then
+		object.Humanoid.Health = 0
 	end
 end)
 end
@@ -138,6 +138,7 @@ pcall(function()
 		end
 		SelectedMob = getFolder(AutoFarmMob)
 		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+		if _G.OneHit then OneHits(v) end
 			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 			for _, v in ipairs(SelectedMob:GetChildren()) do
 				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
