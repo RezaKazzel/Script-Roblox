@@ -1,8 +1,6 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
--- Kalau Universal UI nya dihapus
-local UI = Rey:CreateUI("Rey UI")
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
