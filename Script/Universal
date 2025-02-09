@@ -1,6 +1,8 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
+-- Kalau Universal UI nya dihapus
+local UI = Rey:CreateUI("Rey UI")
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -71,11 +73,6 @@ pcall(function()
 	local plr = game.Players.LocalPlayer
 	local torso = plr.Character.Torso
 	if state then
-		if not torso:FindFirstChild("BodyVelocity") then
-			bv = Instance.new("BodyVelocity", torso)
-			bv.velocity = Vector3.new(0,0.1,0)
-			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		end
 		local nearbyEnemies = getNearby(range)
 		activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
 			task.spawn(function()
@@ -92,6 +89,11 @@ pcall(function()
 				if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
 					local wwd = v:FindFirstChild("HumanoidRootPart")
 					if wwd and player and v.Humanoid.Health > 0 then
+						if not torso:FindFirstChild("BodyVelocity") then
+							bv = Instance.new("BodyVelocity", torso)
+							bv.velocity = Vector3.new(0,0.1,0)
+							bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+						end
 						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + Distance, 0)
 						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
 						break
