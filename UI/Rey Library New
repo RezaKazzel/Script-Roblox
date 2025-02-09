@@ -219,11 +219,11 @@ function ReyUILib:CreateUI(Name, Note)
 	stroke.Color = Color3.fromRGB(255, 255, 255)
 	stroke.Parent = FTextFrame
 	
-	local mambo = Instance.new("Mambo")
+	local mambo = Instance.new("Sound")
 	mambo.SoundId = "rbxassetid://80843441506433"
 	mambo.Parent = ReyBtn
 	
-	local wow = Instance.new("Wow")
+	local wow = Instance.new("Sound")
 	wow.SoundId = "rbxassetid://90255863401034"
 	wow.Parent = ReyBtn
 
