@@ -218,9 +218,22 @@ function ReyUILib:CreateUI(Name, Note)
 	stroke.Thickness = 1.5
 	stroke.Color = Color3.fromRGB(255, 255, 255)
 	stroke.Parent = FTextFrame
+	
+	local mambo = Instance.new("Mambo")
+	mambo.SoundId = "rbxassetid://80843441506433"
+	mambo.Parent = ReyBtn
+	
+	local wow = Instance.new("Wow")
+	wow.SoundId = "rbxassetid://90255863401034"
+	wow.Parent = ReyBtn
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		panel.Visible = not panel.Visible
+		if panel.Visible then
+			mambo:Play()
+		else
+			wow:Play()
+		end
 	end)
 
 	return {
