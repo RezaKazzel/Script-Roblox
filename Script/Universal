@@ -324,7 +324,7 @@ local NpcFolder = game.Workspace
 local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if not v.Name:lower() == "keyframe"  then
+		if v.Name:lower() ~= "keyframe"  then
 			if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
 				if checksTable(npc, v) then
 					table.insert(npc, v)
