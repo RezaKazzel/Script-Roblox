@@ -85,7 +85,7 @@ pcall(function()
 	local torso
 	local cekt = pcall(function() torso = plr.Character.Torso end)
 	if not cekt then
-		torso = plr.Character.FindFirstChild("LowerTorso")
+		torso = plr.Character:FindFirstChild("LowerTorso")
 	end
 	if state then
 		local nearbyEnemies = getNearby(range)
