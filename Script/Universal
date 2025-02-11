@@ -36,7 +36,7 @@ local function getNearby(range)
 
 	local rootPart = Character.HumanoidRootPart
 	for _, obj in ipairs(Folder:GetDescendants()) do
-		if obj:IsA("Model") and not obj.Parent.Name:lower() == "npc" and not obj.Parent.Name:lower() == "shop" and obj:FindFirstChild("Humanoid") or obj:FindFirstChild("Enemy") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
@@ -324,9 +324,11 @@ local NpcFolder = game.Workspace
 local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
-			if checksTable(npc, v) then
-				table.insert(npc, v)
+		if not v.Name:lower() == "keyframe"  then
+			if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
+				if checksTable(npc, v) then
+					table.insert(npc, v)
+				end
 			end
 		end
 	end
