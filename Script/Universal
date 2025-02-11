@@ -82,9 +82,10 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end)
+	local torso
+	local cekt = pcall(function() torso = plr.Character.Torso end)
 	if not cekt then
-		local torso = plr.Character.WaitForChild("LowerTorso")
+		torso = plr.Character.FindFirstChild("LowerTorso")
 	end
 	if state then
 		local nearbyEnemies = getNearby(range)
@@ -137,9 +138,10 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local cekt = pcall(function() local torso = plr.Character:FindFirstChild("Torso") end)
+	local torso
+	local cekt = pcall(function() torso = plr.Character.Torso end)
 	if not cekt then
-		local torso = plr.Character:FindFirstChild("LowerTorso")
+		torso = plr.Character:FindFirstChild("LowerTorso")
 	end
 	if state and AutoFarmMob then
 		if not torso:FindFirstChild("BodyVelocity") then
