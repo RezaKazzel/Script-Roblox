@@ -1,6 +1,8 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
+-- Kalau Universal UI nya dihapus
+local UI = Rey:CreateUI("Rey UI")
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -82,7 +84,10 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local torso = plr.Character.Torso
+	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end
+	if not cekt then
+		local torso = plr.Character.WaitForChild("LowerTorso")
+	end
 	if state then
 		local nearbyEnemies = getNearby(range)
 		activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
@@ -134,7 +139,10 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local torso = plr.Character.Torso
+	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end
+	if not cekt then
+		local torso = plr.Character.WaitForChild("LowerTorso")
+	end
 	if state and AutoFarmMob then
 		if not torso:FindFirstChild("BodyVelocity") then
 			bv = Instance.new("BodyVelocity", torso)
