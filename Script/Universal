@@ -82,7 +82,7 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end
+	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end)
 	if not cekt then
 		local torso = plr.Character.WaitForChild("LowerTorso")
 	end
@@ -137,7 +137,7 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end
+	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end)
 	if not cekt then
 		local torso = plr.Character.WaitForChild("LowerTorso")
 	end
