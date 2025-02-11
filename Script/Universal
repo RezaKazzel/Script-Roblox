@@ -137,9 +137,9 @@ end)
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 pcall(function()
 	local plr = game.Players.LocalPlayer
-	local cekt = pcall(function() local torso = plr.Character.WaitForChild("Torso") end)
+	local cekt = pcall(function() local torso = plr.Character:FindFirstChild("Torso") end)
 	if not cekt then
-		local torso = plr.Character.WaitForChild("LowerTorso")
+		local torso = plr.Character:FindFirstChild("LowerTorso")
 	end
 	if state and AutoFarmMob then
 		if not torso:FindFirstChild("BodyVelocity") then
