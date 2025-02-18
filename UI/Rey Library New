@@ -768,5 +768,34 @@ function ReyUILib:CreateNote(parent, text)
 	return noteFrame
 end
 
+function ReyUI:CreateWebhook(Url, Avatar, Content, Embed)
+	local OSTime = os.time()
+	local Time = os.date("!*t", OSTime)
+	local timestamp = string.format("%d-%02d-%02dT%02d:%02d:%02dZ", Time.year, Time.month, Time.day, Time.hour, Time.min, Time.sec)
+
+	if Embed then
+		Embed.timestamp = timestamp
+	end
+
+	local httpRequest = syn and syn.request or http_request or request
+	if not httpRequest then
+		warn("HTTP request function not found!")
+		return
+	end
+
+	local response = httpRequest({
+		Url = Url,
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json"
+		},
+		Body = game:GetService("HttpService"):JSONEncode({
+			content = Content,
+			avatar_url = Avatar,
+			embeds = { Embed }
+		})
+	})
+end
+
 
 return ReyUILib
