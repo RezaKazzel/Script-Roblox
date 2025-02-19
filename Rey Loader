@@ -16,3 +16,6 @@ if ListGame[game.GameId] ~= nil then
 	loadstring(ListGame[tonumber(game.GameId)])()
 print("Loaded: "..GameName)
 end
+
+--// Extension
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
