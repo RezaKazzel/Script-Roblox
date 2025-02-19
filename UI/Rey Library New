@@ -768,7 +768,7 @@ function ReyUILib:CreateNote(parent, text)
 	return noteFrame
 end
 
-function ReyUI:CreateWebhook(Url, Avatar, Content, Embed)
+function ReyUILib:SendWebhook(Url, Avatar, Content, Embed)
 	local OSTime = os.time()
 	local Time = os.date("!*t", OSTime)
 	local timestamp = string.format("%d-%02d-%02dT%02d:%02d:%02dZ", Time.year, Time.month, Time.day, Time.hour, Time.min, Time.sec)
