@@ -1,5 +1,4 @@
-ayam = 0
-if ayam == 0 then return print("Maintenance") end
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Test%20Webhook"))()
 
 Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New')))()
 local ListGame = {
