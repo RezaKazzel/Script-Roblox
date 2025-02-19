@@ -526,8 +526,15 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 					child:Destroy()
 				end
 			end
-			for _, option in ipairs(Options()) do
-				createOption(option)
+			status = pcall(function()
+				for _, option in ipairs(Options()) do
+					createOption(option)
+				end
+			end)
+			if status == false then
+				for _, option in ipairs(Options) do
+					createOption(option)
+				end
 			end
 			updateCanvasSize()
 			debounce = false
