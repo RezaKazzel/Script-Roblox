@@ -10,12 +10,14 @@ local ListGame = {
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 
 UI = Rey:CreateUI("Rey UI - "..GameName)
-loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
 
 if ListGame[game.GameId] ~= nil then
 	loadstring(ListGame[tonumber(game.GameId)])()
 print("Loaded: "..GameName)
 end
+
+--// Universal
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
 
 --// Extension
 loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
