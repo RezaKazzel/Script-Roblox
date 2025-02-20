@@ -1,6 +1,8 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
+-- Kalau Universal UI nya dihapus
+local UI = Rey:CreateUI("Rey UI")
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -416,10 +418,10 @@ Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 end)
 
 Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
-	while value do wait(0.1)
-		local httpService = game:GetService('HttpService')
-		
-		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
+local httpService = game:GetService('HttpService')
+_G.SaveConfig = value
+	while _G.SaveConfig do wait(0.1)
+		local Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		if not Data["Games"] then Data["Games"] = {} end
 		if not Data["Games"][tostring(game.GameId)] then Data["Games"][tostring(game.GameId)] = {} end
 		
@@ -433,7 +435,10 @@ Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", fun
 		writefile("REY HUB/Reylib.json", tostring(Encode))
 	end
 	
-	if not value then
-		Data["Games"][tostring(game.GameId)] = {}
+	while not _G.SaveConfig do wait(0.1)
+		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
+		Data["Games"][tostring(game.GameId)] = nil
+		local Encode = httpService:JSONEncode(Data)
+		writefile("REY HUB/Reylib.json", tostring(Encode))
 	end
 end)
