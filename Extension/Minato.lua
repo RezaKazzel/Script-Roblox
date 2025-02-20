@@ -1,8 +1,6 @@
 --// Minato
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
---// Hapus
-local UI = Rey:CreateUI("Minato")
 local Main = Rey:CreateTab(UI, "Minato")
 
 local player = game.Players.LocalPlayer
