@@ -4,6 +4,18 @@ local ReyUILib = {}
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 ReyUILib.Data = ReyUILib.Data or {}
 
+local function Finds(Table, Name)
+    for k, v in pairs(Table) do
+        if k == Name then
+            return true, v
+        elseif type(v) == "table" then
+            local found, value = Finds(v, Name)
+            if found then return true, value end
+        end
+    end
+    return false
+end
+
 function ReyUILib:CreateUI(Name, Note)
 	local Note = Note or false
 	local CoreGui = game:GetService("CoreGui")
@@ -414,8 +426,7 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 		Callback(state)
 	end
 	
-	local check = pcall(function() data = Data["Folder"]["Games"][tostring(game.GameId)][Name] end)
-	if check and data then
+	if Finds(Data, Name) then
 		task.spawn(function() toggle() end)
 	end
 
@@ -632,9 +643,9 @@ end
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	callback = callback or function() end
 	
-	local check = pcall(function() data = Data["Folder"]["Games"][tostring(game.GameId)][Name] end)
-	if check and data then
-		default = data
+	if Finds(Data, Name) then
+		_, value = Finds(Data, Name)
+		default = value
 	end
 	
 	local containerFrame = Instance.new("Frame")
