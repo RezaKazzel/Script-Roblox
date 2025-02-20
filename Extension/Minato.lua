@@ -1,6 +1,8 @@
 --// Minato
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
+--// Hapus
+local UI = Rey:CreateUI("Minato")
 local Main = Rey:CreateTab(UI, "Minato")
 
 local player = game.Players.LocalPlayer
@@ -251,9 +253,9 @@ Rey:CreateButton(Main, "Get Minato Kunai V2", "baca note dibawah", "Get", functi
 	end)
 end)
 
-Rey:CreateNote(Main,"V2:\nKlik cepat 3 kali atau lebih untuk Marking,\nliterally sampah😹")
+Rey:CreateNote(Main,"V2:\nKlik cepat 3 kali atau lebih untuk Marking,\nliterally sampah")
 
-Rey:CreateButton(Main, "Get Minato Kunai V3", "kilat kuning⚡", "Get", function()
+Rey:CreateButton(Main, "Get Minato Kunai V3", "kilat kuning", "Get", function()
 	local tool = Instance.new("Tool")
 	tool.Name = "Marking Kunai"
 	tool.RequiresHandle = false
@@ -404,7 +406,7 @@ Rey:CreateButton(Main, "Get Minato Kunai V3", "kilat kuning⚡", "Get", function
 	end)
 end)
 
-Rey:CreateNote(Main,"V3:\nMarking Kunai digunakan untuk Marking,\nMarked Kunai digunakan untuk Teleport ke tempat yang sudah di tandai menggunakan Marking Kunai,\nbtw perlu di ingat kalo v3 masih blm bisa disimpan😋.")
+Rey:CreateNote(Main,"V3:\nMarking Kunai digunakan untuk Marking,\nMarked Kunai digunakan untuk Teleport ke tempat yang sudah di tandai menggunakan Marking Kunai,\nbtw perlu di ingat kalo v3 masih blm bisa disimpan.")
 
 Rey:CreateButton(Main, "Teleport Kunai (Hiraishin)", "Click to Teleport", "Get", function()
 	local Mouse = player:GetMouse()
@@ -421,6 +423,7 @@ Rey:CreateButton(Main, "Teleport Kunai (Hiraishin)", "Click to Teleport", "Get",
 		if not Char or not HRP then
 			return warn("Failed to find HumanoidRootPart")
 		end
+		sfx:Play()
 		HRP.CFrame = CFrame.new(Mouse.Hit.X, Mouse.Hit.Y + 3, Mouse.Hit.Z, select(4, HRP.CFrame:components()))
 	end)
 	if _G.SaveTool then
@@ -488,4 +491,4 @@ local Path = "REY HUB/Extension/Minato.json"
 	end
 end)
 
-Rey:CreateNote(Main, "PERINGATAN,\nJika Save Data dimatikan dan keluar Game maka data sebelumnya akan terhapus.\n\nuntuk sementara biarkan sj dlu kaya gini, aing malas cok😹")
+Rey:CreateNote(Main, "PERINGATAN,\nJika Save Data dimatikan dan keluar Game maka data sebelumnya akan terhapus.\n\nuntuk sementara biarkan sj dlu kaya gini, aing malas cok")
