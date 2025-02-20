@@ -17,10 +17,16 @@ if not y then
 	makefolder("REY HUB")
 	writefile("REY HUB/Reylib.json", {})
 end
+
 if not isfolder("REY HUB/Extension") then
 	makefolder("REY HUB/Extension")
 end
 
 Data["Folder"] = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
+
+for i, v in ipairs(listfiles("REY HUB/Extension")) do
+	local file = v:match("REY HUB/Extension/(.+)"):gsub("%.json$", "")
+	Data[file] = httpService:JSONDecode(readfile(v))
+end
 
 return Data
