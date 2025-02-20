@@ -220,13 +220,17 @@ function ReyUILib:CreateUI(Name, Note)
 	stroke.Color = Color3.fromRGB(255, 255, 255)
 	stroke.Parent = FTextFrame
 	
+	local SFX = Instance.new("Folder")
+	SFX.Name = "Sound Effect"
+	SFX.Parent = ScreenGui
+	
 	local mambo = Instance.new("Sound")
 	mambo.SoundId = "rbxassetid://80843441506433"
-	mambo.Parent = ReyBtn
+	mambo.Parent = SFX
 	
 	local wow = Instance.new("Sound")
 	wow.SoundId = "rbxassetid://90255863401034"
-	wow.Parent = ReyBtn
+	wow.Parent = SFX
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		panel.Visible = not panel.Visible
@@ -244,6 +248,7 @@ function ReyUILib:CreateUI(Name, Note)
 		RightFrame = rightFrame,
 		StartFrame = startframe,
 		TabContainer = tabContainer,
+		SFX = SFX,
 	}
 end
 
