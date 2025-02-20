@@ -413,6 +413,11 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 		end
 		Callback(state)
 	end
+	
+	local check = pcall(function() data = Data["Folder"]["Games"][game.GameId][Name] end)
+	if check and data then
+		toggle()
+	end
 
 	toggleContainer.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -624,11 +629,16 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 	end
 end
 
-function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
+function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	callback = callback or function() end
-
+	
+	local check = pcall(function() data = Data["Folder"]["Games"][game.GameId][Name] end)
+	if check and data then
+		default = data
+	end
+	
 	local containerFrame = Instance.new("Frame")
-	containerFrame.Name = name
+	containerFrame.Name = Name
 	containerFrame.Size = UDim2.new(1, -10, 0, 60) -- Tinggi container lebih besar
 	containerFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	containerFrame.BorderSizePixel = 2
@@ -644,7 +654,7 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	label.TextSize = 16
 	label.TextStrokeTransparency = 0.8
 	label.TextStrokeColor3 = Color3.fromRGB(100, 0, 150)
-	label.Text = name .. " - " .. default
+	label.Text = Name .. " - " .. default
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = containerFrame
 
@@ -696,14 +706,17 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 	local inputCorner = Instance.new("UICorner")
 	inputCorner.CornerRadius = UDim.new(0, 12)
 	inputCorner.Parent = inputBox
+	
+	ReyUILib.Data[Name] = default
 
 	local function updateSlider(input)
 		local sliderPos = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
 		local value = math.floor(sliderPos * (max - min) + min)
 		fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
 		sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-		label.Text = name .. " - " .. value
+		label.Text = Name .. " - " .. value
 		inputBox.Text = tostring(value)
+		ReyUILib.Data[Name] = value
 		callback(value)
 	end
 
@@ -736,7 +749,8 @@ function ReyUILib:CreateSlider(parent, name, min, max, default, callback)
 			local sliderPos = (value - min) / (max - min)
 			fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
 			sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-			label.Text = name .. " - " .. value
+			label.Text = Name .. " - " .. value
+			ReyUILib.Data[Name] = value
 			callback(value)
 		else
 			inputBox.Text = tostring(default)
