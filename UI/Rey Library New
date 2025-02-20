@@ -426,7 +426,8 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 		Callback(state)
 	end
 	
-	if Finds(Data, Name) then
+	local x, value = Finds(Data, Name)
+	if x and value then
 		task.spawn(function() toggle() end)
 	end
 
@@ -643,8 +644,8 @@ end
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	callback = callback or function() end
 	
-	if Finds(Data, Name) then
-		_, value = Finds(Data, Name)
+	local x, value = Finds(Data, Name)
+	if x and value then
 		default = value
 	end
 	
