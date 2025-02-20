@@ -414,7 +414,7 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 		Callback(state)
 	end
 	
-	local check = pcall(function() data = Data["Folder"]["Games"][tostring(game.GameId)][Name] end)
+	local check = pcall(function() data = Data["Games"][tostring(game.GameId)][Name] end)
 	if check and data then
 		task.spawn(function() toggle() end)
 	end
@@ -632,7 +632,7 @@ end
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	callback = callback or function() end
 	
-	local check = pcall(function() data = Data["Folder"]["Games"][tostring(game.GameId)][Name] end)
+	local check = pcall(function() data = Data["Games"][tostring(game.GameId)][Name] end)
 	if check and data then
 		default = data
 	end
