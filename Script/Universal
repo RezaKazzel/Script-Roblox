@@ -34,7 +34,7 @@ local function getNearby(range)
 	local enemies = {}
 	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
 
-local rootPart = Character.HumanoidRootPart
+	local rootPart = Character.HumanoidRootPart
 	for _, obj in ipairs(Folder:GetDescendants()) do
 		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
@@ -409,5 +409,26 @@ Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 	Volume = value / 100
 	for i,v in ipairs (UI.SFX:GetChildren()) do
 		v.Volume = Volume
+	end
+end)
+
+Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
+	_G.SaveConfigData = value
+	while _G.SaveConfigData do wait(0.1)
+		local httpService = game:GetService('HttpService')
+		local x = pcall(function() files = readfile("REY HUB/Reylib.json")end)
+		
+		Data = httpService:JSONDecode(files)
+		if not Data["Games"] then Data["Games"] = {} end
+		if not Data["Games"][game.GameId] then Data["Games"][game.GameId] = {} end
+		
+		for _, v in pairs(ReyUILib.Data) do
+			if type(v) ~= "function" then
+				Data["Games"][game.GameId][_] = v
+			end
+		end
+		
+		local Encode = httpService:JSONEncode(Data)
+		writefile("REY HUB/Reylib.json", tostring(Encode))
 	end
 end)
