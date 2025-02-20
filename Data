@@ -1,23 +1,23 @@
 local httpService = game:GetService('HttpService')
+local Data = {}
 local x = pcall(function() files = readfile("Reylib.json")end)
+local y = pcall(function() files2 = readfile("REY HUB/Reylib.json")end)
 
-if not isfolder("REY HUB") then
+if not x then
+	Data["Execute"] = 1
+else
+	Data = httpService:JSONDecode(readfile("Reylib.json"))
+	Data["Execute"] = Data["Execute"] + 1
+end
+
+local Encode = httpService:JSONEncode(Data)
+writefile("Reylib.json", tostring(Encode))
+
+if not y then
 	makefolder("REY HUB")
 	writefile("REY HUB/Reylib.json", {})
 end
 
-if not x then
-	Data = {
-		["Execute"] = 1
-	}
-	local Encode = httpService:JSONEncode(Data)
-	writefile("Reylib.json", tostring(Encode))
-	return Data
-end
-
-Data = httpService:JSONDecode(files)
-Data["Execute"] = Data["Execute"] + 1
-local Encode = httpService:JSONEncode(Data)
-writefile("Reylib.json", tostring(Encode))
+Data["Folder"] = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 
 return Data
