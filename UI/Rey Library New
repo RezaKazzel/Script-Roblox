@@ -1,6 +1,8 @@
 repeat wait() until game:IsLoaded()
 local ReyUILib = {}
+
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
+ReyUILib.Data = ReyUILib.Data or {}
 
 function ReyUILib:CreateUI(Name, Note)
 	local Note = Note or false
@@ -394,12 +396,14 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 	toggleCircle.Parent = toggleContainer
 
 	local state = false
+	ReyUILib.Data[Name] = state
 
 	-- Callback default
 	Callback = Callback or function() end
 
 	local function toggle()
 		state = not state
+		ReyUILib.Data[Name] = state
 		if state then
 			toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
 			toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
