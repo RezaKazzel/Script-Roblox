@@ -1,6 +1,10 @@
 local httpService = game:GetService('HttpService')
 local x = pcall(function() files = readfile("Reylib.json")end)
 
+if not isfolder("REY HUB") then
+    makefolder("REY HUB")
+end
+
 if not x then
 	Data = {
 		["Execute"] = 1
