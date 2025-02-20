@@ -419,11 +419,11 @@ Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", fun
 		
 		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		if not Data["Games"] then Data["Games"] = {} end
-		if not Data["Games"][game.GameId] then Data["Games"][game.GameId] = {} end
+		if not Data["Games"][tostring(game.GameId)] then Data["Games"][tostring(game.GameId)] = {} end
 		
 		for _, v in pairs(Rey.Data) do
 			if type(v) ~= "function" then
-				Data["Games"][game.GameId][_] = v
+				Data["Games"][tostring(game.GameId)][_] = v
 			end
 		end
 		
