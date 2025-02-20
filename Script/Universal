@@ -34,7 +34,7 @@ local function getNearby(range)
 	local enemies = {}
 	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
 
-	local rootPart = Character.HumanoidRootPart
+local rootPart = Character.HumanoidRootPart
 	for _, obj in ipairs(Folder:GetDescendants()) do
 		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
@@ -402,4 +402,12 @@ end)
 
 Rey:CreateButton(Settings, "Rejoin", "-", "Tap", function()
 	game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end)
+
+Volume = 0.5
+Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
+	Volume = value / 100
+	for i,v in ipairs (UI.SFX:GetChildren()) do
+		v.Volume = Volume
+	end
 end)
