@@ -416,9 +416,8 @@ Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", fun
 	_G.SaveConfigData = value
 	while _G.SaveConfigData do wait(0.1)
 		local httpService = game:GetService('HttpService')
-		local x = pcall(function() files = readfile("REY HUB/Reylib.json")end)
 		
-		Data = httpService:JSONDecode(files)
+		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		if not Data["Games"] then Data["Games"] = {} end
 		if not Data["Games"][game.GameId] then Data["Games"][game.GameId] = {} end
 		
