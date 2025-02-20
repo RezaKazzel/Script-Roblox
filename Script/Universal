@@ -257,7 +257,10 @@ end)
 Rey:CreateToggle(Main, "One Hit [BUTTON]", "[Work Without AutoFarm] one shot one kill", function(state)
 local CoreGui = game:GetService("CoreGui")
 local player = game.Players.LocalPlayer
-	if state and not CoreGui:FindFirstChild("Kill All Button") then
+	if state then
+		if CoreGui:FindFirstChild("Kill All Button") then
+			CoreGui:FindFirstChild("Kill All Button"):Destroy()
+		end
 		local screenGui = Instance.new("ScreenGui")
 		screenGui.Name = "Kill All Button"
 		screenGui.Parent = CoreGui
@@ -413,8 +416,7 @@ Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 end)
 
 Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
-	_G.SaveConfigData = value
-	while _G.SaveConfigData do wait(0.1)
+	while value do wait(0.1)
 		local httpService = game:GetService('HttpService')
 		
 		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
@@ -429,5 +431,9 @@ Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", fun
 		
 		local Encode = httpService:JSONEncode(Data)
 		writefile("REY HUB/Reylib.json", tostring(Encode))
+	end
+	
+	if not value then
+		Data["Games"][tostring(game.GameId)] = {}
 	end
 end)
