@@ -416,7 +416,7 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 	
 	local check = pcall(function() data = Data["Folder"]["Games"][tostring(game.GameId)][Name] end)
 	if check and data then
-		toggle()
+		task.spawn(function() toggle() end)
 	end
 
 	toggleContainer.InputBegan:Connect(function(input)
