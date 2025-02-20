@@ -412,6 +412,9 @@ Rey:CreateButton(Main, "Teleport Kunai (Hiraishin)", "Click to Teleport", "Get",
 	tool.Name = "Hiraishin"
 	tool.RequiresHandle = false
 	tool.Parent = player.Backpack
+	sfx = Instance.new("Sound")
+	sfx.SoundId = "rbxassetid://97536925165304"
+	sfx.Parent = UI.SFX
 	tool.Activated:Connect(function()
 		local Char = player.Character or workspace:FindFirstChild(player.Name)
 		local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
@@ -431,6 +434,7 @@ Rey:CreateButton(Main, "Teleport Kunai (Hiraishin)", "Click to Teleport", "Get",
 					if not Char or not HRP then
 						return warn("Failed to find HumanoidRootPart")
 					end
+					sfx:Play()
 					HRP.CFrame = CFrame.new(Mouse.Hit.X, Mouse.Hit.Y + 3, Mouse.Hit.Z, select(4, HRP.CFrame:components()))
 				end)
 			end
