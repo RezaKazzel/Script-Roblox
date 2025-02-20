@@ -87,6 +87,7 @@ function ReyUILib:CreateUI(Name, Note)
 	tabLayout.Padding = UDim.new(0, 5)
 	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+	tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	tabLayout.Parent = tabContainer
 
 	local rightFrame = Instance.new("Frame")
@@ -277,7 +278,7 @@ function ReyUILib:CreateTab(UI, Name)
 	layout.FillDirection = Enum.FillDirection.Vertical
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	layout.VerticalAlignment = Enum.VerticalAlignment.Top
-	--layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = tabContent
 
 	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
