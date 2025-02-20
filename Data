@@ -2,7 +2,7 @@ local httpService = game:GetService('HttpService')
 local x = pcall(function() files = readfile("Reylib.json")end)
 
 if not isfolder("REY HUB") then
-    makefolder("REY HUB")
+    writefile("REY HUB/Reylib.json", {})
 end
 
 if not x then
