@@ -224,7 +224,7 @@ function ReyUILib:CreateUI(Name, Note)
 	
 	local SFX = Instance.new("Folder")
 	SFX.Name = "Sound Effect"
-	SFX.Parent = ScreenGui
+	SFX.Parent = screenGui
 	
 	local mambo = Instance.new("Sound")
 	mambo.SoundId = "rbxassetid://80843441506433"
