@@ -55,7 +55,7 @@ Rey:SendWebhook(
 	nil,
 	nil,
 	{
-		title = "Executing Rey",
+		title = "Executing Rey\nGame: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
 		color = tonumber("00FF00", 16),
 		footer = { text = HWID },
 		author = {
