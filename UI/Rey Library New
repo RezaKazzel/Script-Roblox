@@ -249,7 +249,7 @@ function ReyUILib:CreateUI(Name, Note)
 	ReyPosition = ReyBtn.Position
 
 	ReyBtn.MouseButton1Click:Connect(function()
-		if not ReyBtn.Position == ReyPosition then ReyPosition = ReyBtn.Position end
+		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
 		panel.Visible = not panel.Visible
 		if panel.Visible then
 			mambo:Play()
