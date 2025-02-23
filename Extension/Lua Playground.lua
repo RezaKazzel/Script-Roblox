@@ -2,8 +2,6 @@
 --// Rey Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
---// Hapus
-local UI = Rey:CreateUI("Lua Playground")
 local Main = Rey:CreateTab(UI, "Lua Playground")
 
 local player = game.Players.LocalPlayer
