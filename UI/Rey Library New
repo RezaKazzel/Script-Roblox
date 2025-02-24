@@ -18,6 +18,7 @@ end
 
 function ReyUILib:CreateUI(Name, Note)
 	local Note = Note or false
+	local TweenService = game:GetService("TweenService")
 	local CoreGui = game:GetService("CoreGui")
 	local Players = game:GetService("Players")
 	local Player = Players.LocalPlayer
@@ -52,7 +53,7 @@ function ReyUILib:CreateUI(Name, Note)
 
 	local panel = Instance.new("Frame")
 	panel.Size = UDim2.new(0, 500, 0, 350)
-	panel.Position = UDim2.new(0.5, -250, 0.5, -175)
+	panel.Position = UDim2.new(0.5, -250, 0.5, -200)
 	panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	panel.BorderSizePixel = 0
 	panel.Visible = false
@@ -245,15 +246,32 @@ function ReyUILib:CreateUI(Name, Note)
 	wow.SoundId = "rbxassetid://90255863401034"
 	wow.Parent = SFX
 	
+	local showTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -250, 0.5, -200),
+		BackgroundTransparency = 0,
+		Size = UDim2.new(0, 500, 0, 350)
+	})
+
+	local hideTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5, 0, -1, 0),
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 0, 0, 0)
+	})
+	
 	ReyPosition = ReyBtn.Position
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
-		panel.Visible = not panel.Visible
-		if panel.Visible then
+		panel.Visible = true
+		if panel.BackgroundTransparency == 1 then
+			showTween:Play()
 			mambo:Play()
 		else
+			hideTween:Play()
 			wow:Play()
+			hideTween.Completed:Connect(function()
+				panel.Visible = false
+			end)
 		end
 	end)
 
@@ -652,7 +670,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 				end
 			else
 				selectedOptions[option] = true
-				optionButton.BackgroundColor3 = Color3.fromRGB(30, 150, 255)
+				optionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 				
 				table.insert(selectedOrder, option)
 			end
