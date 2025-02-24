@@ -52,7 +52,7 @@ function ReyUILib:CreateUI(Name, Note)
 	ReyBtnCorner.Parent = ReyBtn
 
 	local panel = Instance.new("Frame")
-	panel.Size = UDim2.new(0, 500, 0, 350)
+	panel.Size = UDim2.new(0, 0, 0, 0)
 	panel.Position = UDim2.new(0.5, 0, -1, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	panel.BackgroundTransparency = 1
@@ -265,7 +265,7 @@ function ReyUILib:CreateUI(Name, Note)
 	ReyBtn.MouseButton1Click:Connect(function()
 		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
 		panel.Visible = true
-		if panel.BackgroundTransparency == 1 then
+		if not panel.Visible and panel.BackgroundTransparency == 1 then
 			showTween:Play()
 			mambo:Play()
 		else
