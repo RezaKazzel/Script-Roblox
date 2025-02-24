@@ -9,6 +9,7 @@ end
 miaw = 0
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
+UI = Rey:CreateUI("nihao")
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -17,13 +18,72 @@ local torso = plr.Character.Torso
 activeConnections = {}
 
 local function Attack()
-VirtualUser:CaptureController()
-VirtualUser:Button1Down(Vector2.new(0,1,0,1))
-VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+	VirtualUser:CaptureController()
+	VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+	VirtualUser:Button1Up(Vector2.new(0,1,0,1))
 end
 
 -- kebanyakan disini blm selesai
 --Rey:CreateToggle(Exclusive, "Auto Dungeon")
+Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
+_G.AutoLevel = state
+	while _G.AutoLevel do task.wait()
+		if not debounce then
+			local npc = workspace.Npc.Quest["Quest 15"]
+			npc.ProximityPrompt.HoldDuration = 0
+			game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = npc.HumanoidRootPart
+			for i=1,5 do task.wait()
+				FP()
+			end
+			debounce = true
+			task.spawn(function()
+				task.wait(3)
+				debounce = false
+			end)
+		end
+		
+		pcall(function()
+			local plr = game.Players.LocalPlayer
+			local torso
+			local cekt = pcall(function() torso = plr.Character.Torso end)
+			if not cekt then
+				torso = plr.Character:FindFirstChild("LowerTorso")
+			end
+			if _G.AutoBosses and x then
+				if not torso:FindFirstChild("BodyVelocity") then
+					bv = Instance.new("BodyVelocity", torso)
+					bv.velocity = Vector3.new(0,0.1,0)
+					bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+				end
+				activeConnections["AutoBosses"] = game:GetService("RunService").Heartbeat:Connect(function()
+					if OneHit then OneHits(v) end
+					local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+					for i, v in ipairs(workspace.Main.Kurakura["Vasto Lorde"]:GetChildren()) do
+						if v:IsA("Model") then
+							local humanoid = v:FindFirstChildOfClass("Humanoid")
+							local rootPart = v:FindFirstChild("HumanoidRootPart")
+							if humanoid and rootPart and humanoid.Health > 0 then
+								local targetPosition = rootPart.Position + Vector3.new(0,rootPart.Size.Y/2 + 4, 0)
+								player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+								break
+							end
+						end
+					end
+				end)
+			else
+				if activeConnections["AutoBosses"] then
+					activeConnections["AutoBosses"]:Disconnect()
+					activeConnections["AutoBosses"] = nil
+				end
+				wait(0.1)
+				if torso:FindFirstChild("BodyVelocity") then
+					torso:FindFirstChild("BodyVelocity"):Destroy()
+				end
+			end
+		end)
+	end
+end)
+
 Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
 _G.AutoBosses = state
 	while _G.AutoBosses do task.wait()
@@ -51,7 +111,7 @@ _G.AutoBosses = state
 				if not cekt then
 					torso = plr.Character:FindFirstChild("LowerTorso")
 				end
-				if AutoBosses and x then
+				if _G.AutoBosses and x then
 					if not torso:FindFirstChild("BodyVelocity") then
 						bv = Instance.new("BodyVelocity", torso)
 						bv.velocity = Vector3.new(0,0.1,0)
@@ -164,7 +224,7 @@ pcall(function()target = game.Workspace.Main.Forest:FindFirstChild(mob)end)
 				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
 			end
 			activeConnections["AuM"] = game:GetService("RunService").Heartbeat:Connect(function()
-				task.task.wait()
+				task.wait()
 				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 				for _,v in ipairs (target:GetChildren()) do
 					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
@@ -253,7 +313,7 @@ end)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
 _G.AutoBM2 = state
 	if _G.AutoBM2 then
-		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.task.wait()
+		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait()
 			pcall(function()
 				BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 				BlackMerchant.ProximityPrompt.HoldDuration = 0
