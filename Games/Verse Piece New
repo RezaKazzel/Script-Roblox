@@ -254,7 +254,7 @@ Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Tel
 	end)
 end)
 
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wakðŸ˜¹ðŸ˜¹", function(state)
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹😹", function(state)
 _G.FarmGems = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
@@ -329,7 +329,7 @@ _G.AutoBM2 = state
 	end
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "ðŸ’€", function(state)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
 _G.AutoBM3 = state
 while _G.AutoBM3 do wait(0.1)
 	pcall(function()
