@@ -575,6 +575,109 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	return containerFrame
 end
 
+function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
+	Callback = Callback or function() end
+	Refresh = Refresh or false
+	local selectedOptions = {}
+
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = Name
+	containerFrame.Size = UDim2.new(1, -10, 0, 40)
+	containerFrame.BackgroundTransparency = 1
+	containerFrame.Parent = Tab
+
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0)
+	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownFrame.BorderSizePixel = 2
+	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	dropdownFrame.Parent = containerFrame
+
+	local dropdownButton = Instance.new("TextButton")
+	dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+	dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dropdownButton.Font = Enum.Font.GothamBold
+	dropdownButton.TextSize = 14
+	dropdownButton.Text = Name
+	dropdownButton.BorderSizePixel = 0
+	dropdownButton.Parent = dropdownFrame
+
+	local dropdownList = Instance.new("ScrollingFrame")
+	dropdownList.Name = Name
+	dropdownList.Size = UDim2.new(1, 0, 0, 150)
+	dropdownList.Position = UDim2.new(0, 0, 1, 0)
+	dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	dropdownList.BorderSizePixel = 0
+	dropdownList.Visible = false
+	dropdownList.ClipsDescendants = true
+	dropdownList.ScrollBarThickness = 6
+	dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+	dropdownList.ZIndex = 2
+	dropdownList.Parent = dropdownFrame
+
+	local dropdownLayout = Instance.new("UIListLayout")
+	dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+	dropdownLayout.Padding = UDim.new(0, 5)
+	dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	dropdownLayout.Parent = dropdownList
+
+	local function updateCanvasSize()
+		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+	end
+
+	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+
+	local function createOption(option)
+		local optionButton = Instance.new("TextButton")
+		optionButton.Size = UDim2.new(1, -10, 0, 30)
+		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		optionButton.Font = Enum.Font.Gotham
+		optionButton.TextSize = 12
+		optionButton.Text = option.Name or option
+		optionButton.BorderSizePixel = 0
+		optionButton.ZIndex = 2
+		optionButton.Parent = dropdownList
+
+		optionButton.MouseButton1Click:Connect(function()
+			if selectedOptions[option] then
+				selectedOptions[option] = nil
+				optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70) -- Warna default
+			else
+				selectedOptions[option] = true
+				optionButton.BackgroundColor3 = Color3.fromRGB(30, 150, 255) -- Warna saat dipilih
+			end
+
+			local selectedNames = {}
+			for name in pairs(selectedOptions) do
+				table.insert(selectedNames, name)
+			end
+			dropdownButton.Text = table.concat(selectedNames, ", ")
+
+			Callback(selectedOptions)
+		end)
+	end
+	
+	status = pcall(function()
+		for _, option in ipairs(Options()) do
+			createOption(option)
+		end
+	end)
+	if status == false then
+		for _, option in ipairs(Options) do
+			createOption(option)
+		end
+	end
+
+	dropdownButton.MouseButton1Click:Connect(function()
+		dropdownList.Visible = not dropdownList.Visible
+	end)
+
+	updateCanvasSize()
+	return containerFrame
+end
+
 function ReyUILib:RemoveElement(tab, Name)
 	if not tab or not Name then
 		return
