@@ -12,168 +12,175 @@ local miaw = 0
 local sGoblet = nil
 local debounce = false
 local selectedWeapon = nil
+local currentPriority = nil -- Menambahkan variabel untuk menyimpan prioritas saat ini
 
 local function getCharacterParts()
-	local Character = LocalPlayer.Character
-	if not Character then return nil, nil end
-	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
-	local Torso = Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso")
-	return HumanoidRootPart, Torso
+    local Character = LocalPlayer.Character
+    if not Character then return nil, nil end
+    local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+    local Torso = Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso")
+    return HumanoidRootPart, Torso
 end
 
 -- Fungsi-fungsi Dasar
 local function pressE()
-	pcall(function()
-		VirtualUser:CaptureController()
-		VirtualUser:SetKeyDown("e")
-		VirtualUser:SetKeyUp("e")
-	end)
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:SetKeyDown("e")
+        VirtualUser:SetKeyUp("e")
+    end)
 end
 
 local function attack()
-	pcall(function()
-		VirtualUser:CaptureController()
-		VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
-		VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
-	end)
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
+        VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+    end)
 end
 
 local function move(targetCFrame)
-	local HumanoidRootPart, _ = getCharacterParts()
-	if HumanoidRootPart then
-		pcall(function()
-			HumanoidRootPart.CFrame = targetCFrame
-		end)
-	end
+    local HumanoidRootPart, _ = getCharacterParts()
+    if HumanoidRootPart then
+        pcall(function()
+            HumanoidRootPart.CFrame = targetCFrame
+        end)
+    end
 end
 
 local function findTarget(path)
-	if not path then return nil end
-	local result
-	local success, err = pcall(function()
-		for _, child in ipairs(path:GetChildren()) do
-			if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
-				result = child
-				return
-			end
-		end
-	end)
-	if not success then warn("Error in findTarget:", err) return nil end
-	return result
+    if not path then return nil end
+    local result
+    local success, err = pcall(function()
+        for _, child in ipairs(path:GetChildren()) do
+            if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
+                result = child
+                return
+            end
+        end
+    end)
+    if not success then warn("Error in findTarget:", err) return nil end
+    return result
 end
 
 local function setBodyVelocity(enabled)
-	local _, Torso = getCharacterParts()
-	if not Torso then return end
-	pcall(function()
-		local bodyVelocity = Torso:FindFirstChild("BodyVelocity")
-		if enabled and not bodyVelocity then
-			local newBodyVelocity = Instance.new("BodyVelocity", Torso)
-			newBodyVelocity.velocity = Vector3.new(0, 0.1, 0)
-			newBodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		elseif not enabled and bodyVelocity then
-			bodyVelocity:Destroy()
-		end
-	end)
+    local _, Torso = getCharacterParts()
+    if not Torso then return end
+    pcall(function()
+        local bodyVelocity = Torso:FindFirstChild("BodyVelocity")
+        if enabled and not bodyVelocity then
+            local newBodyVelocity = Instance.new("BodyVelocity", Torso)
+            newBodyVelocity.velocity = Vector3.new(0, 0.1, 0)
+            newBodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        elseif not enabled and bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+    end)
 end
 
 local function Weapons()
-	local backpack = {}
-	local backpackFolder = LocalPlayer.Character:FindFirstChild("Backpack")
-	if backpackFolder then
-		for _, item in ipairs(backpackFolder:GetChildren()) do
-			if item:IsA("Tool") then
-				table.insert(backpack, item)
-			end
-		end
-		return backpack
-	end
+    local backpack = {}
+    local backpackFolder = LocalPlayer.Character:FindFirstChild("Backpack")
+    if backpackFolder then
+        for _, item in ipairs(backpackFolder:GetChildren()) do
+            if item:IsA("Tool") then
+                table.insert(backpack, item)
+            end
+        end
+        return backpack
+    end
 end
 
 Rey:CreateDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
-	selectedWeapon = weapon
-	if selectedWeapon then
-		selectedWeapon.Parent = LocalPlayer.Character
-	end
+    selectedWeapon = weapon
+    if selectedWeapon then
+        selectedWeapon.Parent = LocalPlayer.Character
+    end
 end)
 
 -- Auto Vasto Lorde
 Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
-	_G.AutoLevel = state
-	activeConnections["AutoLevel"] = state and RunService.Heartbeat:Connect(function()
-		if not debounce then
-			local questNpc = workspace.Npc.Quest["Quest 15"]
-			if questNpc and questNpc.ProximityPrompt then
-				questNpc.ProximityPrompt.HoldDuration = 0
-				move(questNpc.HumanoidRootPart.CFrame)
-				for i = 1, 5 do task.wait() pressE() end
-				debounce = true
-				task.spawn(function() task.wait(3) debounce = false end)
-			end
-		end
+    _G.AutoLevel = state
+    activeConnections["AutoLevel"] = state and RunService.Heartbeat:Connect(function()
+        if currentPriority == "Boss" then return end -- Jika prioritas saat ini adalah Boss, jangan jalankan Vasto Lorde
 
-		local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
-		if vastoLorde then
-			setBodyVelocity(true)
-			local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
-			move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-			if selectedWeapon then
-				selectedWeapon:Activate()
-			end
-			attack()
-			if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
-				vastoLorde.Humanoid.Health = 0
-				task.spawn(function()
-					while vastoLorde and vastoLorde.Humanoid.Health <= 0 do
-						vastoLorde.Humanoid.Health = 1
-						task.wait(1)
-						vastoLorde.Humanoid.Health = 0
-						task.wait(1)
-					end
-				end)
-			end
-		else
-			setBodyVelocity(false)
-			if activeConnections["AutoLevel"] then
-				activeConnections["AutoLevel"]:Disconnect()
-				activeConnections["AutoLevel"] = nil
-			end
-		end
-	end) or (activeConnections["AutoLevel"] and activeConnections["AutoLevel"]:Disconnect())
+        if not debounce then
+            local questNpc = workspace.Npc.Quest["Quest 15"]
+            if questNpc and questNpc.ProximityPrompt then
+                questNpc.ProximityPrompt.HoldDuration = 0
+                move(questNpc.HumanoidRootPart.CFrame)
+                for i = 1, 5 do task.wait() pressE() end
+                debounce = true
+                task.spawn(function() task.wait(3) debounce = false end)
+            end
+        end
+
+        local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
+        if vastoLorde then
+            currentPriority = "VastoLorde" -- Tetapkan prioritas ke Vasto Lorde
+            setBodyVelocity(true)
+            local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
+            move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+            if selectedWeapon then
+                selectedWeapon:Activate()
+            end
+            attack()
+            if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
+                vastoLorde.Humanoid.Health = 0
+                task.spawn(function()
+                    while vastoLorde and vastoLorde.Humanoid.Health <= 0 do
+                        vastoLorde.Humanoid.Health = 1
+                        task.wait(1)
+                        vastoLorde.Humanoid.Health = 0
+                        task.wait(1)
+                    end
+                end)
+            end
+        else
+            if currentPriority == "VastoLorde" then currentPriority = nil end -- Hapus prioritas jika Vasto Lorde tidak ditemukan
+            setBodyVelocity(false)
+            if activeConnections["AutoLevel"] then
+                activeConnections["AutoLevel"]:Disconnect()
+                activeConnections["AutoLevel"] = nil
+            end
+        end
+    end) or (activeConnections["AutoLevel"] and activeConnections["AutoLevel"]:Disconnect())
 end)
 
 -- Auto Bosses
 Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
-	_G.AutoBosses = state
-	activeConnections["AutoBosses"] = state and RunService.Heartbeat:Connect(function()
-		local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
-		if targetBoss then
-			setBodyVelocity(true)
-			local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
-			move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-			if selectedWeapon then
-				selectedWeapon:Activate()
-			end
-			attack()
-			if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
-				targetBoss.Humanoid.Health = 0
-				task.spawn(function()
-					while targetBoss and targetBoss.Humanoid.Health <= 0 do
-						targetBoss.Humanoid.Health = 1
-						task.wait(1)
-						targetBoss.Humanoid.Health = 0
-						task.wait(1)
-					end
-				end)
-			end
-		else
-			setBodyVelocity(false)
-			if activeConnections["AutoBosses"] then
-				activeConnections["AutoBosses"]:Disconnect()
-				activeConnections["AutoBosses"] = nil
-			end
-		end
-	end) or (activeConnections["AutoBosses"] and activeConnections["AutoBosses"]:Disconnect())
+    _G.AutoBosses = state
+    activeConnections["AutoBosses"] = state and RunService.Heartbeat:Connect(function()
+        local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
+        if targetBoss then
+            currentPriority = "Boss" -- Tetapkan prioritas ke Boss
+            setBodyVelocity(true)
+            local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
+            move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+            if selectedWeapon then
+                selectedWeapon:Activate()
+            end
+            attack()
+            if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
+                targetBoss.Humanoid.Health = 0
+                task.spawn(function()
+                    while targetBoss and targetBoss.Humanoid.Health <= 0 do
+                        targetBoss.Humanoid.Health = 1
+                        task.wait(1)
+                        targetBoss.Humanoid.Health = 0
+                        task.wait(1)
+                    end
+                end)
+            end
+        else
+            if currentPriority == "Boss" then currentPriority = nil end -- Hapus prioritas jika Boss tidak ditemukan
+            setBodyVelocity(false)
+            if activeConnections["AutoBosses"] then
+                activeConnections["AutoBosses"]:Disconnect()
+                activeConnections["AutoBosses"] = nil
+            end
+        end
+    end) or (activeConnections["AutoBosses"] and activeConnections["AutoBosses"]:Disconnect())
 end)
 
 Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss yang bisa, okarun ga ngespawn otomatis jadinya gbisa")
@@ -181,180 +188,180 @@ Rey:CreateNote(Exclusive, "-- Misc")
 
 -- Auto Mission
 local function runAutoMission()
-	sGoblet = nil
-	local missionStatus = LocalPlayer.MissionData.Active.Value
-	if not missionStatus then
-		miaw = miaw + 1
-		local questNpc = workspace.Npc.Quest.Mission
-		if questNpc and questNpc.HumanoidRootPart then
-			move(questNpc.HumanoidRootPart.CFrame)
-			questNpc.ProximityPrompt.HoldDuration = 0
-			task.wait(0.1)
-			pressE()
-			if miaw > 5 then task.wait(1) miaw = 0 end
-		end
-		return
-	end
+    sGoblet = nil
+    local missionStatus = LocalPlayer.MissionData.Active.Value
+    if not missionStatus then
+        miaw = miaw + 1
+        local questNpc = workspace.Npc.Quest.Mission
+        if questNpc and questNpc.HumanoidRootPart then
+            move(questNpc.HumanoidRootPart.CFrame)
+            questNpc.ProximityPrompt.HoldDuration = 0
+            task.wait(0.1)
+            pressE()
+            if miaw > 5 then task.wait(1) miaw = 0 end
+        end
+        return
+    end
 
-	local questTitle = LocalPlayer.MissionData["Quest Title"].Value
-	local questActions = {
-		["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
-		["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
-		["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 770 do pressE() end; sGoblet = true end,
-		["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 770 do pressE() end end,
-		["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
-		["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
-	}
+    local questTitle = LocalPlayer.MissionData["Quest Title"].Value
+    local questActions = {
+        ["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
+        ["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
+        ["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 770 do pressE() end; sGoblet = true end,
+        ["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 770 do pressE() end end,
+        ["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
+        ["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
+    }
 
-	for questName, action in pairs(questActions) do
-		if questTitle:find(questName) then
-			action()
-			return
-		end
-	end
+    for questName, action in pairs(questActions) do
+        if questTitle:find(questName) then
+            action()
+            return
+        end
+    end
 end
 
 -- Farm Gems
 local function runFarmGems()
-	if not sGoblet then
-		runAutoMission()
-	else
-		setBodyVelocity(false)
-		local shopNpc
-		pcall(function()
-			shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
-		end)
-		if shopNpc and shopNpc.HumanoidRootPart then
-			shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
-			move(shopNpc.HumanoidRootPart.CFrame)
-			task.wait(0.1)
-			pressE()
-			local args = {[1] = "750"}
-			pcall(function()
-				LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
-			end)
-			move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
-			task.wait(0.1)
-			for i = 1, 770 do pressE() end
-			task.wait(3)
-		end
-		sGoblet = nil
-	end
+    if not sGoblet then
+        runAutoMission()
+    else
+        setBodyVelocity(false)
+        local shopNpc
+        pcall(function()
+            shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
+        end)
+        if shopNpc and shopNpc.HumanoidRootPart then
+            shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
+            move(shopNpc.HumanoidRootPart.CFrame)
+            task.wait(0.1)
+            pressE()
+            local args = {[1] = "750"}
+            pcall(function()
+                LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
+            end)
+            move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+            task.wait(0.1)
+            for i = 1, 770 do pressE() end
+            task.wait(3)
+        end
+        sGoblet = nil
+    end
 end
 
 -- Auto Mission Toggle
 Rey:CreateToggle(Exclusive, "Auto Mission (Lvl 1.000+)", "-", function(state)
-	_G.AutoMissions = state
-	for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
-		if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
-	end
-	setBodyVelocity(state)
-	activeConnections["AutoMissions"] = state and RunService.Heartbeat:Connect(runAutoMission) or (activeConnections["AutoMissions"] and activeConnections["AutoMissions"]:Disconnect())
+    _G.AutoMissions = state
+    for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
+    end
+    setBodyVelocity(state)
+    activeConnections["AutoMissions"] = state and RunService.Heartbeat:Connect(runAutoMission) or (activeConnections["AutoMissions"] and activeConnections["AutoMissions"]:Disconnect())
 end)
 
 -- Auto Mob
 function autoMob(mob, state)
-	local target = workspace.Main.Forest:FindFirstChild(mob)
-	if target and state then
-		setBodyVelocity(true)
-		activeConnections["AutoMob" .. mob] = RunService.Heartbeat:Connect(function()
-			if not target then
-				activeConnections["AutoMob" .. mob]:Disconnect()
-				activeConnections["AutoMob" .. mob] = nil
-				setBodyVelocity(false)
-				return
-			end
-			for _, child in ipairs(target:GetChildren()) do
-				if child:IsA("Model") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
-					local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
-					move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-					if selectedWeapon then
-						selectedWeapon:Activate()
-					end
-					attack()
-					break
-				end
-			end
-		end)
-	elseif activeConnections["AutoMob" .. mob] then
-		activeConnections["AutoMob" .. mob]:Disconnect()
-		activeConnections["AutoMob" .. mob] = nil
-		setBodyVelocity(false)
-	end
+    local target = workspace.Main.Forest:FindFirstChild(mob)
+    if target and state then
+        setBodyVelocity(true)
+        activeConnections["AutoMob" .. mob] = RunService.Heartbeat:Connect(function()
+            if not target then
+                activeConnections["AutoMob" .. mob]:Disconnect()
+                activeConnections["AutoMob" .. mob] = nil
+                setBodyVelocity(false)
+                return
+            end
+            for _, child in ipairs(target:GetChildren()) do
+                if child:IsA("Model") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
+                    local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
+                    move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+                    if selectedWeapon then
+                        selectedWeapon:Activate()
+                    end
+                    attack()
+                    break
+                end
+            end
+        end)
+    elseif activeConnections["AutoMob" .. mob] then
+        activeConnections["AutoMob" .. mob]:Disconnect()
+        activeConnections["AutoMob" .. mob] = nil
+        setBodyVelocity(false)
+    end
 end
 
 -- Adventure Shop Teleport
 Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Teleport", function()
-	local shopNpc
-	pcall(function()
-		shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
-	end)
-	if shopNpc and shopNpc.HumanoidRootPart then
-		move(shopNpc.HumanoidRootPart.CFrame)
-	end
+    local shopNpc
+    pcall(function()
+        shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
+    end)
+    if shopNpc and shopNpc.HumanoidRootPart then
+        move(shopNpc.HumanoidRootPart.CFrame)
+    end
 end)
 
 -- Farm Gems Toggle
 Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak<0xF0><0x9F><0xA7><0xB3>", function(state)
-	_G.FarmGems = state
-	for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
-		if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
-	end
-	setBodyVelocity(state)
-	activeConnections["FarmGems"] = state and RunService.Heartbeat:Connect(runFarmGems) or (activeConnections["FarmGems"] and activeConnections["FarmGems"]:Disconnect())
+    _G.FarmGems = state
+    for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
+    end
+    setBodyVelocity(state)
+    activeConnections["FarmGems"] = state and RunService.Heartbeat:Connect(runFarmGems) or (activeConnections["FarmGems"] and activeConnections["FarmGems"]:Disconnect())
 end)
 
 -- Auto Goblet (Manual Click)
 Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
-	move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
-	task.wait(0.1)
-	for i = 1, 750 do pressE() end
+    move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+    task.wait(0.1)
+    for i = 1, 750 do pressE() end
 end)
 
 -- Auto Buy Black Merchant (Slow)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
-	_G.AutoBM1 = state
-	setBodyVelocity(state)
-	activeConnections["AutoBM1"] = state and RunService.Heartbeat:Connect(function()
-		local merchantNpc
-		pcall(function()
-			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-		end)
-		if merchantNpc and merchantNpc.HumanoidRootPart then
-			move(merchantNpc.HumanoidRootPart.CFrame)
-			pressE()
-		end
-	end) or (activeConnections["AutoBM1"] and activeConnections["AutoBM1"]:Disconnect())
+    _G.AutoBM1 = state
+    setBodyVelocity(state)
+    activeConnections["AutoBM1"] = state and RunService.Heartbeat:Connect(function()
+        local merchantNpc
+        pcall(function()
+            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+        end)
+        if merchantNpc and merchantNpc.HumanoidRootPart then
+            move(merchantNpc.HumanoidRootPart.CFrame)
+            pressE()
+        end
+    end) or (activeConnections["AutoBM1"] and activeConnections["AutoBM1"]:Disconnect())
 end)
 
 -- Auto Buy Black Merchant (Fast)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
-	_G.AutoBM2 = state
-	setBodyVelocity(state)
-	activeConnections["AutoBM2"] = state and RunService.Heartbeat:Connect(function()
-		local merchantNpc
-		pcall(function()
-			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-		end)
-		if merchantNpc and merchantNpc.HumanoidRootPart then
-			move(merchantNpc.HumanoidRootPart.CFrame)
-			pressE()
-		end
-	end) or (activeConnections["AutoBM2"] and activeConnections["AutoBM2"]:Disconnect())
+    _G.AutoBM2 = state
+    setBodyVelocity(state)
+    activeConnections["AutoBM2"] = state and RunService.Heartbeat:Connect(function()
+        local merchantNpc
+        pcall(function()
+            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+        end)
+        if merchantNpc and merchantNpc.HumanoidRootPart then
+            move(merchantNpc.HumanoidRootPart.CFrame)
+            pressE()
+        end
+    end) or (activeConnections["AutoBM2"] and activeConnections["AutoBM2"]:Disconnect())
 end)
 
 -- Auto Buy Black Merchant (BROKEN)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "<0xF0><0x9F><0x91><0xB6>", function(state)
-	_G.AutoBM3 = state
-	setBodyVelocity(state)
-	activeConnections["AutoBM3"] = state and RunService.Heartbeat:Connect(function()
-		local merchantNpc
-		pcall(function()
-			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-		end)
-		if merchantNpc and merchantNpc.HumanoidRootPart then
-			move(merchantNpc.HumanoidRootPart.CFrame)
-			for i = 1, 1000 do pressE() end
-		end
-	end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
+    _G.AutoBM3 = state
+    setBodyVelocity(state)
+    activeConnections["AutoBM3"] = state and RunService.Heartbeat:Connect(function()
+        local merchantNpc
+        pcall(function()
+            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+        end)
+        if merchantNpc and merchantNpc.HumanoidRootPart then
+            move(merchantNpc.HumanoidRootPart.CFrame)
+            for i = 1, 1000 do pressE() end
+        end
+    end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
 end)
