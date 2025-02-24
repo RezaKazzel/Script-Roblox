@@ -264,8 +264,8 @@ function ReyUILib:CreateUI(Name, Note)
 
 	ReyBtn.MouseButton1Click:Connect(function()
 		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
-		panel.Visible = true
 		if not panel.Visible and panel.BackgroundTransparency == 1 then
+			panel.Visible = true
 			showTween:Play()
 			mambo:Play()
 		elseif panel.Visible and panel.BackgroundTransparency == 0 then
