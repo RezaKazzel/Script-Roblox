@@ -59,6 +59,7 @@ function ReyUILib:CreateUI(Name, Note)
 	panel.Visible = false
 	panel.Parent = screenGui
 	panel.Active = true
+	panel.ClipsDescendants = true
 	panel.Draggable = true
 	
 	local panelCorner = Instance.new("UICorner")
