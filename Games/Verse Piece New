@@ -25,8 +25,8 @@ end
 -- kebanyakan disini blm selesai
 --Rey:CreateToggle(Exclusive, "Auto Dungeon")
 Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
-AutoBosses = state
-	while AutoBosses do task.wait()
+_G.AutoBosses = state
+	while _G.AutoBosses do task.wait()
 		local function AutoBoss(path)
 			for i, v in ipairs(path:GetChildren()) do
 				if v:IsA("Model") then
@@ -87,13 +87,13 @@ Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss ya
 Rey:CreateNote(Exclusive, "-- Misc")
 
 Rey:CreateToggle(Exclusive, "Auto Mission (Lvl. 1.000+)", "-", function(state)
-AutoMissions = state
+_G.AutoMissions = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
 		v.HoldDuration = 0
 	end
 end
-	while AutoMissions do task.wait()
+	while _G.AutoMissions do task.wait()
 		SGoblet = nil
 		AutoMission()
 	end
@@ -195,13 +195,13 @@ Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Tel
 end)
 
 Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wakðŸ˜¹ðŸ˜¹", function(state)
-FarmGems = state
+_G.FarmGems = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
 		v.HoldDuration = 0
 	end
 end
-	while FarmGems do task.wait()
+	while _G.FarmGems do task.wait()
 		if not SGoblet then
 			AutoMission()
 		else
@@ -239,8 +239,8 @@ Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "S
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
-AutoBM1 = state
-	while AutoBM1 do task.wait()
+_G.AutoBM1 = state
+	while _G.AutoBM1 do task.wait()
 		pcall(function()
 			BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 			BlackMerchant.ProximityPrompt.HoldDuration = 0
@@ -251,8 +251,8 @@ AutoBM1 = state
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
-AutoBM2 = state
-	if AutoBM2 then
+_G.AutoBM2 = state
+	if _G.AutoBM2 then
 		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.task.wait()
 			pcall(function()
 				BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
@@ -270,8 +270,8 @@ AutoBM2 = state
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "ðŸ’€", function(state)
-AutoBM3 = state
-while AutoBM3 do wait(0.1)
+_G.AutoBM3 = state
+while _G.AutoBM3 do wait(0.1)
 	pcall(function()
 		BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 		BlackMerchant.ProximityPrompt.HoldDuration = 0
