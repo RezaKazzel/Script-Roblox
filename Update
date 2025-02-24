@@ -1,0 +1,8 @@
+local ListGame = {
+	--// Verse Piece
+	[6471449680]="Update 1:\n-- Farm Gems\n-- Auto Black Market\n-- Auto Mission (Lv.1000+)\n-- Auto Bosses\n-- Auto Vasto Lorde"
+}
+
+if ListGame[game.GameId] ~= nil then
+	return ListGame[game.GameId]
+end
