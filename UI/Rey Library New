@@ -122,7 +122,7 @@ function ReyUILib:CreateUI(Name, Note)
 	startframe.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	startframe.BorderSizePixel = 2
 	startframe.BorderColor3 = Color3.fromRGB(30, 30, 30)
-	startframe.Parent = rightFrame
+	startframe.Parent = panel
 
 	local startframeCorner = Instance.new("UICorner")
 	startframeCorner.CornerRadius = UDim.new(0, 10)
