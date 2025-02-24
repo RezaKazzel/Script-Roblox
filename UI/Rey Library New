@@ -691,7 +691,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 				table.insert(selectedOrder, option)
 			end
 			dropdownButton.Text = table.concat(selectedOrder, ", ")
-			if dropdownButton.Text == "" then Name end
+			if dropdownButton.Text == "" then dropdownButton.Text = Name end
 			Callback(selectedOrder)
 		end)
 	end
