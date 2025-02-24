@@ -534,8 +534,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				Callback(option)
 			end)
 			if not dropdownList:FindFirstChildWhichIsA("TextButton") then CreateButton(Name) end
-			CreateButton(option)
 		end
+		CreateButton(option)
 	end
 	
 	status = pcall(function()
@@ -554,10 +554,11 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 
 	dropdownButton.MouseButton1Click:Connect(function()
 		for _, v in pairs(alldropdown) do
-			if _ == Name and v.Visible then
+			if _ ~= Name and v.Visible then
 				v.Visible = false
 			end
 		end
+		print(dropdownList.Visible)
 		dropdownList.Visible = not dropdownList.Visible
 		alldropdown[Name] = dropdownList
 	end)
