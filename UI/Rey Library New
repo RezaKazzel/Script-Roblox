@@ -554,12 +554,12 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 
 	dropdownButton.MouseButton1Click:Connect(function()
 		for _, v in pairs(alldropdown) do
-			if _ == Name and v == true then
+			if _ == Name and v.Visible then
 				v.Visible = false
 			end
 		end
 		dropdownList.Visible = not dropdownList.Visible
-		alldropdown[Name] = dropdownList.Visible
+		alldropdown[Name] = dropdownList
 	end)
 
 	if Refresh then
@@ -709,12 +709,12 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 
 	dropdownButton.MouseButton1Click:Connect(function()
 		for _, v in pairs(alldropdown) do
-			if _ == Name and v then
+			if _ == Name and v.Visible then
 				v.Visible = false
 			end
 		end
 		dropdownList.Visible = not dropdownList.Visible
-		alldropdown[Name] = dropdownList.Visible
+		alldropdown[Name] = dropdownList
 	end)
 	
 	if Refresh then
