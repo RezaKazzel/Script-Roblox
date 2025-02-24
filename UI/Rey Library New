@@ -137,7 +137,7 @@ function ReyUILib:CreateUI(Name, Note)
 		sFrame.ScrollBarThickness = 6
 		sFrame.ClipsDescendants = true
 		sFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-		sFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Diperbarui otomatis
+		sFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 		sFrame.Parent = startframe
 		
 		local FFCorner = Instance.new("UICorner")
@@ -208,7 +208,6 @@ function ReyUILib:CreateUI(Name, Note)
 	FGLabel.TextXAlignment = Enum.TextXAlignment.Left
 	FGLabel.Parent = startframe
 
-	-- Foto profil
 	local profileImage = Instance.new("ImageLabel")
 	profileImage.Size = UDim2.new(0, 70, 0, 70)
 	profileImage.Position = UDim2.new(0, 20, 0, 20)
@@ -413,7 +412,6 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 	local state = false
 	ReyUILib.Data[Name] = state
 
-	-- Callback default
 	Callback = Callback or function() end
 
 	local function toggle()
@@ -579,6 +577,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	Callback = Callback or function() end
 	Refresh = Refresh or false
 	local selectedOptions = {}
+	local selectedOrder = {}
 
 	local containerFrame = Instance.new("Frame")
 	containerFrame.Name = Name
@@ -643,17 +642,22 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		optionButton.MouseButton1Click:Connect(function()
 			if selectedOptions[option] then
 				selectedOptions[option] = nil
-				optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70) -- Warna default
+				optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+				
+				for i, v in ipairs(selectedOrder) do
+					if v == option then
+						table.remove(selectedOrder, i)
+						break
+					end
+				end
 			else
 				selectedOptions[option] = true
-				optionButton.BackgroundColor3 = Color3.fromRGB(30, 150, 255) -- Warna saat dipilih
+				optionButton.BackgroundColor3 = Color3.fromRGB(30, 150, 255)
+				
+				table.insert(selectedOrder, option)
 			end
 
-			local selectedNames = {}
-			for name in pairs(selectedOptions) do
-				table.insert(selectedNames, name)
-			end
-			dropdownButton.Text = table.concat(selectedNames, ", ")
+			dropdownButton.Text = table.concat(selectedOrder, ", ")
 
 			Callback(selectedOptions)
 		end)
@@ -704,11 +708,9 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 	for property, value in pairs(properties) do
 		if property == "Callback" then
 			if element:IsA("TextButton") or element:IsA("TextBox") then
-				-- Disconnect existing Callbacks
 				for _, connection in ipairs(element.MouseButton1Click:GetConnections()) do
 					connection:Disconnect()
 				end
-				-- Add new Callback
 				element.MouseButton1Click:Connect(value)
 			elseif element:IsA("Frame") and element:FindFirstChild("DropdownButton") then
 				local dropdownButton = element:FindFirstChild("DropdownButton")
@@ -726,10 +728,8 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 				warn("Callback is not applicable for this element")
 			end
 		elseif property == "Description" and element:FindFirstChild("Description") then
-			-- Update Description text
 			element.Description.Text = value
 		elseif property == "Options" and element:FindFirstChild("DropdownList") then
-			-- Update dropdown options
 			local dropdownList = element:FindFirstChild("DropdownList")
 			dropdownList:ClearAllChildren()
 			for _, option in ipairs(value) do
@@ -739,7 +739,6 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 				newOption.Parent = dropdownList
 			end
 		elseif element[property] ~= nil then
-			-- Update standard properties like Text, BackgroundColor3, etc.
 			element[property] = value
 		else
 			warn("Property '" .. property .. "' does not exist or is not supported for this element")
@@ -757,7 +756,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	
 	local containerFrame = Instance.new("Frame")
 	containerFrame.Name = Name
-	containerFrame.Size = UDim2.new(1, -10, 0, 60) -- Tinggi container lebih besar
+	containerFrame.Size = UDim2.new(1, -10, 0, 60)
 	containerFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	containerFrame.BorderSizePixel = 2
 	containerFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
@@ -777,8 +776,8 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	label.Parent = containerFrame
 
 	local sliderFrame = Instance.new("Frame")
-	sliderFrame.Size = UDim2.new(0.9, -20, 0, 30) -- Ukuran sliderFrame lebih besar
-	sliderFrame.Position = UDim2.new(0, 10, 0, 25) -- Posisi digeser sedikit
+	sliderFrame.Size = UDim2.new(0.9, -20, 0, 30)
+	sliderFrame.Position = UDim2.new(0, 10, 0, 25)
 	sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
 	sliderFrame.BorderSizePixel = 0
 	sliderFrame.Parent = containerFrame
@@ -808,8 +807,8 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	sliderButton.Parent = sliderFrame
 
 	local inputBox = Instance.new("TextBox")
-	inputBox.Size = UDim2.new(0.1, 0, 0, 30) -- Ukuran inputBox
-	inputBox.Position = UDim2.new(0.9, -5, 0, 25) -- Disesuaikan dengan sliderFrame
+	inputBox.Size = UDim2.new(0.1, 0, 0, 30)
+	inputBox.Position = UDim2.new(0.9, -5, 0, 25)
 	inputBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	inputBox.TextColor3 = Color3.fromRGB(0, 0, 0)
 	inputBox.Font = Enum.Font.GothamBold
