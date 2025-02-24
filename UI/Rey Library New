@@ -516,35 +516,26 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
 
 	local function createOption(option)
-		if not dropdownList:FindFirstChildWhichIsA("TextButton") then
+		local function CreateButton(option)
 			local optionButton = Instance.new("TextButton")
 			optionButton.Size = UDim2.new(1, -10, 0, 30)
 			optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 			optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 			optionButton.Font = Enum.Font.Gotham
 			optionButton.TextSize = 12
-			optionButton.Text = Name
+			optionButton.Text = option.Name or option
 			optionButton.BorderSizePixel = 0
 			optionButton.ZIndex = 2
 			optionButton.Parent = dropdownList
+	
+			optionButton.MouseButton1Click:Connect(function()
+				dropdownButton.Text = option.Name or option
+				dropdownList.Visible = false
+				Callback(option)
+			end)
+			if not dropdownList:FindFirstChildWhichIsA("TextButton") then CreateButton(Name) end
+			CreateButton(option)
 		end
-		
-		local optionButton = Instance.new("TextButton")
-		optionButton.Size = UDim2.new(1, -10, 0, 30)
-		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-		optionButton.Font = Enum.Font.Gotham
-		optionButton.TextSize = 12
-		optionButton.Text = option.Name or option
-		optionButton.BorderSizePixel = 0
-		optionButton.ZIndex = 2
-		optionButton.Parent = dropdownList
-
-		optionButton.MouseButton1Click:Connect(function()
-			dropdownButton.Text = option.Name or option
-			dropdownList.Visible = false
-			Callback(option)
-		end)
 	end
 	
 	status = pcall(function()
@@ -700,6 +691,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 				table.insert(selectedOrder, option)
 			end
 			dropdownButton.Text = table.concat(selectedOrder, ", ")
+			if dropdownButton.Text == "" then Name end
 			Callback(selectedOrder)
 		end)
 	end
