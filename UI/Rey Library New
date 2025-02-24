@@ -554,7 +554,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 
 	dropdownButton.MouseButton1Click:Connect(function()
 		for _, v in pairs(alldropdown) do
-			if _ == Name and v then
+			if _ == Name and v == true then
 				v.Visible = false
 			end
 		end
