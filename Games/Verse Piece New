@@ -1,32 +1,99 @@
 local VirtualUser = game:GetService("VirtualUser")
+
 local function FP()
 local key = "E"
-    VirtualUser:CaptureController()
-    VirtualUser:SetKeyDown(key:lower())
-    VirtualUser:SetKeyUp(key:lower())
+	VirtualUser:CaptureController()
+	VirtualUser:SetKeyDown(key:lower())
+	VirtualUser:SetKeyUp(key:lower())
 end
 miaw = 0
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
+
 Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 local plr = game.Players.LocalPlayer
 local torso = plr.Character.Torso
 activeConnections = {}
-local function Attack()
 
+local function Attack()
 VirtualUser:CaptureController()
 VirtualUser:Button1Down(Vector2.new(0,1,0,1))
 VirtualUser:Button1Up(Vector2.new(0,1,0,1))
 end
 
+-- kebanyakan disini blm selesai
+--Rey:CreateToggle(Exclusive, "Auto Dungeon")
+Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
+AutoBosses = state
+	while AutoBosses do task.wait()
+		local function AutoBoss(path)
+			for i, v in ipairs(path:GetChildren()) do
+				if v:IsA("Model") then
+					local humanoid = v:FindFirstChildOfClass("Humanoid")
+					local rootPart = v:FindFirstChild("HumanoidRootPart")
+					if humanoid and rootPart and humanoid.Health > 0 then
+						return v
+					end
+				end
+			end
+			return false
+		end
+		
+		local x = AutoBoss(game.Workspace.Main.Boss)
+		if not x then x = AutoBoss(workspace.Main.RaidBoss) end
+		if not x then x = AutoBoss(workspace.Main.Valentine) end
+		if x then
+			pcall(function()
+				local plr = game.Players.LocalPlayer
+				local torso
+				local cekt = pcall(function() torso = plr.Character.Torso end)
+				if not cekt then
+					torso = plr.Character:FindFirstChild("LowerTorso")
+				end
+				if AutoBosses and x then
+					if not torso:FindFirstChild("BodyVelocity") then
+						bv = Instance.new("BodyVelocity", torso)
+						bv.velocity = Vector3.new(0,0.1,0)
+						bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+					end
+					activeConnections["AutoBosses"] = game:GetService("RunService").Heartbeat:Connect(function()
+					if OneHit then OneHits(v) end
+						local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+						v = x
+						if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
+							local wwd = v:FindFirstChild("HumanoidRootPart")
+							if wwd and player and v.Humanoid.Health > 0 then
+								local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + 4, 0)
+								player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+							end
+						end
+					end)
+				else
+					if activeConnections["AutoBosses"] then
+						activeConnections["AutoBosses"]:Disconnect()
+						activeConnections["AutoBosses"] = nil
+					end
+					wait(0.1)
+					if torso:FindFirstChild("BodyVelocity") then
+						torso:FindFirstChild("BodyVelocity"):Destroy()
+					end
+				end
+			end)
+		end
+	end
+end)
+Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss yang bisa, okarun ga ngespawn otomatis jadinya gbisa")
+Rey:CreateNote(Exclusive, "-- Misc")
+
 Rey:CreateToggle(Exclusive, "Auto Mission (Lvl. 1.000+)", "-", function(state)
-_G.AutoMissions = state
+AutoMissions = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
 		v.HoldDuration = 0
 	end
 end
-	while _G.AutoMissions do wait()
+	while AutoMissions do task.wait()
 		SGoblet = nil
 		AutoMission()
 	end
@@ -97,7 +164,7 @@ pcall(function()target = game.Workspace.Main.Forest:FindFirstChild(mob)end)
 				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
 			end
 			activeConnections["AuM"] = game:GetService("RunService").Heartbeat:Connect(function()
-				task.wait()
+				task.task.wait()
 				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 				for _,v in ipairs (target:GetChildren()) do
 					if player and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
@@ -127,14 +194,14 @@ Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Tel
 	end)
 end)
 
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹😹", function(state)
-_G.FarmGems = state
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wakðŸ˜¹ðŸ˜¹", function(state)
+FarmGems = state
 for i, v in ipairs (workspace.Main["Mission Quest"]:GetDescendants()) do
 	if v.Name == "ProximityPrompt" then
 		v.HoldDuration = 0
 	end
 end
-	while _G.FarmGems do wait()
+	while FarmGems do task.wait()
 		if not SGoblet then
 			AutoMission()
 		else
@@ -157,7 +224,7 @@ end
 				player.CFrame = CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 				wait(0.1)
 				for i=1,770 do FP() end
-				wait(5)
+				wait(3)
 			end)
 		end
 	end
@@ -172,8 +239,8 @@ Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "S
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
-_G.AutoBM1 = state
-	while _G.AutoBM1 do wait()
+AutoBM1 = state
+	while AutoBM1 do task.wait()
 		pcall(function()
 			BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 			BlackMerchant.ProximityPrompt.HoldDuration = 0
@@ -184,9 +251,9 @@ _G.AutoBM1 = state
 end)
 
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
-_G.AutoBM2 = state
-	if _G.AutoBM2 then
-		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.wait()
+AutoBM2 = state
+	if AutoBM2 then
+		activeConnections["AutoBM"] = game:GetService("RunService").Heartbeat:Connect(function() task.task.wait()
 			pcall(function()
 				BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 				BlackMerchant.ProximityPrompt.HoldDuration = 0
@@ -202,9 +269,9 @@ _G.AutoBM2 = state
 	end
 end)
 
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀", function(state)
-_G.AutoBM3 = state
-while _G.AutoBM3 do wait(0.1)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "ðŸ’€", function(state)
+AutoBM3 = state
+while AutoBM3 do wait(0.1)
 	pcall(function()
 		BlackMerchant = workspace.Npc["Black Merchant"]["Black Merchant"]
 		BlackMerchant.ProximityPrompt.HoldDuration = 0
