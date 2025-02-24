@@ -4,7 +4,6 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
-local UI = Rey:CreateUI("nihao")
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local activeConnections = {}
