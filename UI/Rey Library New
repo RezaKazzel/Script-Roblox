@@ -4,6 +4,7 @@ local ReyUILib = {}
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 ReyUILib.Data = ReyUILib.Data or {}
 
+alldropdown = {}
 local function Finds(Table, Name)
     for k, v in pairs(Table) do
         if k == Name then
@@ -462,9 +463,10 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 end
 
 function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
-	Callback = Callback or function() end
-	Refresh = Refresh or false
-
+	table.insert(alldropdown, Name)
+	local Callback = Callback or function() end
+	local Refresh = Refresh or false
+	
 	local containerFrame = Instance.new("Frame")
 	containerFrame.Name = Name
 	containerFrame.Size = UDim2.new(1, -10, 0, 40)
@@ -514,6 +516,19 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
 
 	local function createOption(option)
+		if not dropdownList:FindFirstChildWhichIsA("TextButton") then
+			local optionButton = Instance.new("TextButton")
+			optionButton.Size = UDim2.new(1, -10, 0, 30)
+			optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+			optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			optionButton.Font = Enum.Font.Gotham
+			optionButton.TextSize = 12
+			optionButton.Text = Name
+			optionButton.BorderSizePixel = 0
+			optionButton.ZIndex = 2
+			optionButton.Parent = dropdownList
+		end
+		
 		local optionButton = Instance.new("TextButton")
 		optionButton.Size = UDim2.new(1, -10, 0, 30)
 		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
@@ -538,14 +553,22 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		end
 	end)
 	if status == false then
-		for _, option in ipairs(Options) do
-			createOption(option)
-		end
+		pcall(function()
+			for _, option in ipairs(Options) do
+				createOption(option)
+			end
+		end)
 	end
 	
 
 	dropdownButton.MouseButton1Click:Connect(function()
+		for _, v in pairs(alldropdown) do
+			if _ == Name and v then
+				v.Visible = false
+			end
+		end
 		dropdownList.Visible = not dropdownList.Visible
+		alldropdown[Name] = dropdownList.Visible
 	end)
 
 	if Refresh then
@@ -594,8 +617,9 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 end
 
 function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
-	Callback = Callback or function() end
-	Refresh = Refresh or false
+	table.insert(alldropdown, Name)
+	local Callback = Callback or function() end
+	local Refresh = Refresh or false
 	local selectedOptions = {}
 	local selectedOrder = {}
 
@@ -673,13 +697,10 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			else
 				selectedOptions[option] = true
 				optionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-				
 				table.insert(selectedOrder, option)
 			end
-
 			dropdownButton.Text = table.concat(selectedOrder, ", ")
-
-			Callback(selectedOptions)
+			Callback(selectedOrder)
 		end)
 	end
 	
@@ -695,8 +716,55 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	end
 
 	dropdownButton.MouseButton1Click:Connect(function()
+		for _, v in pairs(alldropdown) do
+			if _ == Name and v then
+				v.Visible = false
+			end
+		end
 		dropdownList.Visible = not dropdownList.Visible
+		alldropdown[Name] = dropdownList.Visible
 	end)
+	
+	if Refresh then
+		local refreshFrame = Instance.new("Frame")
+		refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
+		refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
+		refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		refreshFrame.BorderSizePixel = 2
+		refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+		refreshFrame.Parent = containerFrame
+
+		local refreshButton = Instance.new("ImageButton")
+		refreshButton.Size = UDim2.new(1, -8, 1, -8)
+		refreshButton.Position = UDim2.new(0, 4, 0, 4)
+		refreshButton.BackgroundTransparency = 1
+		refreshButton.Image = "rbxassetid://122032243989747"
+		refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		refreshButton.Parent = refreshFrame
+
+		local debounce = false
+		refreshButton.MouseButton1Click:Connect(function()
+			if debounce then return end
+			debounce = true
+			for _, child in ipairs(dropdownList:GetChildren()) do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+			status = pcall(function()
+				for _, option in ipairs(Options()) do
+					createOption(option)
+				end
+			end)
+			if status == false then
+				for _, option in ipairs(Options) do
+					createOption(option)
+				end
+			end
+			updateCanvasSize()
+			debounce = false
+		end)
+	end
 
 	updateCanvasSize()
 	return containerFrame
