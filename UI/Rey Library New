@@ -268,7 +268,7 @@ function ReyUILib:CreateUI(Name, Note)
 		if not panel.Visible and panel.BackgroundTransparency == 1 then
 			showTween:Play()
 			mambo:Play()
-		elseif not panel.Visible and panel.BackgroundTransparency == 0 then
+		elseif panel.Visible and panel.BackgroundTransparency == 0 then
 			hideTween:Play()
 			wow:Play()
 			hideTween.Completed:Connect(function()
