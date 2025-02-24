@@ -55,6 +55,7 @@ function ReyUILib:CreateUI(Name, Note)
 	panel.Size = UDim2.new(0, 500, 0, 350)
 	panel.Position = UDim2.new(0.5, 0, -1, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	panel.BackgroundTransparency = 1
 	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.Parent = screenGui
