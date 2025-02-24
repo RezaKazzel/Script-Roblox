@@ -558,7 +558,6 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				v.Visible = false
 			end
 		end
-		print(dropdownList.Visible)
 		dropdownList.Visible = not dropdownList.Visible
 		alldropdown[Name] = dropdownList
 	end)
