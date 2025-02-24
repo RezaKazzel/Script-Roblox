@@ -12,7 +12,7 @@ local miaw = 0
 local sGoblet = nil
 local debounce = false
 local selectedWeapon = nil
-local currentPriority = nil -- Menambahkan variabel untuk menyimpan prioritas saat ini
+local currentPriority = nil
 
 local function getCharacterParts()
     local Character = LocalPlayer.Character
@@ -22,13 +22,22 @@ local function getCharacterParts()
     return HumanoidRootPart, Torso
 end
 
--- Fungsi-fungsi Dasar
-local function pressE()
+local function pressKey(key)
     pcall(function()
         VirtualUser:CaptureController()
-        VirtualUser:SetKeyDown("e")
-        VirtualUser:SetKeyUp("e")
+        VirtualUser:SetKeyDown(key:lower())
+        VirtualUser:SetKeyUp(key:lower())
     end)
+end
+
+local function AutoSkill()
+    if #selectedSkills > 0 then
+        pcall(function()
+            for _, skill in ipairs(selectedSkills) do
+                pressKey(skill)
+            end
+        end)
+    end
 end
 
 local function attack()
@@ -80,7 +89,7 @@ end
 
 local function Weapons()
     local backpack = {}
-    local backpackFolder = LocalPlayer.Character:FindFirstChild("Backpack")
+    local backpackFolder = LocalPlayer:FindFirstChild("Backpack")
     if backpackFolder then
         for _, item in ipairs(backpackFolder:GetChildren()) do
             if item:IsA("Tool") then
@@ -96,20 +105,26 @@ Rey:CreateDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
     if selectedWeapon then
         selectedWeapon.Parent = LocalPlayer.Character
     end
+end, true)
+
+local skills = {"Z", "X", "C", "V", "F"}
+local selectedSkills = {}
+
+Rey:CreateMultipleDropdown(Exclusive, "Auto Skill", skills, function(selected)
+    selectedSkills = selected
 end)
 
 -- Auto Vasto Lorde
 Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
     _G.AutoLevel = state
     activeConnections["AutoLevel"] = state and RunService.Heartbeat:Connect(function()
-        if currentPriority == "Boss" then return end -- Jika prioritas saat ini adalah Boss, jangan jalankan Vasto Lorde
-
+        if currentPriority == "Boss" then return end
         if not debounce then
             local questNpc = workspace.Npc.Quest["Quest 15"]
             if questNpc and questNpc.ProximityPrompt then
                 questNpc.ProximityPrompt.HoldDuration = 0
                 move(questNpc.HumanoidRootPart.CFrame)
-                for i = 1, 5 do task.wait() pressE() end
+                for i = 1, 5 do task.wait() pressKey("E") end
                 debounce = true
                 task.spawn(function() task.wait(3) debounce = false end)
             end
@@ -117,14 +132,14 @@ Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
 
         local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
         if vastoLorde then
-            currentPriority = "VastoLorde" -- Tetapkan prioritas ke Vasto Lorde
+            currentPriority = "VastoLorde"
             setBodyVelocity(true)
             local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
             move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
             if selectedWeapon then
                 selectedWeapon:Activate()
             end
-            attack()
+            AutoSkill()
             if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
                 vastoLorde.Humanoid.Health = 0
                 task.spawn(function()
@@ -137,7 +152,7 @@ Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
                 end)
             end
         else
-            if currentPriority == "VastoLorde" then currentPriority = nil end -- Hapus prioritas jika Vasto Lorde tidak ditemukan
+            if currentPriority == "VastoLorde" then currentPriority = nil end
             setBodyVelocity(false)
             if activeConnections["AutoLevel"] then
                 activeConnections["AutoLevel"]:Disconnect()
@@ -153,14 +168,14 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
     activeConnections["AutoBosses"] = state and RunService.Heartbeat:Connect(function()
         local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
         if targetBoss then
-            currentPriority = "Boss" -- Tetapkan prioritas ke Boss
+            currentPriority = "Boss"
             setBodyVelocity(true)
             local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
             move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
             if selectedWeapon then
                 selectedWeapon:Activate()
             end
-            attack()
+            AutoSkill()
             if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
                 targetBoss.Humanoid.Health = 0
                 task.spawn(function()
@@ -173,7 +188,7 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
                 end)
             end
         else
-            if currentPriority == "Boss" then currentPriority = nil end -- Hapus prioritas jika Boss tidak ditemukan
+            if currentPriority == "Boss" then currentPriority = nil end
             setBodyVelocity(false)
             if activeConnections["AutoBosses"] then
                 activeConnections["AutoBosses"]:Disconnect()
@@ -197,7 +212,7 @@ local function runAutoMission()
             move(questNpc.HumanoidRootPart.CFrame)
             questNpc.ProximityPrompt.HoldDuration = 0
             task.wait(0.1)
-            pressE()
+            pressKey("E")
             if miaw > 5 then task.wait(1) miaw = 0 end
         end
         return
@@ -205,10 +220,10 @@ local function runAutoMission()
 
     local questTitle = LocalPlayer.MissionData["Quest Title"].Value
     local questActions = {
-        ["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
-        ["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressE() end end,
-        ["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 770 do pressE() end; sGoblet = true end,
-        ["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 770 do pressE() end end,
+        ["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
+        ["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
+        ["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 770 do pressKey("E") end; sGoblet = true end,
+        ["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 770 do pressKey("E") end end,
         ["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
         ["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
     }
@@ -235,14 +250,14 @@ local function runFarmGems()
             shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
             move(shopNpc.HumanoidRootPart.CFrame)
             task.wait(0.1)
-            pressE()
+            pressKey("E")
             local args = {[1] = "750"}
             pcall(function()
                 LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
             end)
             move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
             task.wait(0.1)
-            for i = 1, 770 do pressE() end
+            for i = 1, 770 do pressKey("E") end
             task.wait(3)
         end
         sGoblet = nil
@@ -278,7 +293,6 @@ function autoMob(mob, state)
                     if selectedWeapon then
                         selectedWeapon:Activate()
                     end
-                    attack()
                     break
                 end
             end
@@ -302,7 +316,7 @@ Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Tel
 end)
 
 -- Farm Gems Toggle
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak<0xF0><0x9F><0xA7><0xB3>", function(state)
+Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹😹", function(state)
     _G.FarmGems = state
     for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
         if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
@@ -315,7 +329,7 @@ end)
 Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
     move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
     task.wait(0.1)
-    for i = 1, 750 do pressE() end
+    for i = 1, 750 do pressKey("E") end
 end)
 
 -- Auto Buy Black Merchant (Slow)
@@ -329,7 +343,7 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy
         end)
         if merchantNpc and merchantNpc.HumanoidRootPart then
             move(merchantNpc.HumanoidRootPart.CFrame)
-            pressE()
+            pressKey("E")
         end
     end) or (activeConnections["AutoBM1"] and activeConnections["AutoBM1"]:Disconnect())
 end)
@@ -345,13 +359,13 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nangg
         end)
         if merchantNpc and merchantNpc.HumanoidRootPart then
             move(merchantNpc.HumanoidRootPart.CFrame)
-            pressE()
+            pressKey("E")
         end
     end) or (activeConnections["AutoBM2"] and activeConnections["AutoBM2"]:Disconnect())
 end)
 
 -- Auto Buy Black Merchant (BROKEN)
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "<0xF0><0x9F><0x91><0xB6>", function(state)
+Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀💀", function(state)
     _G.AutoBM3 = state
     setBodyVelocity(state)
     activeConnections["AutoBM3"] = state and RunService.Heartbeat:Connect(function()
@@ -361,7 +375,7 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "<0xF0><0x9F><0x
         end)
         if merchantNpc and merchantNpc.HumanoidRootPart then
             move(merchantNpc.HumanoidRootPart.CFrame)
-            for i = 1, 1000 do pressE() end
+            for i = 1, 1000 do pressKey("E") end
         end
     end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
 end)
