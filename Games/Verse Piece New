@@ -366,6 +366,8 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy
 			setBodyVelocity(true)
 			move(merchantNpc.HumanoidRootPart.CFrame)
 			pressKey("E")
+		else
+			setBodyVelocity(false)
 		end
 	end) or (activeConnections["AutoBM1"] and activeConnections["AutoBM1"]:Disconnect())
 end)
@@ -383,6 +385,8 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nangg
 			setBodyVelocity(true)
 			move(merchantNpc.HumanoidRootPart.CFrame)
 			for i=1, 100 then pressKey("E") end
+		else
+			setBodyVelocity(false)
 		end
 	end) or (activeConnections["AutoBM2"] and activeConnections["AutoBM2"]:Disconnect())
 end)
@@ -400,6 +404,8 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀💀", func
 			setBodyVelocity(true)
 			move(merchantNpc.HumanoidRootPart.CFrame)
 			for i = 1, 1000 do pressKey("E") end
+		else
+			setBodyVelocity(false)
 		end
 	end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
 end)
