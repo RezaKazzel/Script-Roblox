@@ -116,86 +116,102 @@ end)
 -- Auto Vasto Lorde
 Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
     _G.AutoLevel = state
-    activeConnections["AutoLevel"] = state and RunService.Heartbeat:Connect(function()
-        if currentPriority == "Boss" then return end
-        if not debounce then
-            local questNpc = workspace.Npc.Quest["Quest 15"]
-            if questNpc and questNpc.ProximityPrompt then
-                questNpc.ProximityPrompt.HoldDuration = 0
-                move(questNpc.HumanoidRootPart.CFrame)
-                for i = 1, 5 do task.wait() pressKey("E") end
-                debounce = true
-                task.spawn(function() task.wait(3) debounce = false end)
-            end
+    if state then
+        -- Interaksi dengan questNpc hanya dijalankan sekali saat toggle diaktifkan
+        local questNpc = workspace.Npc.Quest["Quest 15"]
+        if questNpc and questNpc.ProximityPrompt then
+            questNpc.ProximityPrompt.HoldDuration = 0
+            move(questNpc.HumanoidRootPart.CFrame)
+            for i = 1, 5 do task.wait() pressKey("E") end
         end
 
-        local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
-        if vastoLorde then
-            currentPriority = "VastoLorde"
-            setBodyVelocity(true)
-            local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
-            move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-            if selectedWeapon then
-                selectedWeapon:Activate()
+        activeConnections["AutoLevel"] = RunService.Heartbeat:Connect(function()
+            if currentPriority == "Boss" then return end
+
+            local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
+            if vastoLorde then
+                currentPriority = "VastoLorde"
+                setBodyVelocity(true)
+                local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
+                move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+                if selectedWeapon then
+                    selectedWeapon:Activate()
+                end
+                AutoSkill()
+                if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
+                    vastoLorde.Humanoid.Health = 0
+                    task.spawn(function()
+                        while vastoLorde and vastoLorde.Humanoid.Health <= 0 do
+                            vastoLorde.Humanoid.Health = 1
+                            task.wait(1)
+                            vastoLorde.Humanoid.Health = 0
+                            task.wait(1)
+                        end
+                    end)
+                end
+            else
+                if currentPriority == "VastoLorde" then currentPriority = nil end
+                setBodyVelocity(false)
+                -- Hanya disconnect jika toggle masih aktif
+                if _G.AutoLevel then
+                    activeConnections["AutoLevel"]:Disconnect()
+                    activeConnections["AutoLevel"] = nil
+                end
             end
-            AutoSkill()
-            if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
-                vastoLorde.Humanoid.Health = 0
-                task.spawn(function()
-                    while vastoLorde and vastoLorde.Humanoid.Health <= 0 do
-                        vastoLorde.Humanoid.Health = 1
-                        task.wait(1)
-                        vastoLorde.Humanoid.Health = 0
-                        task.wait(1)
-                    end
-                end)
-            end
-        else
-            if currentPriority == "VastoLorde" then currentPriority = nil end
-            setBodyVelocity(false)
-            if activeConnections["AutoLevel"] then
-                activeConnections["AutoLevel"]:Disconnect()
-                activeConnections["AutoLevel"] = nil
-            end
+        end)
+    else
+        if activeConnections["AutoLevel"] then
+            activeConnections["AutoLevel"]:Disconnect()
+            activeConnections["AutoLevel"] = nil
         end
-    end) or (activeConnections["AutoLevel"] and activeConnections["AutoLevel"]:Disconnect())
+    end
 end)
 
 -- Auto Bosses
 Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
     _G.AutoBosses = state
-    activeConnections["AutoBosses"] = state and RunService.Heartbeat:Connect(function()
-        local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
-        if targetBoss then
-            currentPriority = "Boss"
-            setBodyVelocity(true)
-            local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
-            move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-            if selectedWeapon then
-                selectedWeapon:Activate()
+    if state then
+        activeConnections["AutoBosses"] = RunService.Heartbeat:Connect(function()
+            local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
+            if targetBoss then
+                currentPriority = "Boss"
+                setBodyVelocity(true)
+                local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
+                move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+                if selectedWeapon then
+                    selectedWeapon:Activate()
+                end
+                AutoSkill()
+                if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
+                    targetBoss.Humanoid.Health = 0
+                    task.spawn(function()
+                        while targetBoss and targetBoss.Humanoid.Health <= 0 do
+                            targetBoss.Humanoid.Health = 1
+                            task.wait(1)
+                            targetBoss.Humanoid.Health = 0
+                            task.wait(1)
+                        end
+                    end)
+                end
+            else
+                if currentPriority == "Boss" then currentPriority = nil end
+                setBodyVelocity(false)
+                -- Hanya disconnect jika toggle masih aktif
+                if _G.AutoBosses then
+                    activeConnections["AutoBosses"]:Disconnect()
+                    activeConnections["AutoBosses"] = nil
+                end
             end
-            AutoSkill()
-            if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
-                targetBoss.Humanoid.Health = 0
-                task.spawn(function()
-                    while targetBoss and targetBoss.Humanoid.Health <= 0 do
-                        targetBoss.Humanoid.Health = 1
-                        task.wait(1)
-                        targetBoss.Humanoid.Health = 0
-                        task.wait(1)
-                    end
-                end)
-            end
-        else
-            if currentPriority == "Boss" then currentPriority = nil end
-            setBodyVelocity(false)
-            if activeConnections["AutoBosses"] then
-                activeConnections["AutoBosses"]:Disconnect()
-                activeConnections["AutoBosses"] = nil
-            end
+        end)
+    else
+        -- Disconnect saat toggle dimatikan
+        if activeConnections["AutoBosses"] then
+            activeConnections["AutoBosses"]:Disconnect()
+            activeConnections["AutoBosses"] = nil
         end
-    end) or (activeConnections["AutoBosses"] and activeConnections["AutoBosses"]:Disconnect())
+    end
 end)
+
 
 Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss yang bisa, okarun ga ngespawn otomatis jadinya gbisa")
 Rey:CreateNote(Exclusive, "-- Misc")
