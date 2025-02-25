@@ -1,396 +1,1029 @@
-local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+repeat wait() until game:IsLoaded()
+local ReyUILib = {}
 
-local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
-local Exclusive = Rey:CreateTab(UI, "Exclusive+")
+Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
+ReyUILib.Data = ReyUILib.Data or {}
 
-local activeConnections = {}
-local miaw = 0
-local sGoblet = nil
-local debounce = false
-local selectedWeapon = nil
-local currentPriority = nil
-
-local function getCharacterParts()
-    local Character = LocalPlayer.Character
-    if not Character then return nil, nil end
-    local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
-    local Torso = Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso")
-    return HumanoidRootPart, Torso
+alldropdown = {}
+local function Finds(Table, Name)
+    for k, v in pairs(Table) do
+        if k == Name then
+            return true, v
+        elseif type(v) == "table" then
+            local found, value = Finds(v, Name)
+            if found then return true, value end
+        end
+    end
+    return false
 end
 
-local function pressKey(key)
-    pcall(function()
-        VirtualUser:CaptureController()
-        VirtualUser:SetKeyDown(key:lower())
-        VirtualUser:SetKeyUp(key:lower())
-    end)
+function ReyUILib:CreateUI(Name, Note)
+	local Note = Note or false
+	local TweenService = game:GetService("TweenService")
+	local CoreGui = game:GetService("CoreGui")
+	local Players = game:GetService("Players")
+	local Player = Players.LocalPlayer
+	
+	if CoreGui:FindFirstChild(Name) then
+		CoreGui:FindFirstChild(Name):Destroy()
+	elseif CoreGui:FindFirstChild("ReyUI") then
+		CoreGui:FindFirstChild("ReyUI"):Destroy()
+	end
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = Name or "ReyUI"
+	screenGui.Parent = CoreGui
+	screenGui.ResetOnSpawn = false
+
+	local ReyBtn = Instance.new("TextButton")
+	ReyBtn.Name = "Rey"
+	ReyBtn.Size = UDim2.new(0, 70, 0, 30)
+	ReyBtn.Position = UDim2.new(1, -80, 0, 10)
+	ReyBtn.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
+	ReyBtn.Text = "Rey"
+	ReyBtn.TextColor3 = Color3.new(1, 1, 1)
+	ReyBtn.BorderSizePixel = 0
+	ReyBtn.Font = Enum.Font.GothamBold
+	ReyBtn.TextSize = 14
+	ReyBtn.Parent = screenGui
+	ReyBtn.Active = true
+	ReyBtn.Draggable = true
+	
+	local ReyBtnCorner = Instance.new("UICorner")
+	ReyBtnCorner.CornerRadius = UDim.new(0, 8)
+	ReyBtnCorner.Parent = ReyBtn
+
+	local panel = Instance.new("Frame")
+	panel.Size = UDim2.new(0, 0, 0, 0)
+	panel.Position = UDim2.new(0.5, 0, -1, 0)
+	panel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	panel.BackgroundTransparency = 1
+	panel.BorderSizePixel = 0
+	panel.Visible = false
+	panel.Parent = screenGui
+	panel.Active = true
+	panel.ClipsDescendants = true
+	panel.Draggable = true
+	
+	local panelCorner = Instance.new("UICorner")
+	panelCorner.CornerRadius = UDim.new(0, 10)
+	panelCorner.Parent = panel
+
+	local header = Instance.new("TextLabel")
+	header.Name = Name or "Rey UI"
+	header.Size = UDim2.new(1, 0, 0, 30)
+	header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	header.Text = Name or "Rey UI"
+	header.TextColor3 = Color3.fromRGB(255, 255, 255)
+	header.BorderSizePixel = 0
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = 16
+	header.TextXAlignment = Enum.TextXAlignment.Center
+	header.Parent = panel
+	
+	local headerCorner = Instance.new("UICorner")
+	headerCorner.CornerRadius = UDim.new(0, 10)
+	headerCorner.Parent = header
+
+	local leftFrame = Instance.new("Frame")
+	leftFrame.Size = UDim2.new(0, 130, 1, -30)
+	leftFrame.Position = UDim2.new(0, 0, 0, 30)
+	leftFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+	leftFrame.BorderSizePixel = 0
+	leftFrame.Parent = panel
+	
+	local leftFrameCorner = Instance.new("UICorner")
+	leftFrameCorner.CornerRadius = UDim.new(0, 10)
+	leftFrameCorner.Parent = leftFrame
+
+	local tabContainer = Instance.new("Frame")
+	tabContainer.Size = UDim2.new(1, 0, 1, 0)
+	tabContainer.BackgroundTransparency = 1
+	tabContainer.Parent = leftFrame
+
+	local tabLayout = Instance.new("UIListLayout")
+	tabLayout.FillDirection = Enum.FillDirection.Vertical
+	tabLayout.Padding = UDim.new(0, 5)
+	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+	tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabLayout.Parent = tabContainer
+
+	local rightFrame = Instance.new("Frame")
+	rightFrame.Size = UDim2.new(1, -130, 1, -30)
+	rightFrame.Position = UDim2.new(0, 130, 0, 30)
+	rightFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	rightFrame.BorderSizePixel = 0
+	rightFrame.Parent = panel
+	
+	local rightFrameCorner = Instance.new("UICorner")
+	rightFrameCorner.CornerRadius = UDim.new(0, 10)
+	rightFrameCorner.Parent = rightFrame
+	
+	local startframe = Instance.new("Frame")
+	startframe.Size = UDim2.new(1, -130, 1, -30)
+	startframe.Position = UDim2.new(0, 130, 0, 30)
+	startframe.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	startframe.BorderSizePixel = 2
+	startframe.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	startframe.Parent = panel
+
+	local startframeCorner = Instance.new("UICorner")
+	startframeCorner.CornerRadius = UDim.new(0, 10)
+	startframeCorner.Parent = startframe
+	
+	if Note then	
+		local sFrame = Instance.new("ScrollingFrame")
+		sFrame.Size = UDim2.new(1, -25, 0, 50)
+		sFrame.Position = UDim2.new(0, 20, 0.3, 0)
+		sFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		sFrame.BorderSizePixel = 0
+		sFrame.AutomaticSize = Enum.AutomaticSize.Y
+		sFrame.ScrollBarThickness = 6
+		sFrame.ClipsDescendants = true
+		sFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+		sFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		sFrame.Parent = startframe
+		
+		local FFCorner = Instance.new("UICorner")
+		FFCorner.CornerRadius = UDim.new(0, 8)
+		FFCorner.Parent = sFrame
+		
+		local stroke = Instance.new("UIStroke")
+		stroke.Thickness = 1.5
+		stroke.Color = Color3.fromRGB(255, 255, 255)
+		stroke.Parent = sFrame
+		
+		local note = Instance.new("TextLabel")
+		note.Size = UDim2.new(1, -10, 0, 0)
+		note.Position = UDim2.new(0, 5, 0, 5)
+		note.BackgroundTransparency = 1
+		note.Text = Note or "-"
+		note.TextColor3 = Color3.fromRGB(255, 255, 255)
+		note.Font = Enum.Font.Gotham
+		note.TextSize = 14
+		note.TextWrapped = true
+		note.TextXAlignment = Enum.TextXAlignment.Left
+		note.TextYAlignment = Enum.TextYAlignment.Top
+		note.AutomaticSize = Enum.AutomaticSize.Y
+		note.Parent = sFrame
+		
+		local layout = Instance.new("UIListLayout")
+		layout.Parent = sFrame
+		layout.FillDirection = Enum.FillDirection.Vertical
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.VerticalAlignment = Enum.VerticalAlignment.Top
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 5)
+		
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			sFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+		end)
+	end
+	
+	local FTextFrame = Instance.new("Frame")
+	FTextFrame.Size = UDim2.new(0.8, -25, 0, 70)
+	FTextFrame.Position = UDim2.new(0, 95, 0, 20)
+	FTextFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	FTextFrame.BorderSizePixel = 0
+	FTextFrame.Parent = startframe
+
+	local FTextCorner = Instance.new("UICorner")
+	FTextCorner.CornerRadius = UDim.new(0, 8)
+	FTextCorner.Parent = FTextFrame
+
+	local AvatarBorder = Instance.new("Frame")
+	AvatarBorder.Size = UDim2.new(0,70,0,70)
+	AvatarBorder.Position = UDim2.new(0,20,0,20)
+	AvatarBorder.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	AvatarBorder.Parent = startframe
+	
+	local AvatarBorderCorner = Instance.new("UICorner")
+	AvatarBorderCorner.CornerRadius = UDim.new(0, 10)
+	AvatarBorderCorner.Parent = AvatarBorder
+	
+	local FGLabel = Instance.new("TextLabel")
+	FGLabel.Size = UDim2.new(1, -50, 0, 40)
+	FGLabel.Position = UDim2.new(0, 100, 0, 35)
+	FGLabel.BackgroundTransparency = 1
+	FGLabel.Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..Data["Execute"]
+	FGLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	FGLabel.Font = Enum.Font.Gotham
+	FGLabel.TextSize = 17
+	FGLabel.TextXAlignment = Enum.TextXAlignment.Left
+	FGLabel.Parent = startframe
+
+	local profileImage = Instance.new("ImageLabel")
+	profileImage.Size = UDim2.new(0, 70, 0, 70)
+	profileImage.Position = UDim2.new(0, 20, 0, 20)
+	profileImage.BackgroundTransparency = 1
+	profileImage.Image = Players:GetUserThumbnailAsync(
+		Player.UserId,
+		Enum.ThumbnailType.HeadShot,
+		Enum.ThumbnailSize.Size100x100
+	)
+	profileImage.Parent = startframe
+	
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Parent = AvatarBorder
+	
+	local AvatarBorderCorner = Instance.new("UICorner")
+	AvatarBorderCorner.CornerRadius = UDim.new(0, 10)
+	AvatarBorderCorner.Parent = profileImage
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Parent = FTextFrame
+	
+	local SFX = Instance.new("Folder")
+	SFX.Name = "Sound Effect"
+	SFX.Parent = screenGui
+	
+	local mambo = Instance.new("Sound")
+	mambo.SoundId = "rbxassetid://80843441506433"
+	mambo.Parent = SFX
+	
+	local wow = Instance.new("Sound")
+	wow.SoundId = "rbxassetid://90255863401034"
+	wow.Parent = SFX
+	
+	local showTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -250, 0.5, -200),
+		BackgroundTransparency = 0,
+		Size = UDim2.new(0, 500, 0, 350)
+	})
+
+	local hideTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5, 0, -1, 0),
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 0, 0, 0)
+	})
+	
+	ReyPosition = ReyBtn.Position
+
+	ReyBtn.MouseButton1Click:Connect(function()
+		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
+		if not panel.Visible and panel.BackgroundTransparency == 1 then
+			panel.Visible = true
+			showTween:Play()
+			mambo:Play()
+		elseif panel.Visible and panel.BackgroundTransparency == 0 then
+			hideTween:Play()
+			wow:Play()
+			hideTween.Completed:Connect(function()
+				panel.Visible = false
+			end)
+		end
+	end)
+
+	return {
+		ScreenGui = screenGui,
+		Panel = panel,
+		LeftFrame = leftFrame,
+		RightFrame = rightFrame,
+		StartFrame = startframe,
+		TabContainer = tabContainer,
+		SFX = SFX,
+	}
 end
 
-local function AutoSkill()
-    if #selectedSkills > 0 then
-        pcall(function()
-            for _, skill in ipairs(selectedSkills) do
-                pressKey(skill)
-            end
-        end)
-    end
+function ReyUILib:CreateTab(UI, Name)
+	local tabButton = Instance.new("TextButton")
+	tabButton.Name = Name
+	tabButton.Size = UDim2.new(1, -10, 0, 25)
+	tabButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+	tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	tabButton.Font = Enum.Font.GothamBold
+	tabButton.TextSize = 14
+	tabButton.Text = Name
+	tabButton.BorderSizePixel = 0
+	tabButton.Parent = UI.TabContainer
+	
+	local buttonCorner = Instance.new("UICorner")
+	buttonCorner.CornerRadius = UDim.new(0, 10)
+	buttonCorner.Parent = tabButton
+
+	local tabContent = Instance.new("ScrollingFrame")
+	tabContent.Size = UDim2.new(1, 0, 1, 0)
+	tabContent.BackgroundTransparency = 1
+	tabContent.Visible = false
+	tabContent.ScrollBarThickness = 6
+	tabContent.ScrollBarImageColor3 = Color3.fromRGB(85, 85, 255)
+	tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tabContent.ScrollingDirection = Enum.ScrollingDirection.Y
+	tabContent.Parent = UI.RightFrame
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 5)
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = tabContent
+
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+	end)
+
+	tabButton.MouseButton1Click:Connect(function()
+		for _, tab in ipairs(UI.RightFrame:GetChildren()) do
+			if tab:IsA("Frame") or tab:IsA("ScrollingFrame") then
+				tab.Visible = false
+			end
+		end
+		UI.StartFrame.Visible = false
+		tabContent.Visible = true
+	end)
+
+	return tabContent
 end
 
-local function attack()
-    pcall(function()
-        VirtualUser:CaptureController()
-        VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
-        VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
-    end)
+function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
+	local buttonFrame = Instance.new("Frame")
+	buttonFrame.Name = Name
+	buttonFrame.Size = UDim2.new(1, -10, 0, 50)
+	buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	buttonFrame.BorderSizePixel = 2
+	buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	buttonFrame.Parent = Parent
+
+	local buttonName = Instance.new("TextLabel")
+	buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
+	buttonName.Position = UDim2.new(0, 10, 0, 5)
+	buttonName.BackgroundTransparency = 1
+	buttonName.Text = Name
+	buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	buttonName.Font = Enum.Font.GothamBold
+	buttonName.TextSize = 14
+	buttonName.TextXAlignment = Enum.TextXAlignment.Left
+	buttonName.Parent = buttonFrame
+
+	local buttonDesc = Instance.new("TextLabel")
+	buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
+	buttonDesc.Position = UDim2.new(0, 10, 0, 30)
+	buttonDesc.BackgroundTransparency = 1
+	buttonDesc.Text = Description
+	buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+	buttonDesc.Font = Enum.Font.Gotham
+	buttonDesc.TextSize = 12
+	buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
+	buttonDesc.Parent = buttonFrame
+
+	local actionButton = Instance.new("TextButton")
+	actionButton.Size = UDim2.new(0, 65, 0, 25)
+	actionButton.Position = UDim2.new(1, -70, 0, 12)
+	actionButton.BackgroundColor3 = Color3.fromRGB(85, 85, 255)
+	actionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	actionButton.Font = Enum.Font.GothamBold
+	actionButton.TextSize = 14
+	actionButton.Text = ButtonText
+	actionButton.BorderSizePixel = 0
+	actionButton.Parent = buttonFrame
+
+	actionButton.MouseButton1Click:Connect(Callback)
 end
 
-local function move(targetCFrame)
-    local HumanoidRootPart, _ = getCharacterParts()
-    if HumanoidRootPart then
-        pcall(function()
-            HumanoidRootPart.CFrame = targetCFrame
-        end)
-    end
+function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
+	local buttonFrame = Instance.new("Frame")
+	buttonFrame.Name = Name
+	buttonFrame.Size = UDim2.new(1, -10, 0, 50)
+	buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	buttonFrame.BorderSizePixel = 2
+	buttonFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	buttonFrame.Parent = Parent
+
+	local buttonName = Instance.new("TextLabel")
+	buttonName.Size = UDim2.new(0.7, 0, 0.5, 0)
+	buttonName.Position = UDim2.new(0, 10, 0, 5)
+	buttonName.BackgroundTransparency = 1
+	buttonName.Text = Name
+	buttonName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	buttonName.Font = Enum.Font.GothamBold
+	buttonName.TextSize = 14
+	buttonName.TextXAlignment = Enum.TextXAlignment.Left
+	buttonName.Parent = buttonFrame
+
+	local buttonDesc = Instance.new("TextLabel")
+	buttonDesc.Size = UDim2.new(0.7, 0, 0.3, 0)
+	buttonDesc.Position = UDim2.new(0, 10, 0, 30)
+	buttonDesc.BackgroundTransparency = 1
+	buttonDesc.Text = Description
+	buttonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+	buttonDesc.Font = Enum.Font.Gotham
+	buttonDesc.TextSize = 12
+	buttonDesc.TextXAlignment = Enum.TextXAlignment.Left
+	buttonDesc.Parent = buttonFrame
+
+	local toggleContainer = Instance.new("Frame")
+	toggleContainer.Size = UDim2.new(0, 60, 0, 25)
+	toggleContainer.Position = UDim2.new(1, -70, 0, 12)
+	toggleContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	toggleContainer.BorderSizePixel = 0
+	toggleContainer.Parent = buttonFrame
+
+	local toggleCircle = Instance.new("Frame")
+	toggleCircle.Size = UDim2.new(0, 20, 0, 20)
+	toggleCircle.Position = UDim2.new(0, 2, 0, 2)
+	toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+	toggleCircle.BorderSizePixel = 0
+	toggleCircle.Parent = toggleContainer
+
+	local state = false
+	ReyUILib.Data[Name] = state
+
+	Callback = Callback or function() end
+
+	local function toggle()
+		state = not state
+		ReyUILib.Data[Name] = state
+		if state then
+			toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+			toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		else
+			toggleCircle:TweenPosition(UDim2.new(0, 2, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+			toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+		end
+		Callback(state)
+	end
+	
+	local x, value = Finds(Data, Name)
+	if x and value then
+		task.spawn(function() toggle() end)
+	end
+
+	toggleContainer.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			toggle()
+		end
+	end)
+
+	return buttonFrame
 end
 
-local function findTarget(path)
-    if not path then return nil end
-    local result
-    local success, err = pcall(function()
-        for _, child in ipairs(path:GetChildren()) do
-            if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
-                result = child
-                return
-            end
-        end
-    end)
-    if not success then warn("Error in findTarget:", err) return nil end
-    return result
+function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
+	table.insert(alldropdown, Name)
+	local Callback = Callback or function() end
+	local Refresh = Refresh or false
+	
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = Name
+	containerFrame.Size = UDim2.new(1, -10, 0, 40)
+	containerFrame.BackgroundTransparency = 1
+	containerFrame.Parent = Tab
+
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0)
+	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownFrame.BorderSizePixel = 2
+	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	dropdownFrame.Parent = containerFrame
+
+	local dropdownButton = Instance.new("TextButton")
+	dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+	dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dropdownButton.Font = Enum.Font.GothamBold
+	dropdownButton.TextSize = 14
+	dropdownButton.Text = Name
+	dropdownButton.BorderSizePixel = 0
+	dropdownButton.Parent = dropdownFrame
+
+	local dropdownList = Instance.new("ScrollingFrame")
+	dropdownList.Name = Name
+	dropdownList.Size = UDim2.new(1, 0, 0, 150)
+	dropdownList.Position = UDim2.new(0, 0, 1, 0)
+	dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	dropdownList.BorderSizePixel = 0
+	dropdownList.Visible = false
+	dropdownList.ClipsDescendants = true
+	dropdownList.ScrollBarThickness = 6
+	dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+	dropdownList.ZIndex = 2
+	dropdownList.Parent = dropdownFrame
+
+	local dropdownLayout = Instance.new("UIListLayout")
+	dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+	dropdownLayout.Padding = UDim.new(0, 5)
+	dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	dropdownLayout.Parent = dropdownList
+
+	local function updateCanvasSize()
+		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+	end
+
+	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+
+	local function createOption(option)
+		local function CreateButton(option)
+			local optionButton = Instance.new("TextButton")
+			optionButton.Size = UDim2.new(1, -10, 0, 30)
+			optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+			optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			optionButton.Font = Enum.Font.Gotham
+			optionButton.TextSize = 12
+			optionButton.Text = option.Name or option
+			optionButton.BorderSizePixel = 0
+			optionButton.ZIndex = 2
+			optionButton.Parent = dropdownList
+	
+			optionButton.MouseButton1Click:Connect(function()
+				dropdownButton.Text = option.Name or option
+				dropdownList.Visible = false
+				Callback(option)
+			end)
+			if not dropdownList:FindFirstChildWhichIsA("TextButton") then CreateButton(Name) end
+		end
+		CreateButton(option)
+	end
+	
+	status = pcall(function()
+		for _, option in ipairs(Options()) do
+			createOption(option)
+		end
+	end)
+	if status == false then
+		pcall(function()
+			for _, option in ipairs(Options) do
+				createOption(option)
+			end
+		end)
+	end
+	
+
+	dropdownButton.MouseButton1Click:Connect(function()
+		for _, v in pairs(alldropdown) do
+			if _ ~= Name and v.Visible then
+				v.Visible = false
+			end
+		end
+		dropdownList.Visible = not dropdownList.Visible
+		alldropdown[Name] = dropdownList
+	end)
+
+	if Refresh then
+		local refreshFrame = Instance.new("Frame")
+		refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
+		refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
+		refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		refreshFrame.BorderSizePixel = 2
+		refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+		refreshFrame.Parent = containerFrame
+
+		local refreshButton = Instance.new("ImageButton")
+		refreshButton.Size = UDim2.new(1, -8, 1, -8)
+		refreshButton.Position = UDim2.new(0, 4, 0, 4)
+		refreshButton.BackgroundTransparency = 1
+		refreshButton.Image = "rbxassetid://122032243989747"
+		refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		refreshButton.Parent = refreshFrame
+
+		local debounce = false
+		refreshButton.MouseButton1Click:Connect(function()
+			if debounce then return end
+			debounce = true
+			for _, child in ipairs(dropdownList:GetChildren()) do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+			status = pcall(function()
+				for _, option in ipairs(Options()) do
+					createOption(option)
+				end
+			end)
+			if status == false then
+				for _, option in ipairs(Options) do
+					createOption(option)
+				end
+			end
+			updateCanvasSize()
+			debounce = false
+		end)
+	end
+
+	updateCanvasSize()
+	return containerFrame
 end
 
-local function setBodyVelocity(enabled)
-    local _, Torso = getCharacterParts()
-    if not Torso then return end
-    pcall(function()
-        local bodyVelocity = Torso:FindFirstChild("BodyVelocity")
-        if enabled and not bodyVelocity then
-            local newBodyVelocity = Instance.new("BodyVelocity", Torso)
-            newBodyVelocity.velocity = Vector3.new(0, 0.1, 0)
-            newBodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
-        elseif not enabled and bodyVelocity then
-            bodyVelocity:Destroy()
-        end
-    end)
+function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
+	table.insert(alldropdown, Name)
+	local Callback = Callback or function() end
+	local Refresh = Refresh or false
+	local selectedOptions = {}
+	local selectedOrder = {}
+
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = Name
+	containerFrame.Size = UDim2.new(1, -10, 0, 40)
+	containerFrame.BackgroundTransparency = 1
+	containerFrame.Parent = Tab
+
+	local dropdownFrame = Instance.new("Frame")
+	dropdownFrame.Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0)
+	dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownFrame.BorderSizePixel = 2
+	dropdownFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	dropdownFrame.Parent = containerFrame
+
+	local dropdownButton = Instance.new("TextButton")
+	dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+	dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dropdownButton.Font = Enum.Font.GothamBold
+	dropdownButton.TextSize = 14
+	dropdownButton.Text = Name
+	dropdownButton.BorderSizePixel = 0
+	dropdownButton.Parent = dropdownFrame
+
+	local dropdownList = Instance.new("ScrollingFrame")
+	dropdownList.Name = Name
+	dropdownList.Size = UDim2.new(1, 0, 0, 150)
+	dropdownList.Position = UDim2.new(0, 0, 1, 0)
+	dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	dropdownList.BorderSizePixel = 0
+	dropdownList.Visible = false
+	dropdownList.ClipsDescendants = true
+	dropdownList.ScrollBarThickness = 6
+	dropdownList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+	dropdownList.ZIndex = 2
+	dropdownList.Parent = dropdownFrame
+
+	local dropdownLayout = Instance.new("UIListLayout")
+	dropdownLayout.FillDirection = Enum.FillDirection.Vertical
+	dropdownLayout.Padding = UDim.new(0, 5)
+	dropdownLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	dropdownLayout.Parent = dropdownList
+
+	local function updateCanvasSize()
+		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+	end
+
+	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+
+	local function createOption(option)
+		local optionButton = Instance.new("TextButton")
+		optionButton.Size = UDim2.new(1, -10, 0, 30)
+		optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		optionButton.Font = Enum.Font.Gotham
+		optionButton.TextSize = 12
+		optionButton.Text = option.Name or option
+		optionButton.BorderSizePixel = 0
+		optionButton.ZIndex = 2
+		optionButton.Parent = dropdownList
+
+		optionButton.MouseButton1Click:Connect(function()
+			if selectedOptions[option] then
+				selectedOptions[option] = nil
+				optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+				
+				for i, v in ipairs(selectedOrder) do
+					if v == option then
+						table.remove(selectedOrder, i)
+						break
+					end
+				end
+			else
+				selectedOptions[option] = true
+				optionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+				table.insert(selectedOrder, option)
+			end
+			dropdownButton.Text = table.concat(selectedOrder, ", ")
+			if dropdownButton.Text == "" then dropdownButton.Text = Name end
+			Callback(selectedOrder)
+		end)
+	end
+	
+	status = pcall(function()
+		for _, option in ipairs(Options()) do
+			createOption(option)
+		end
+	end)
+	if status == false then
+		for _, option in ipairs(Options) do
+			createOption(option)
+		end
+	end
+
+	dropdownButton.MouseButton1Click:Connect(function()
+		for _, v in pairs(alldropdown) do
+			if _ ~= Name and v.Visible then
+				v.Visible = false
+			end
+		end
+		dropdownList.Visible = not dropdownList.Visible
+		alldropdown[Name] = dropdownList
+	end)
+	
+	if Refresh then
+		local refreshFrame = Instance.new("Frame")
+		refreshFrame.Size = UDim2.new(0.13, 0, 1, 0)
+		refreshFrame.Position = UDim2.new(0.85, 5, 0, 0)
+		refreshFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		refreshFrame.BorderSizePixel = 2
+		refreshFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+		refreshFrame.Parent = containerFrame
+
+		local refreshButton = Instance.new("ImageButton")
+		refreshButton.Size = UDim2.new(1, -8, 1, -8)
+		refreshButton.Position = UDim2.new(0, 4, 0, 4)
+		refreshButton.BackgroundTransparency = 1
+		refreshButton.Image = "rbxassetid://122032243989747"
+		refreshButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		refreshButton.Parent = refreshFrame
+
+		local debounce = false
+		refreshButton.MouseButton1Click:Connect(function()
+			if debounce then return end
+			debounce = true
+			for _, child in ipairs(dropdownList:GetChildren()) do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+			status = pcall(function()
+				for _, option in ipairs(Options()) do
+					createOption(option)
+				end
+			end)
+			if status == false then
+				for _, option in ipairs(Options) do
+					createOption(option)
+				end
+			end
+			updateCanvasSize()
+			debounce = false
+		end)
+	end
+
+	updateCanvasSize()
+	return containerFrame
 end
 
-local function Weapons()
-    local backpack = {}
-    local backpackFolder = LocalPlayer:FindFirstChild("Backpack")
-    if backpackFolder then
-        for _, item in ipairs(backpackFolder:GetChildren()) do
-            if item:IsA("Tool") then
-                table.insert(backpack, item)
-            end
-        end
-        return backpack
-    end
+function ReyUILib:RemoveElement(tab, Name)
+	if not tab or not Name then
+		return
+	end
+
+	local element = tab:FindFirstChild(Name)
+	if element then
+		element:Destroy()
+	end
 end
 
-Rey:CreateDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
-    selectedWeapon = weapon
-    if selectedWeapon then
-        selectedWeapon.Parent = LocalPlayer.Character
-    end
-end, true)
+function ReyUILib:UpdateElement(tab, elementName, properties)
+	if not tab or not tab:IsA("Frame") then
+		warn("Invalid tab passed to UpdateElement")
+		return
+	end
 
-local skills = {"Z", "X", "C", "V", "F"}
-local selectedSkills = {}
+	local element = tab:FindFirstChild(elementName)
+	if not element then
+		warn("Element with name '" .. elementName .. "' not found in the specified tab")
+		return
+	end
 
-Rey:CreateMultipleDropdown(Exclusive, "Auto Skill", skills, function(selected)
-    selectedSkills = selected
-end)
-
--- Auto Vasto Lorde
-Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
-    _G.AutoLevel = state
-    if state then
-        -- Interaksi dengan questNpc hanya dijalankan sekali saat toggle diaktifkan
-        local questNpc = workspace.Npc.Quest["Quest 15"]
-        if questNpc and questNpc.ProximityPrompt then
-            questNpc.ProximityPrompt.HoldDuration = 0
-            move(questNpc.HumanoidRootPart.CFrame)
-            for i = 1, 5 do task.wait() pressKey("E") end
-        end
-
-        activeConnections["AutoLevel"] = RunService.Heartbeat:Connect(function()
-            if currentPriority == "Boss" then return end
-
-            local vastoLorde = findTarget(workspace.Main.Kurakura["Vasto Lorde"])
-            if vastoLorde then
-                currentPriority = "VastoLorde"
-                setBodyVelocity(true)
-                local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
-                move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-                if selectedWeapon then
-                    selectedWeapon:Activate()
-                end
-                AutoSkill()
-                if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
-                    vastoLorde.Humanoid.Health = 0
-                    task.spawn(function()
-                        while vastoLorde and vastoLorde.Humanoid.Health <= 0 do
-                            vastoLorde.Humanoid.Health = 1
-                            task.wait(1)
-                            vastoLorde.Humanoid.Health = 0
-                            task.wait(1)
-                        end
-                    end)
-                end
-            else
-                if currentPriority == "VastoLorde" then currentPriority = nil end
-                setBodyVelocity(false)
-                -- Hanya disconnect jika toggle masih aktif
-                if _G.AutoLevel then
-                    activeConnections["AutoLevel"]:Disconnect()
-                    activeConnections["AutoLevel"] = nil
-                end
-            end
-        end)
-    else
-        if activeConnections["AutoLevel"] then
-            activeConnections["AutoLevel"]:Disconnect()
-            activeConnections["AutoLevel"] = nil
-        end
-    end
-end)
-
--- Auto Bosses
-Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
-    _G.AutoBosses = state
-    if state then
-        activeConnections["AutoBosses"] = RunService.Heartbeat:Connect(function()
-            local targetBoss = findTarget(workspace.Main.Boss) or findTarget(workspace.Main.RaidBoss) or findTarget(workspace.Main.Valentine)
-            if targetBoss then
-                currentPriority = "Boss"
-                setBodyVelocity(true)
-                local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
-                move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-                if selectedWeapon then
-                    selectedWeapon:Activate()
-                end
-                AutoSkill()
-                if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
-                    targetBoss.Humanoid.Health = 0
-                    task.spawn(function()
-                        while targetBoss and targetBoss.Humanoid.Health <= 0 do
-                            targetBoss.Humanoid.Health = 1
-                            task.wait(1)
-                            targetBoss.Humanoid.Health = 0
-                            task.wait(1)
-                        end
-                    end)
-                end
-            else
-                if currentPriority == "Boss" then currentPriority = nil end
-                setBodyVelocity(false)
-                -- Hanya disconnect jika toggle masih aktif
-                if _G.AutoBosses then
-                    activeConnections["AutoBosses"]:Disconnect()
-                    activeConnections["AutoBosses"] = nil
-                end
-            end
-        end)
-    else
-        -- Disconnect saat toggle dimatikan
-        if activeConnections["AutoBosses"] then
-            activeConnections["AutoBosses"]:Disconnect()
-            activeConnections["AutoBosses"] = nil
-        end
-    end
-end)
-
-
-Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss yang bisa, okarun ga ngespawn otomatis jadinya gbisa")
-Rey:CreateNote(Exclusive, "-- Misc")
-
--- Auto Mission
-local function runAutoMission()
-    sGoblet = nil
-    local missionStatus = LocalPlayer.MissionData.Active.Value
-    if not missionStatus then
-        miaw = miaw + 1
-        local questNpc = workspace.Npc.Quest.Mission
-        if questNpc and questNpc.HumanoidRootPart then
-            move(questNpc.HumanoidRootPart.CFrame)
-            questNpc.ProximityPrompt.HoldDuration = 0
-            task.wait(0.1)
-            pressKey("E")
-            if miaw > 5 then task.wait(1) miaw = 0 end
-        end
-        return
-    end
-
-    local questTitle = LocalPlayer.MissionData["Quest Title"].Value
-    local questActions = {
-        ["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
-        ["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
-        ["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 770 do pressKey("E") end; sGoblet = true end,
-        ["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 770 do pressKey("E") end end,
-        ["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
-        ["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
-    }
-
-    for questName, action in pairs(questActions) do
-        if questTitle:find(questName) then
-            action()
-            return
-        end
-    end
+	for property, value in pairs(properties) do
+		if property == "Callback" then
+			if element:IsA("TextButton") or element:IsA("TextBox") then
+				for _, connection in ipairs(element.MouseButton1Click:GetConnections()) do
+					connection:Disconnect()
+				end
+				element.MouseButton1Click:Connect(value)
+			elseif element:IsA("Frame") and element:FindFirstChild("DropdownButton") then
+				local dropdownButton = element:FindFirstChild("DropdownButton")
+				for _, connection in ipairs(dropdownButton.MouseButton1Click:GetConnections()) do
+					connection:Disconnect()
+				end
+				dropdownButton.MouseButton1Click:Connect(value)
+			elseif element:IsA("Frame") and element:FindFirstChild("ToggleButton") then
+				local toggleButton = element:FindFirstChild("ToggleButton")
+				for _, connection in ipairs(toggleButton.MouseButton1Click:GetConnections()) do
+					connection:Disconnect()
+				end
+				toggleButton.MouseButton1Click:Connect(value)
+			else
+				warn("Callback is not applicable for this element")
+			end
+		elseif property == "Description" and element:FindFirstChild("Description") then
+			element.Description.Text = value
+		elseif property == "Options" and element:FindFirstChild("DropdownList") then
+			local dropdownList = element:FindFirstChild("DropdownList")
+			dropdownList:ClearAllChildren()
+			for _, option in ipairs(value) do
+				local newOption = Instance.new("TextLabel")
+				newOption.Text = option
+				newOption.Size = UDim2.new(1, 0, 0, 25)
+				newOption.Parent = dropdownList
+			end
+		elseif element[property] ~= nil then
+			element[property] = value
+		else
+			warn("Property '" .. property .. "' does not exist or is not supported for this element")
+		end
+	end
 end
 
--- Farm Gems
-local function runFarmGems()
-    if not sGoblet then
-        runAutoMission()
-    else
-        setBodyVelocity(false)
-        local shopNpc
-        pcall(function()
-            shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
-        end)
-        if shopNpc and shopNpc.HumanoidRootPart then
-            shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
-            move(shopNpc.HumanoidRootPart.CFrame)
-            task.wait(0.1)
-            pressKey("E")
-            local args = {[1] = "750"}
-            pcall(function()
-                LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
-            end)
-            move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
-            task.wait(0.1)
-            for i = 1, 770 do pressKey("E") end
-            task.wait(3)
-        end
-        sGoblet = nil
-    end
+function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
+	callback = callback or function() end
+	
+	local x, value = Finds(Data, Name)
+	if x and value then
+		default = value
+	end
+	
+	local containerFrame = Instance.new("Frame")
+	containerFrame.Name = Name
+	containerFrame.Size = UDim2.new(1, -10, 0, 60)
+	containerFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	containerFrame.BorderSizePixel = 2
+	containerFrame.BorderColor3 = Color3.fromRGB(30, 30, 30)
+	containerFrame.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Position = UDim2.new(0, 10, 0, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 16
+	label.TextStrokeTransparency = 0.8
+	label.TextStrokeColor3 = Color3.fromRGB(100, 0, 150)
+	label.Text = Name .. " - " .. default
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = containerFrame
+
+	local sliderFrame = Instance.new("Frame")
+	sliderFrame.Size = UDim2.new(0.9, -20, 0, 30)
+	sliderFrame.Position = UDim2.new(0, 10, 0, 25)
+	sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 120)
+	sliderFrame.BorderSizePixel = 0
+	sliderFrame.Parent = containerFrame
+
+	local sliderCorner = Instance.new("UICorner")
+	sliderCorner.CornerRadius = UDim.new(0, 15)
+	sliderCorner.Parent = sliderFrame
+
+	local fillFrame = Instance.new("Frame")
+	fillFrame.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+	fillFrame.BackgroundColor3 = Color3.fromRGB(140, 50, 220)
+	fillFrame.BorderSizePixel = 0
+	fillFrame.Parent = sliderFrame
+
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(0, 15)
+	fillCorner.Parent = fillFrame
+
+	local sliderButton = Instance.new("ImageButton")
+	sliderButton.Size = UDim2.new(0, 25, 1, 0)
+	sliderButton.Position = UDim2.new((default - min) / (max - min), -15, 0, 0)
+	sliderButton.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
+	sliderButton.BackgroundTransparency = 1
+	sliderButton.Image = "rbxassetid://3570695787"
+	sliderButton.ScaleType = Enum.ScaleType.Slice
+	sliderButton.SliceCenter = Rect.new(100, 100, 100, 100)
+	sliderButton.Parent = sliderFrame
+
+	local inputBox = Instance.new("TextBox")
+	inputBox.Size = UDim2.new(0.1, 0, 0, 30)
+	inputBox.Position = UDim2.new(0.9, -5, 0, 25)
+	inputBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	inputBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+	inputBox.Font = Enum.Font.GothamBold
+	inputBox.TextSize = 16
+	inputBox.Text = tostring(default)
+	inputBox.TextStrokeTransparency = 0.8
+	inputBox.BackgroundTransparency = 0.2
+	inputBox.TextXAlignment = Enum.TextXAlignment.Center
+	inputBox.TextYAlignment = Enum.TextYAlignment.Center
+	inputBox.Parent = containerFrame
+
+	local inputCorner = Instance.new("UICorner")
+	inputCorner.CornerRadius = UDim.new(0, 12)
+	inputCorner.Parent = inputBox
+	
+	ReyUILib.Data[Name] = default
+
+	local function updateSlider(input)
+		local sliderPos = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
+		local value = math.floor(sliderPos * (max - min) + min)
+		fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+		sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+		label.Text = Name .. " - " .. value
+		inputBox.Text = tostring(value)
+		ReyUILib.Data[Name] = value
+		callback(value)
+	end
+
+	sliderButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			local connection
+			connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+				if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+					updateSlider(moveInput)
+				end
+			end)
+			game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+				if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+					connection:Disconnect()
+				end
+			end)
+		end
+	end)
+
+	sliderFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			updateSlider(input)
+		end
+	end)
+
+	inputBox.FocusLost:Connect(function()
+		local value = tonumber(inputBox.Text)
+		if value then
+			value = math.clamp(value, min, max)
+			local sliderPos = (value - min) / (max - min)
+			fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+			sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+			label.Text = Name .. " - " .. value
+			ReyUILib.Data[Name] = value
+			callback(value)
+		else
+			inputBox.Text = tostring(default)
+		end
+	end)
+
+	return containerFrame
 end
 
--- Auto Mission Toggle
-Rey:CreateToggle(Exclusive, "Auto Mission (Lvl 1.000+)", "-", function(state)
-    _G.AutoMissions = state
-    for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
-        if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
-    end
-    setBodyVelocity(state)
-    activeConnections["AutoMissions"] = state and RunService.Heartbeat:Connect(runAutoMission) or (activeConnections["AutoMissions"] and activeConnections["AutoMissions"]:Disconnect())
-end)
+function ReyUILib:CreateNote(parent, text)
+	local noteFrame = Instance.new("Frame")
+	noteFrame.Size = UDim2.new(1, -10, 0, 30)
+	noteFrame.Position = UDim2.new(0, 5, 0, 5)
+	noteFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	noteFrame.BorderSizePixel = 0
+	noteFrame.AutomaticSize = Enum.AutomaticSize.Y
+	noteFrame.Parent = parent
 
--- Auto Mob
-function autoMob(mob, state)
-    local target = workspace.Main.Forest:FindFirstChild(mob)
-    if target and state then
-        setBodyVelocity(true)
-        activeConnections["AutoMob" .. mob] = RunService.Heartbeat:Connect(function()
-            if not target then
-                activeConnections["AutoMob" .. mob]:Disconnect()
-                activeConnections["AutoMob" .. mob] = nil
-                setBodyVelocity(false)
-                return
-            end
-            for _, child in ipairs(target:GetChildren()) do
-                if child:IsA("Model") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
-                    local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
-                    move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-                    if selectedWeapon then
-                        selectedWeapon:Activate()
-                    end
-                    break
-                end
-            end
-        end)
-    elseif activeConnections["AutoMob" .. mob] then
-        activeConnections["AutoMob" .. mob]:Disconnect()
-        activeConnections["AutoMob" .. mob] = nil
-        setBodyVelocity(false)
-    end
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(30, 30, 30)
+	stroke.Parent = noteFrame
+
+	local note = Instance.new("TextLabel")
+	note.Size = UDim2.new(1, -10, 0, 0)
+	note.Position = UDim2.new(0, 5, 0, 5)
+	note.BackgroundTransparency = 1
+	note.Text = text or "Note"
+	note.TextColor3 = Color3.fromRGB(255, 255, 255)
+	note.Font = Enum.Font.Gotham
+	note.TextSize = 14
+	note.TextWrapped = true
+	note.TextXAlignment = Enum.TextXAlignment.Left
+	note.TextYAlignment = Enum.TextYAlignment.Top
+	note.AutomaticSize = Enum.AutomaticSize.Y
+	note.Parent = noteFrame
+
+	local layout = Instance.new("UIListLayout")
+	layout.Parent = noteFrame
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 5)
+
+	return noteFrame
 end
 
--- Adventure Shop Teleport
-Rey:CreateButton(Exclusive, "Adventure Shop", "kalo ga ke tp berarti gada", "Teleport", function()
-    local shopNpc
-    pcall(function()
-        shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
-    end)
-    if shopNpc and shopNpc.HumanoidRootPart then
-        move(shopNpc.HumanoidRootPart.CFrame)
-    end
-end)
+function ReyUILib:SendWebhook(Url, Avatar, Content, Embed)
+	local OSTime = os.time()
+	local Time = os.date("!*t", OSTime)
+	local timestamp = string.format("%d-%02d-%02dT%02d:%02d:%02dZ", Time.year, Time.month, Time.day, Time.hour, Time.min, Time.sec)
 
--- Farm Gems Toggle
-Rey:CreateToggle(Exclusive, "Farm Gems", "jual sendiri Goblet nya wak😹😹", function(state)
-    _G.FarmGems = state
-    for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
-        if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
-    end
-    setBodyVelocity(state)
-    activeConnections["FarmGems"] = state and RunService.Heartbeat:Connect(runFarmGems) or (activeConnections["FarmGems"] and activeConnections["FarmGems"]:Disconnect())
-end)
+	if Embed then
+		Embed.timestamp = timestamp
+	end
 
--- Auto Goblet (Manual Click)
-Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
-    move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
-    task.wait(0.1)
-    for i = 1, 750 do pressKey("E") end
-end)
+	local httpRequest = syn and syn.request or http_request or request
+	if not httpRequest then
+		warn("HTTP request function not found!")
+		return
+	end
 
--- Auto Buy Black Merchant (Slow)
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
-    _G.AutoBM1 = state
-    setBodyVelocity(state)
-    activeConnections["AutoBM1"] = state and RunService.Heartbeat:Connect(function()
-        local merchantNpc
-        pcall(function()
-            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-        end)
-        if merchantNpc and merchantNpc.HumanoidRootPart then
-            move(merchantNpc.HumanoidRootPart.CFrame)
-            pressKey("E")
-        end
-    end) or (activeConnections["AutoBM1"] and activeConnections["AutoBM1"]:Disconnect())
-end)
+	local response = httpRequest({
+		Url = Url,
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json"
+		},
+		Body = game:GetService("HttpService"):JSONEncode({
+			content = Content,
+			avatar_url = Avatar,
+			embeds = { Embed }
+		})
+	})
+end
 
--- Auto Buy Black Merchant (Fast)
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nanggung", function(state)
-    _G.AutoBM2 = state
-    setBodyVelocity(state)
-    activeConnections["AutoBM2"] = state and RunService.Heartbeat:Connect(function()
-        local merchantNpc
-        pcall(function()
-            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-        end)
-        if merchantNpc and merchantNpc.HumanoidRootPart then
-            move(merchantNpc.HumanoidRootPart.CFrame)
-            pressKey("E")
-        end
-    end) or (activeConnections["AutoBM2"] and activeConnections["AutoBM2"]:Disconnect())
-end)
 
--- Auto Buy Black Merchant (BROKEN)
-Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀💀", function(state)
-    _G.AutoBM3 = state
-    setBodyVelocity(state)
-    activeConnections["AutoBM3"] = state and RunService.Heartbeat:Connect(function()
-        local merchantNpc
-        pcall(function()
-            merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
-        end)
-        if merchantNpc and merchantNpc.HumanoidRootPart then
-            move(merchantNpc.HumanoidRootPart.CFrame)
-            for i = 1, 1000 do pressKey("E") end
-        end
-    end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
-end)
+return ReyUILib
