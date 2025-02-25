@@ -195,7 +195,7 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
 							task.wait(1)
 							targetBoss.Humanoid.Health = 0
 							task.wait(1)
-						end
+						end)
 						end
 					end)
 				end
