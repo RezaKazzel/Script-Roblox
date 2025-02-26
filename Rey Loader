@@ -1,5 +1,5 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Test%20Webhook"))()
-Rey = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New'))()
+Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New')))()
 local ListGame = {
 	-- Verse Piece
 	--[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
@@ -13,8 +13,10 @@ if Note then
 else
 	UI = Rey:CreateUI("Rey UI - "..GameName)
 end
-loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
 
 if ListGame[game.GameId] ~= nil then
 	loadstring(ListGame[tonumber(game.GameId)])()
 end
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
