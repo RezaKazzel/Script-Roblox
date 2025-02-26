@@ -1,4 +1,5 @@
 pcall(function()
+Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
@@ -55,7 +56,7 @@ Rey:SendWebhook(
 	nil,
 	nil,
 	{
-		title = "Executing Rey\nGame: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+		title = "Executing Rey for "..Data["Execute"].."\nGame: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
 		color = tonumber("00FF00", 16),
 		footer = { text = HWID },
 		author = {
