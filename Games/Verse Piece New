@@ -9,7 +9,7 @@ local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local activeConnections = {}
 local miaw = 0
 local sGoblet = nil
-local selectedWeapon = nil
+local selectedWeapons = {}
 local currentPriority = nil
 local skills = {"Z", "X", "C", "V", "F"}
 local selectedSkills = {}
@@ -100,10 +100,17 @@ local function Weapons()
 	end
 end
 
-Rey:CreateDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
-	selectedWeapon = weapon
-	if selectedWeapon then
-		selectedWeapon.Parent = LocalPlayer.Character
+local function EquipWeapons()
+	for i, v in ipairs(Weapons) do
+		v.Parent = LocalPlayer.Character
+		v:Activate()
+	end
+end
+
+Rey:CreateMultipleDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
+	Weapons = weapon
+	for i, v in ipairs(Weapons) do
+		v.Parent = LocalPlayer.Character
 	end
 end, true)
 
@@ -133,10 +140,7 @@ Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
 				setBodyVelocity(true)
 				local targetPosition = vastoLorde.HumanoidRootPart.Position + Vector3.new(0, vastoLorde.HumanoidRootPart.Size.Y / 2 + 4, 0)
 				move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-				if selectedWeapon then
-					selectedWeapon.Parent = LocalPlayer.Character
-					selectedWeapon:Activate()
-				end
+				EquipWeapons()
 				AutoSkill()
 				pcall(function()
 					if vastoLorde.Humanoid.Health < vastoLorde.Humanoid.MaxHealth * 0.8 then
@@ -159,6 +163,8 @@ Rey:CreateToggle(Exclusive, "Auto Vasto Lorde", "-", function(state)
 			end
 		end)
 	else
+		setBodyVelocity(false)
+		if currentPriority == "VastoLorde" then currentPriority = nil end
 		if activeConnections["AutoLevel"] then
 			activeConnections["AutoLevel"]:Disconnect()
 			activeConnections["AutoLevel"] = nil
@@ -179,10 +185,7 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
 				setBodyVelocity(true)
 				local targetPosition = targetBoss.HumanoidRootPart.Position + Vector3.new(0, targetBoss.HumanoidRootPart.Size.Y / 2 + 4, 0)
 				move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-				if selectedWeapon then
-					selectedWeapon.Parent = LocalPlayer.Character
-					selectedWeapon:Activate()
-				end
+				EquipWeapons()
 				AutoSkill()
 				if targetBoss.Humanoid.Health < targetBoss.Humanoid.MaxHealth * 0.8 then
 					targetBoss.Humanoid.Health = 0
@@ -203,6 +206,8 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "auto semua boss", function(state)
 			end
 		end)
 	else
+		setBodyVelocity(false)
+		if currentPriority == "Boss" then currentPriority = nil end
 		if activeConnections["AutoBosses"] then
 			activeConnections["AutoBosses"]:Disconnect()
 			activeConnections["AutoBosses"] = nil
@@ -301,9 +306,9 @@ function autoMob(mob, state)
 						setBodyVelocity(true)
 						local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
 						move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-						if selectedWeapon then
-							selectedWeapon.Parent = LocalPlayer.Character
-							selectedWeapon:Activate()
+						if selectedWeapons then
+							selectedWeapons.Parent = LocalPlayer.Character
+							selectedWeapons:Activate()
 						end
 						break
 					end
