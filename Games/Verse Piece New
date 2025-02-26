@@ -87,7 +87,7 @@ local function setBodyVelocity(enabled)
 	end)
 end
 
-local function Weapons()
+local function GetWeapons()
 	local backpack = {}
 	local backpackFolder = LocalPlayer:FindFirstChild("Backpack")
 	if backpackFolder then
@@ -107,7 +107,7 @@ local function EquipWeapons()
 	end
 end
 
-Rey:CreateMultipleDropdown(Exclusive, "Pilih senjata", Weapons, function(weapon)
+Rey:CreateMultipleDropdown(Exclusive, "Pilih senjata", GetWeapons, function(weapon)
 	Weapons = weapon
 	for i, v in ipairs(Weapons) do
 		v.Parent = LocalPlayer.Character
