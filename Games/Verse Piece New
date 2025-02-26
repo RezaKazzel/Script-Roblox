@@ -384,7 +384,7 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nangg
 		if _G.AutoBM2 and merchantNpc and merchantNpc.HumanoidRootPart then
 			setBodyVelocity(true)
 			move(merchantNpc.HumanoidRootPart.CFrame)
-			for i=1, 100 then pressKey("E") end
+			for i=1, 100 do pressKey("E") end
 		else
 			setBodyVelocity(false)
 		end
