@@ -5,11 +5,13 @@ local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
 
+-- Variables
 local activeConnections = {}
 local Distance = 10
 local Folder = game.Workspace
 local range = 100
 
+-- Helper Functions
 local function getFolder(miaw)
 	for _, v in ipairs(Folder:GetDescendants()) do
 		if v:IsA("Model") and v.Name == miaw and v:FindFirstChild("HumanoidRootPart") then
@@ -40,13 +42,13 @@ local function getNearby(range)
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
-			
+
 			if humanoid and humanoid.Health > 0 and distance <= range then
 				table.insert(enemies, obj)
 			end
 		end
 	end
-	
+
 	table.sort(enemies, function(a, b)
 		return a.Humanoid.Health < b.Humanoid.Health
 	end)
@@ -55,126 +57,141 @@ local function getNearby(range)
 end
 
 local function OneHits(object)
-pcall(function()
-repeat
-local before = object.Humanoid.Health
-	if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * OneHitHealth then
-		object.Humanoid.Health = 0
-	end
-	wait(1.5)
-	object.Humanoid.Health = before
-until not object
-end)
+	pcall(function()
+		repeat
+			local before = object.Humanoid.Health
+			if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * OneHitHealth then
+				object.Humanoid.Health = 0
+			end
+			wait(1.5)
+			object.Humanoid.Health = before
+		until not object
+	end)
 end
 
+-- UI Elements and Functionality
 Rey:CreateToggle(Main, "Auto Click/Attack", "sesuai nama yh", function(state)
-pcall(function()
 	_G.AutoClick = state
-	while _G.AutoClick do wait()
-		local VirtualUser = game:GetService("VirtualUser")
-		VirtualUser:CaptureController()
-		VirtualUser:Button1Down(Vector2.new(0,1,0,1))
-		VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+	while _G.AutoClick do
+		wait()
+		local player = game.Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		local backpack = player:FindFirstChild("Backpack")
+
+		local function activateTool()
+			pcall(function()
+				local tool = character:FindFirstChildOfClass("Tool")
+				if tool then
+					tool:Activate()
+				end
+			end)
+		end
+
+		local x = pcall(function() activateTool() end)
+		if not x then
+			local VirtualUser = game:GetService("VirtualUser")
+			VirtualUser:CaptureController()
+			VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
+			VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+		end
 	end
-end)
 end)
 
 Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
-pcall(function()
-	local plr = game.Players.LocalPlayer
-	local torso
-	local cekt = pcall(function() torso = plr.Character.Torso end)
-	if not cekt then
-		torso = plr.Character:FindFirstChild("LowerTorso")
-	end
-	if state then
-		local nearbyEnemies = getNearby(range)
-		activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
-			task.spawn(function()
-				if not proses then
-					proses = true
-					wait(3)
-					nearbyEnemies = getNearby(range)
-					proses = false
-				end
-			end)
+	pcall(function()
+		local plr = game.Players.LocalPlayer
+		local torso
+		local cekt = pcall(function() torso = plr.Character.Torso end)
+		if not cekt then
+			torso = plr.Character:FindFirstChild("LowerTorso")
+		end
+		if state then
+			local nearbyEnemies = getNearby(range)
+			activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
+				task.spawn(function()
+					if not proses then
+						proses = true
+						wait(3)
+						nearbyEnemies = getNearby(range)
+						proses = false
+					end
+				end)
 
-			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-			for _, v in ipairs(nearbyEnemies) do
-			if _G.OneHit then OneHits(v) end
-				if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
-					local wwd = v:FindFirstChild("HumanoidRootPart")
-					if wwd and player and v.Humanoid.Health > 0 then
-						if not torso:FindFirstChild("BodyVelocity") then
-							bv = Instance.new("BodyVelocity", torso)
-							bv.velocity = Vector3.new(0,0.1,0)
-							bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+				for _, v in ipairs(nearbyEnemies) do
+					if _G.OneHit then OneHits(v) end
+					if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
+						local wwd = v:FindFirstChild("HumanoidRootPart")
+						if wwd and player and v.Humanoid.Health > 0 then
+							if not torso:FindFirstChild("BodyVelocity") then
+								bv = Instance.new("BodyVelocity", torso)
+								bv.velocity = Vector3.new(0, 0.1, 0)
+								bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+							end
+							local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y / 2 + Distance, 0)
+							player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+							break
 						end
-						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + Distance, 0)
-						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-						break
 					end
 				end
+			end)
+		else
+			if activeConnections["AutoFarmNearby"] then
+				activeConnections["AutoFarmNearby"]:Disconnect()
+				activeConnections["AutoFarmNearby"] = nil
 			end
-		end)
-	else
-		if activeConnections["AutoFarmNearby"] then
-			activeConnections["AutoFarmNearby"]:Disconnect()
-			activeConnections["AutoFarmNearby"] = nil
+			wait(0.1)
+			if torso:FindFirstChild("BodyVelocity") then
+				torso:FindFirstChild("BodyVelocity"):Destroy()
+			end
 		end
-		wait(0.1)
-		if torso:FindFirstChild("BodyVelocity") then
-			torso:FindFirstChild("BodyVelocity"):Destroy()
-		end
-	end
-end)
+	end)
 end)
 
 Rey:CreateSlider(Main, "Nearby Distance", 1, 100, 10, function(value)
 	range = value * 10
 end)
 
-
 Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
-pcall(function()
-	local plr = game.Players.LocalPlayer
-	local torso
-	local cekt = pcall(function() torso = plr.Character.Torso end)
-	if not cekt then
-		torso = plr.Character:FindFirstChild("LowerTorso")
-	end
-	if state and AutoFarmMob then
-		if not torso:FindFirstChild("BodyVelocity") then
-			bv = Instance.new("BodyVelocity", torso)
-			bv.velocity = Vector3.new(0,0.1,0)
-			bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+	pcall(function()
+		local plr = game.Players.LocalPlayer
+		local torso
+		local cekt = pcall(function() torso = plr.Character.Torso end)
+		if not cekt then
+			torso = plr.Character:FindFirstChild("LowerTorso")
 		end
-		SelectedMob = getFolder(AutoFarmMob)
-		activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
-		if _G.OneHit then OneHits(v) end
-			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-			for _, v in ipairs(SelectedMob:GetChildren()) do
-				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
-					local wwd = v:FindFirstChild("HumanoidRootPart")
-					if wwd and player and v.Humanoid.Health > 0 then
-						local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y/2 + Distance, 0)
-						player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-						break
+		if state and AutoFarmMob then
+			if not torso:FindFirstChild("BodyVelocity") then
+				bv = Instance.new("BodyVelocity", torso)
+				bv.velocity = Vector3.new(0, 0.1, 0)
+				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+			end
+			SelectedMob = getFolder(AutoFarmMob)
+			activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+				if _G.OneHit then OneHits(v) end
+				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+				for _, v in ipairs(SelectedMob:GetChildren()) do
+					if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
+						local wwd = v:FindFirstChild("HumanoidRootPart")
+						if wwd and player and v.Humanoid.Health > 0 then
+							local targetPosition = wwd.Position + Vector3.new(0, wwd.Size.Y / 2 + Distance, 0)
+							player.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+							break
+						end
 					end
 				end
+			end)
+		else
+			if activeConnections["AutoFarm"] then
+				activeConnections["AutoFarm"]:Disconnect()
+				activeConnections["AutoFarm"] = nil
 			end
-		end)
-	else
-		if activeConnections["AutoFarm"] then
-			activeConnections["AutoFarm"]:Disconnect()
-			activeConnections["AutoFarm"] = nil
+			wait(0.1)
+			if torso:FindFirstChild("BodyVelocity") then
+				torso:FindFirstChild("BodyVelocity"):Destroy()
+			end
 		end
-		wait(0.1)
-		if torso:FindFirstChild("BodyVelocity") then
-			torso:FindFirstChild("BodyVelocity"):Destroy()
-		end
-	end
-end)
+	end)
 end)
 
 local function checksTable(tbl, value)
@@ -202,51 +219,50 @@ Rey:CreateDropdown(Main, "▼ Select Mob ▼", Monsters, function(selectedOption
 	AutoFarmMob = selectedOption
 end, true)
 
-
 Rey:CreateSlider(Main, "Distance from Mob", 1, 20, 11, function(value)
 	Distance = value
 end)
 
 Rey:CreateToggle(Main, "Auto Grab Items", "enak buat nyulik drop orang", function(state)
-pcall(function()
-	_G.AutoGrab = state
-	while _G.AutoGrab do
-		task.wait(0.2)
-		local player = game.Players.LocalPlayer.Character.HumanoidRootPart
-		for _, v in ipairs(game.Workspace:GetDescendants()) do
-			if v:IsA("Tool") then
-				if v:FindFirstChild("Handle") then
-					v.Handle.CFrame = player.CFrame
-				elseif v:FindFirstChild("CFrame") then
-					v.CFrame = player.CFrame
+	pcall(function()
+		_G.AutoGrab = state
+		while _G.AutoGrab do
+			task.wait(0.2)
+			local player = game.Players.LocalPlayer.Character.HumanoidRootPart
+			for _, v in ipairs(game.Workspace:GetDescendants()) do
+				if v:IsA("Tool") then
+					if v:FindFirstChild("Handle") then
+						v.Handle.CFrame = player.CFrame
+					elseif v:FindFirstChild("CFrame") then
+						v.CFrame = player.CFrame
+					end
 				end
 			end
 		end
-	end
-end)
+	end)
 end)
 
 Rey:CreateToggle(Main, "Equip all tools", "sesuai nama yh", function(state)
-pcall(function()
-	if state then
-		activeConnections["Equip All Tools"] = game:GetService("RunService").RenderStepped:Connect(function()
-			for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-				if v:IsA("Tool") then
-					v.Parent = game.Players.LocalPlayer.Character
+	pcall(function()
+		if state then
+			activeConnections["Equip All Tools"] = game:GetService("RunService").RenderStepped:Connect(function()
+				for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+					if v:IsA("Tool") then
+						v.Parent = game.Players.LocalPlayer.Character
+					end
 				end
+			end)
+		else
+			if activeConnections["Equip All Tools"] then
+				activeConnections["Equip All Tools"]:Disconnect()
+				activeConnections["Equip All Tools"] = nil
 			end
-		end)
-	else
-		if activeConnections["Equip All Tools"] then
-			activeConnections["Equip All Tools"]:Disconnect()
-			activeConnections["Equip All Tools"] = nil
 		end
-	end
-end)
+	end)
 end)
 
 Rey:CreateToggle(Main, "1 Hit enemies", "Only Work When AutoFarm", function(state)
-_G.OneHit = state
+	_G.OneHit = state
 end)
 
 OneHitHealth = 0.7
@@ -255,8 +271,8 @@ Rey:CreateSlider(Main, "Kill when Health under", 1, 100, 70, function(value)
 end)
 
 Rey:CreateToggle(Main, "One Hit [BUTTON]", "[Work Without AutoFarm] one shot one kill", function(state)
-local CoreGui = game:GetService("CoreGui")
-local player = game.Players.LocalPlayer
+	local CoreGui = game:GetService("CoreGui")
+	local player = game.Players.LocalPlayer
 	if state then
 		if CoreGui:FindFirstChild("Kill All Button") then
 			CoreGui:FindFirstChild("Kill All Button"):Destroy()
@@ -277,11 +293,11 @@ local player = game.Players.LocalPlayer
 		KillAll.Parent = screenGui
 		KillAll.Active = true
 		KillAll.Draggable = true
-		
+
 		KillAll.MouseButton1Click:Connect(function()
 			sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
 			sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
-	
+
 			for _, object in pairs(game.Workspace:GetDescendants()) do
 				if object:IsA("Humanoid") and object.Health < object.MaxHealth and object.Parent.Name ~= player.Name then
 					object.Health = 0
@@ -322,7 +338,7 @@ end
 Rey:CreateDropdown(Misc, "Teleport to Player", getPlayerList, function(selectedPlayer)
 	local localPlayer = game.Players.LocalPlayer
 	local targetPlayer = game.Players:FindFirstChild(selectedPlayer)
-	
+
 	if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
 		local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
 		if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -335,7 +351,7 @@ local NpcFolder = game.Workspace
 local function getNPCList()
 	local npc = {}
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if v.Name:lower() ~= "keyframe"  then
+		if v.Name:lower() ~= "keyframe" then
 			if v:FindFirstChild("CFrame") or v:FindFirstChild("HumanoidRootPart") then
 				if checksTable(npc, v) then
 					table.insert(npc, v)
@@ -359,7 +375,6 @@ Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 	end
 end, true)
 
-
 Rey:CreateDropdown(Settings, "▼ Select Folder for AutoFarm ▼", getFolders, function(selectedOption)
 	Folder = selectedOption
 end, true)
@@ -368,7 +383,7 @@ Rey:CreateDropdown(Settings, "▼ Select Folder for Tp NPC ▼", getFolders, fun
 	NpcFolder = selectedOption
 end, true)
 
-Rey:CreateButton(Settings, "BOOST FPS🔥", "-", "Tap", function()
+Rey:CreateButton(Settings, "BOOST FPS", "-", "Tap", function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
 end)
 
@@ -410,30 +425,36 @@ end)
 Volume = 0.5
 Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 	Volume = value / 100
-	for i,v in ipairs (UI.SFX:GetChildren()) do
+	for i, v in ipairs(UI.SFX:GetChildren()) do
 		v.Volume = Volume
 	end
 end)
 
 Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
-local httpService = game:GetService('HttpService')
-_G.SaveConfig = value
-	while _G.SaveConfig do wait(0.1)
+	local httpService = game:GetService('HttpService')
+	_G.SaveConfig = value
+	while _G.SaveConfig do
+		wait(0.1)
 		local Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
-		if not Data["Games"] then Data["Games"] = {} end
-		if not Data["Games"][tostring(game.GameId)] then Data["Games"][tostring(game.GameId)] = {} end
-		
+		if not Data["Games"] then
+			Data["Games"] = {}
+		end
+		if not Data["Games"][tostring(game.GameId)] then
+			Data["Games"][tostring(game.GameId)] = {}
+		end
+
 		for _, v in pairs(Rey.Data) do
 			if type(v) ~= "function" then
 				Data["Games"][tostring(game.GameId)][_] = v
 			end
 		end
-		
+
 		local Encode = httpService:JSONEncode(Data)
 		writefile("REY HUB/Reylib.json", tostring(Encode))
 	end
-	
-	while not _G.SaveConfig do wait(0.1)
+
+	while not _G.SaveConfig do
+		wait(0.1)
 		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		Data["Games"][tostring(game.GameId)] = nil
 		local Encode = httpService:JSONEncode(Data)
