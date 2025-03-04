@@ -1,7 +1,7 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
--- Menu Setup
+-- Main Setup
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -411,6 +411,20 @@ end, true)
 
 Rey:CreateButton(Settings, "BOOST FPS", "-", "Tap", function()
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
+end)
+
+Rey:CreateToggle(Settings, "Auto Load Rey Hub Jika Server Hop", "(jika tidak work maka Executor kalian tidak ada fiturnya)", function(state)
+	if state then
+		queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+		Players = game.Players
+		
+		Players.LocalPlayer.OnTeleport:Connect(function(State)
+			if not TeleportCheck and queueteleport then
+				TeleportCheck = true
+				queueteleport("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader")
+			end
+		end)
+	end
 end)
 
 Rey:CreateButton(Settings, "Hop Server", "-", "Tap", function()
