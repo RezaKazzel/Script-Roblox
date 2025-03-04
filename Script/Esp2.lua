@@ -1,11 +1,13 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
+local PrimaryPart
 
 local ESPConnections = {}
 local ESPObjects = {}
 
 state = state or nil
+
 function DestroyESP()
     for _, obj in pairs(ESPObjects) do
         if obj.Box then obj.Box:Remove() end
@@ -41,6 +43,14 @@ function CreateESP(player)
     tracer.Thickness = 1
     tracer.Color = Color3.fromRGB(255, 255, 255)
     tracer.Visible = false
+    
+    -- Distance ESP
+    local distance = Drawing.new("Text")
+    distance.Color = Color3.fromRGB(255, 255, 255)
+    distance.Center = true
+    distance.Outline = true
+    distance.Size = 19
+    distance.Visible = false
 
     -- Nama ESP
     local nameTag = Drawing.new("Text")
@@ -51,13 +61,14 @@ function CreateESP(player)
     nameTag.Text = player.DisplayName
     nameTag.Visible = false
 
-    ESPObjects[player] = { Box = box, Tracer = tracer, Name = nameTag, RootPart = rootPart }
+    ESPObjects[player] = { Box = box, Tracer = tracer, Distance = distance, Name = nameTag, RootPart = rootPart }
 
     local connection
     connection = RunService.RenderStepped:Connect(function()
         if not _G.ESP or not character or not rootPart or not character.Parent then
             box.Visible = false
             tracer.Visible = false
+            distance.Visible = false
             nameTag.Visible = false
             connection:Disconnect()
             ESPObjects[player] = nil
@@ -77,6 +88,13 @@ function CreateESP(player)
             tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y - 50)
             tracer.To = Vector2.new(bottomPos.X, bottomPos.Y)
             tracer.Visible = true
+            
+            -- Distance ESP
+            distance.Visible = true
+            distance.Position = Vector2.new(pos.X, pos.Y - 35)
+            distance.Text = math.floor((Camera.CFrame.p - rootPart.Position).magnitude) .."m away"
+            distance.Color = Color3.fromRGB(255, 255, 255)
+		    distance.Visible = true
 
             -- Nama ESP
             nameTag.Position = Vector2.new(pos.X, pos.Y - 50)
@@ -84,6 +102,7 @@ function CreateESP(player)
         else
             box.Visible = false
             tracer.Visible = false
+            distance.Visible = false
             nameTag.Visible = false
         end
     end)
@@ -113,4 +132,4 @@ function ToggleESP(state)
     end
 end
 
-ToggleESP(state)
+ToggleESP()
