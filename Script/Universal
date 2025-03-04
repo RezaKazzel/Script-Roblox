@@ -315,6 +315,23 @@ Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
 	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
 
+Rey:CreateToggle(Misc, "Infinite Jump", "[may not work in some games]", function(state)
+	if not _G.InfJump and state then
+		if _G.InfJump then _G.InfJump:Disconnect() end
+		_G.InfJump = game:GetService("UserInputService").JumpRequest:connect(function()
+			if not infJumpDebounce then
+				infJumpDebounce = true
+				game:GetService"Players".LocalPlayer.Character:FindFirstChildOfClass'Humanoid':ChangeState("Jumping")
+				wait()
+				infJumpDebounce = false
+			end
+		end)
+	elseif _G.InfJump and not state then
+		_G.InfJump:Disconnect()
+		_G.InfJump = nil
+	end
+end)
+
 local function getFolders()
 	local parent = game.Workspace
 	local folders = {}
