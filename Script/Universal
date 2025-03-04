@@ -318,6 +318,11 @@ Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
 	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
 end)
 
+Rey:CreateToggle(Misc, "Esp Players", "-", function(state)
+	state = not state
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+end)
+
 Rey:CreateToggle(Misc, "Infinite Jump", "[may not work in some games]", function(state)
 	if not _G.InfJump and state then
 		if _G.InfJump then _G.InfJump:Disconnect() end
