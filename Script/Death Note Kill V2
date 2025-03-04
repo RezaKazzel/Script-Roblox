@@ -26,8 +26,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameFolder = ReplicatedStorage.Game
 
 Toggle.MouseButton1Click:connect(function()
-	pcall(function()
-		for _, player in GameFolder.FolderForIds:GetChildren() do
+	for _, player in GameFolder.FolderForIds:GetChildren() do
+		x = pcall(function()
 			local t = {"Fall", "Car"}
 			local random = t[math.random(1, #t)]
 			local args = {
@@ -38,7 +38,7 @@ Toggle.MouseButton1Click:connect(function()
 			    }
 			}
 			game:GetService("ReplicatedStorage").Remotes.Gamemode:FireServer(unpack(args))
-			break
-		end
-	end)
+		end)
+		if x then break end
+	end
 end)
