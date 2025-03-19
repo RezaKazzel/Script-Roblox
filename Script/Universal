@@ -1,7 +1,7 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
--- Main Setup
+-- Setup
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -399,6 +399,8 @@ Rey:CreateDropdown(Misc, "Teleport to NPC", getNPCList, function(selectedNpc)
 		localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
 	end
 end, true)
+
+Rey:CreateNote(Misc, "hiraukan note ini, karna biar bisa di scroll sj\n\n\n\n\n\n\n\n ")
 
 Rey:CreateToggle(Settings, "Lepas Pembatas AutoFarm", "- baca note dibawah", function(state)
 	_G.RestrictAutoFarm = state
