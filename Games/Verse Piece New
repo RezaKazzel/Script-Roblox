@@ -366,6 +366,9 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy
 		local merchantNpc
 		pcall(function()
 			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+			local mp = merchantNpc.ProximityPrompt
+			mp.RequiresLineOfSight = false
+			mp.HoldDuration = 0
 		end)
 		if _G.AutoBM1 and merchantNpc and merchantNpc.HumanoidRootPart then
 			setBodyVelocity(true)
@@ -385,6 +388,9 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Fast)", "kalo lag ga nangg
 		local merchantNpc
 		pcall(function()
 			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+			local mp = merchantNpc.ProximityPrompt
+			mp.RequiresLineOfSight = false
+			mp.HoldDuration = 0
 		end)
 		if _G.AutoBM2 and merchantNpc and merchantNpc.HumanoidRootPart then
 			setBodyVelocity(true)
@@ -404,6 +410,9 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀💀", func
 		local merchantNpc
 		pcall(function()
 			merchantNpc = workspace.Npc["Black Merchant"]["Black Merchant"]
+			local mp = merchantNpc.ProximityPrompt
+			mp.RequiresLineOfSight = false
+			mp.HoldDuration = 0
 		end)
 		if _G.AutoBM3 and merchantNpc and merchantNpc.HumanoidRootPart then
 			setBodyVelocity(true)
