@@ -5,13 +5,13 @@ local ListGame = {
 	--[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
 	[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece%20New'))()"
 }
-
-local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local GameName = ""
+pcall(function() GameName = " - "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end)
 local Note = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Update'))()
 if Note then
-	UI = Rey:CreateUI("Rey UI - "..GameName, Note)
+	UI = Rey:CreateUI("Rey UI"..GameName, Note)
 else
-	UI = Rey:CreateUI("Rey UI - "..GameName)
+	UI = Rey:CreateUI("Rey UI"..GameName)
 end
 
 if ListGame[game.GameId] ~= nil then
