@@ -1,7 +1,7 @@
 -- Rey UI Library
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
--- Setup
+-- UI Setup
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -321,6 +321,25 @@ end)
 Rey:CreateToggle(Misc, "Esp Players", "-", function(state)
 	state = not state
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+end)
+
+Rey:CreateToggle(Misc, "Noclip", "-", function(state)
+_G.Noclip = state
+	if _G.Noclip then
+		nc = game:GetService("RunService").Stepped:Connect(function ()
+			pcall(function ()
+				for _, child in pairs(plr.Character:GetDescendants()) do
+					if child:IsA("BasePart") and child.CanCollide == true then
+						child.CanCollide = false
+					end
+				end
+			end)
+		end)
+	elseif not _G.Noclip then
+		if nc then
+			nc:Disconnect()
+		end
+	end
 end)
 
 Rey:CreateToggle(Misc, "Infinite Jump", "[may not work in some games]", function(state)
