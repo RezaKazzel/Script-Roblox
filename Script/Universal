@@ -326,9 +326,9 @@ end)
 Rey:CreateToggle(Misc, "Noclip", "-", function(state)
 _G.Noclip = state
 	if _G.Noclip then
-		nc = game:GetService("RunService").Stepped:Connect(function ()
-			pcall(function ()
-				for _, child in pairs(plr.Character:GetDescendants()) do
+		nc = game:GetService("RunService").Stepped:Connect(function()
+			pcall(function()
+				for _, child in pairs(Player.Character:GetDescendants()) do
 					if child:IsA("BasePart") and child.CanCollide == true then
 						child.CanCollide = false
 					end
