@@ -11,6 +11,11 @@ local activeConnections = {}
 local Distance = 10
 local Folder = game.Workspace
 local range = 100
+_G.SaveConfig = nil
+
+-- Setup fungsi anjay
+local RunService = game:GetService("RunService")
+
 
 -- Helper Functions
 local function getFolder(miaw)
@@ -108,7 +113,7 @@ Rey:CreateToggle(Main, "AutoFarm V3", "autofarm nearby", function(state)
 		end
 		if state then
 			local nearbyEnemies = getNearby(range)
-			activeConnections["AutoFarmNearby"] = game:GetService("RunService").Heartbeat:Connect(function()
+			activeConnections["AutoFarmNearby"] = RunService.Heartbeat:Connect(function()
 				task.spawn(function()
 					if not proses then
 						proses = true
@@ -168,7 +173,7 @@ Rey:CreateToggle(Main, "AutoFarm V2", "janlupa pilih mob", function(state)
 				bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
 			end
 			SelectedMob = getFolder(AutoFarmMob)
-			activeConnections["AutoFarm"] = game:GetService("RunService").Heartbeat:Connect(function()
+			activeConnections["AutoFarm"] = RunService.Heartbeat:Connect(function()
 				if _G.OneHit then OneHits(v) end
 				local player = game.Players.LocalPlayer.Character.HumanoidRootPart
 				for _, v in ipairs(SelectedMob:GetChildren()) do
@@ -248,7 +253,7 @@ end)
 Rey:CreateToggle(Main, "Equip all tools", "sesuai nama yh", function(state)
 	pcall(function()
 		if state then
-			activeConnections["Equip All Tools"] = game:GetService("RunService").RenderStepped:Connect(function()
+			activeConnections["Equip All Tools"] = RunService.RenderStepped:Connect(function()
 				for _, v in ipairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
 					if v:IsA("Tool") then
 						v.Parent = game.Players.LocalPlayer.Character
@@ -323,10 +328,31 @@ Rey:CreateToggle(Misc, "Esp Players", "-", function(state)
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
 end)
 
+Rey:CreateToggle(Misc, "Full Bright", "-", function(state)
+	state = not state
+	local Lighting = game:GetService("Lighting")
+	
+	local function brightFunc()
+		Lighting.Brightness = 2
+		Lighting.ClockTime = 14
+		Lighting.FogEnd = 100000
+		Lighting.GlobalShadows = false
+		Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+	end
+	
+	if not _G.brightLoop and state then
+		_G.brightLoop = RunService.RenderStepped:Connect(brightFunc)
+	elseif _G.brightLoop and not state then
+		_G.brightLoop:Disconnect()
+		_G.brightLoop = nil
+	end
+end)
+
+
 Rey:CreateToggle(Misc, "Noclip", "-", function(state)
 _G.Noclip = state
 	if _G.Noclip then
-		nc = game:GetService("RunService").Stepped:Connect(function()
+		nc = RunService.Stepped:Connect(function()
 			pcall(function()
 				for _, child in pairs(Player.Character:GetDescendants()) do
 					if child:IsA("BasePart") and child.CanCollide == true then
@@ -496,10 +522,13 @@ Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 	end
 end)
 
+_G.RE = true
 Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
 	local httpService = game:GetService('HttpService')
 	_G.SaveConfig = value
+	_G.RE = nil
 	while _G.SaveConfig do
+		if _G.RE then break end
 		wait(0.1)
 		local Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		if not Data["Games"] then
@@ -520,6 +549,7 @@ Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", fun
 	end
 
 	while not _G.SaveConfig do
+		if _G.RE then break end
 		wait(0.1)
 		Data = httpService:JSONDecode(readfile("REY HUB/Reylib.json"))
 		Data["Games"][tostring(game.GameId)] = nil
