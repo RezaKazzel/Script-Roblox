@@ -368,6 +368,39 @@ _G.Noclip = state
 	end
 end)
 
+local HumanModCons = {}
+Rey:CreateToggle(Misc, "Edge Jump", "Lompat otomatis ketika di ujung block", function(mhm)
+	if mhm then
+		local Char = Player.Character
+		local Human = Char and Char:FindFirstChildWhichIsA("Humanoid")
+		local state
+		local laststate
+		local lastcf
+		local function edgejump()
+			if Char and Human then
+				laststate = state
+				state = Human:GetState()
+				if laststate ~= state and state == Enum.HumanoidStateType.Freefall and laststate ~= Enum.HumanoidStateType.Jumping then
+					Char.HumanoidRootPart.CFrame = lastcf
+					Char.HumanoidRootPart.Velocity = Vector3.new(Char.HumanoidRootPart.Velocity.X, Human.JumpPower or Human.JumpHeight, Char.HumanoidRootPart.Velocity.Z)
+				end
+				lastcf = Char.HumanoidRootPart.CFrame
+			end
+		end
+		edgejump()
+		HumanModCons.ejLoop = (HumanModCons.ejLoop and HumanModCons.ejLoop:Disconnect() and false) or RunService.RenderStepped:Connect(edgejump)
+		HumanModCons.ejCA = (HumanModCons.ejCA and HumanModCons.ejCA:Disconnect() and false) or Player.CharacterAdded:Connect(function(nChar)
+			Char, Human = nChar, nChar:WaitForChild("Humanoid")
+			edgejump()
+			HumanModCons.ejLoop = (HumanModCons.ejLoop and HumanModCons.ejLoop:Disconnect() and false) or RunService.RenderStepped:Connect(edgejump)
+		end)
+	else pcall(function()
+			HumanModCons.ejLoop = (HumanModCons.ejLoop and HumanModCons.ejLoop:Disconnect() and false) or nil
+			HumanModCons.ejCA = (HumanModCons.ejCA and HumanModCons.ejCA:Disconnect() and false) or nil
+		end)
+	end 
+end)
+
 Rey:CreateToggle(Misc, "Infinite Jump", "[may not work in some games]", function(state)
 	if not _G.InfJump and state then
 		if _G.InfJump then _G.InfJump:Disconnect() end
@@ -468,12 +501,10 @@ end)
 Rey:CreateToggle(Settings, "Auto Load Rey Hub Jika Server Hop", "(jika tidak work maka Executor kalian tidak ada fiturnya)", function(state)
 	if state then
 		queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-		Players = game.Players
-		
-		Players.LocalPlayer.OnTeleport:Connect(function(State)
+		Player.OnTeleport:Connect(function()
 			if not TeleportCheck and queueteleport then
 				TeleportCheck = true
-				queueteleport("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader")
+				queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader'))()")
 			end
 		end)
 	end
