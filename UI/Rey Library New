@@ -832,6 +832,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	local x, value = Finds(Data, Name)
 	if x and value then
 		default = value
+		callback(value)
 	end
 	
 	local containerFrame = Instance.new("Frame")
