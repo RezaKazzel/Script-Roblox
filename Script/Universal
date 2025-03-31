@@ -329,7 +329,6 @@ Rey:CreateToggle(Misc, "Esp Players", "-", function(state)
 end)
 
 Rey:CreateToggle(Misc, "Full Bright", "-", function(state)
-	state = not state
 	local Lighting = game:GetService("Lighting")
 	
 	local function brightFunc()
