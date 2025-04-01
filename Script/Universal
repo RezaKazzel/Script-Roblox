@@ -320,7 +320,15 @@ Rey:CreateToggle(Main, "One Hit [BUTTON]", "[Work Without AutoFarm] one shot one
 end)
 
 Rey:CreateButton(Misc, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
-	loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme')))()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
+end)
+
+Rey:CreateButton(Misc, "[ FE ] Invisible", "almost works in all games", "Load", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Invisible'))()
+end)
+
+Rey:CreateButton(Misc, "[ FE ] Rewind", "-", "Load", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Rewind'))()
 end)
 
 Rey:CreateToggle(Misc, "Esp Players", "-", function(state)
