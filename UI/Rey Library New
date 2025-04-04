@@ -262,15 +262,15 @@ function ReyUILib:CreateUI(Name, Note)
 	})
 	
 	ReyPosition = ReyBtn.Position
-	Rey.Animation = Rey.Animation or true
+	ReyUILib.Animation = true
 	ReyBtn.MouseButton1Click:Connect(function()
 		if ReyBtn.Position ~= ReyPosition then ReyPosition = ReyBtn.Position return end
 		if not panel.Visible and panel.BackgroundTransparency == 1 then
 			panel.Visible = true
-			if Rey.Animation then showTween:Play() end
+			if ReyUILib.Animation then showTween:Play() end
 			mambo:Play()
 		elseif panel.Visible and panel.BackgroundTransparency == 0 then
-			if Rey.Animation then
+			if ReyUILib.Animation then
 				wow:Play()
 				hideTween:Play()
 				hideTween.Completed:Connect(function()
