@@ -560,6 +560,10 @@ Rey:CreateSlider(Settings, "Sound Effect Volume", 0, 100, 100, function(value)
 	end
 end)
 
+Rey:CreateButton(Settings, "Turn Off Rey Animation", "", function(value)
+	Rey.Animation = not value
+end)
+
 _G.RE = true
 Rey:CreateToggle(Settings, "Save Config Data", "config nya bakal di simpan", function(value)
 	local httpService = game:GetService('HttpService')
