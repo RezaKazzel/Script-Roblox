@@ -1,0 +1,25 @@
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
+
+--// Hapus
+local UI = Rey:CreateUI("Dead Rails")
+local Main = Rey:CreateTab(UI, "Dead Rails")
+
+-- Services
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+Rey:CreateButton(Main, "TP to End", "-", "Tap", function()
+	local a = Players.LocalPlayer.Character.HumanoidRootPart
+	
+	local b = RunService.Heartbeat:Connect(function()
+	a.CFrame = CFrame.new(-424, 30, -49041)
+	end)
+	
+	task.spawn(function()
+	wait(5)
+		repeat
+			b:Disconnect()
+			b = nil
+		until b == nil
+	end)
+end)
