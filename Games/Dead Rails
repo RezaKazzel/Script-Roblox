@@ -7,19 +7,236 @@ local Main = Rey:CreateTab(UI, "Dead Rails")
 -- Services
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local mulai = false
 
-Rey:CreateButton(Main, "TP to End", "-", "Tap", function()
+Rey:CreateButton(Main, "ESP Items", "-", "Tap", function()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local ESPEnabled = false
+local ESPObjects = {}
+local TextColor = Color3.fromRGB(204, 255, 204)
+
+local function GetPrimaryPart(model)
+    if model.PrimaryPart then return model.PrimaryPart end
+    for _, part in ipairs(model:GetChildren()) do
+        if part:IsA("BasePart") then
+            model.PrimaryPart = part
+            return part
+        end
+    end
+    return nil
+end
+
+local function CreateItemESP(item)
+    local primaryPart = GetPrimaryPart(item)
+    if not primaryPart then return end
+
+    local billboardGui = Instance.new("BillboardGui")
+    billboardGui.Adornee = primaryPart
+    billboardGui.Size = UDim2.new(0, 200, 0, 50)
+    billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+    billboardGui.AlwaysOnTop = true
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = item.Name
+    textLabel.TextSize = 14
+    textLabel.TextColor3 = TextColor
+    textLabel.Parent = billboardGui
+
+    billboardGui.Parent = game.CoreGui
+    ESPObjects[item] = billboardGui
+end
+
+local function ToggleESP(value)
+    ESPEnabled = value
+    if ESPEnabled then
+        local runtimeItems = workspace:FindFirstChild("RuntimeItems")
+        if runtimeItems then
+            for _, item in ipairs(runtimeItems:GetChildren()) do
+                if item:IsA("Model") and not ESPObjects[item] then
+                    CreateItemESP(item)
+                end
+            end
+        end
+    else
+        for _, gui in pairs(ESPObjects) do
+            if gui then gui:Destroy() end
+        end
+        ESPObjects = {}
+    end
+end
+
+local function UpdateTextColor(value)
+    TextColor = value
+    for _, gui in pairs(ESPObjects) do
+        local textLabel = gui:FindFirstChildOfClass("TextLabel")
+        if textLabel then
+            textLabel.TextColor3 = TextColor
+        end
+    end
+end
+
+local function UpdateTextSize()
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = LocalPlayer.Character.HumanoidRootPart
+    for item, gui in pairs(ESPObjects) do
+        local primaryPart = GetPrimaryPart(item)
+        if gui and primaryPart then
+            local distance = (rootPart.Position - primaryPart.Position).Magnitude
+            local size = math.clamp(16 / (distance / 10), 8, 24)
+            local textLabel = gui:FindFirstChildOfClass("TextLabel")
+            if textLabel then
+                textLabel.TextSize = size
+            end
+        end
+    end
+end
+
+local function MonitorRuntimeItems()
+    local runtimeItems = workspace:FindFirstChild("RuntimeItems")
+    if runtimeItems then
+        runtimeItems.ChildAdded:Connect(function(item)
+            if ESPEnabled and item:IsA("Model") and not ESPObjects[item] then
+                CreateItemESP(item)
+            end
+        end)
+    end
+end
+
+workspace.ChildAdded:Connect(function(child)
+    if child:IsA("Folder") and child.Name == "RuntimeItems" then
+        MonitorRuntimeItems()
+    end
+end)
+
+MonitorRuntimeItems()
+RunService.Heartbeat:Connect(UpdateTextSize)
+
+ToggleESP(true)
+end)
+
+Rey:CreateButton(Main, "Unlock Cam & Noclip", "-", "Tap", function()
+	player.CameraMode = Enum.CameraMode.Classic
+	player.CameraMaxZoomDistance = 200
+	nc = RunService.Stepped:Connect(function()
+		pcall(function()
+			for _, child in pairs(Players.LocalPlayer.Character:GetDescendants()) do
+				if child:IsA("BasePart") and child.CanCollide == true then
+					child.CanCollide = false
+				end
+			end
+		end)
+	end)
+end)
+
+Rey:CreateButton(Main, "Auto Bond", "-", "Tap", function()
+	local selesai = false
 	local a = Players.LocalPlayer.Character.HumanoidRootPart
 	
-	local b = RunService.Heartbeat:Connect(function()
-	a.CFrame = CFrame.new(-424, 30, -49041)
+	TpToEnd = RunService.Heartbeat:Connect(function()
+		a.CFrame = CFrame.new(-424, 30, -49041)
+		local mob
+		local cek, result = pcall(function()
+			return workspace.Baseplates.FinalBasePlate.OutlawBase.Sentries.EnemyTurret.TurretOutlaw.Humanoid
+		end)
+		pcall(function()
+			local smd = workspace.Baseplates.FinalBasePlate.OutlawBase
+			for i, v in ipairs(smd:GetChildren()) do
+				pcall(function() v.CanCollide = false end)
+			end
+		end)
+
+		if cek then
+			mob = result
+			if mob.Health < 1 then
+				wait(1)
+				TpToEnd:Disconnect()
+				selesai = true
+			end
+		end
 	end)
+	repeat task.wait() until selesai
+	wait(1)
+	TpToEnd = RunService.Heartbeat:Connect(function()
+		a.CFrame = CFrame.new(-424, 30, -49041)
+	end)
+	wait(3)
+	TpToEnd:Disconnect()
+	mulai = true
+end)
+
+RunService.Heartbeat:Connect(function()
+	local b = Players.LocalPlayer.Character:WaitForChild("Humanoid")
+	if b.Sit and mulai then
+		b.Sit = false
+	end
 	
-	task.spawn(function()
-	wait(5)
-		repeat
-			b:Disconnect()
-			b = nil
-		until b == nil
+	pcall(function()
+		local e = workspace.StartingZone.Buildings.Gunsmith.RevolverTable.Table
+		for i, v in ipairs(e:GetDescendants()) do
+			if v:IsA("ProximityPrompt") then
+				v.HoldDuration = 0
+			end
+		end
+		local function pickup(args)
+			if not args then return end
+			pcall(function() game:GetService("ReplicatedStorage").Packages.RemotePromise.Remotes.C_ActivateObject:FireServer(args) end)
+			pcall(function() game:GetService("ReplicatedStorage").Remotes.Tool.PickUpTool:FireServer(args) end)
+		end
+		pickup(workspace.RuntimeItems:FindFirstChild("RevolverAmmo"))
+		pickup(workspace.RuntimeItems:FindFirstChild("Revolver"))
+		pickup(workspace.RuntimeItems:FindFirstChild("Bond"))
 	end)
+end)
+
+
+Rey:CreateToggle(Main, "Auto Mobs", "-", function(state)
+	_G.AutoMobs = state
+	
+	if _G.AutoMobs then
+		while _G.AutoMobs do wait(0.4)
+			local plr = game.Players.LocalPlayer
+			local root = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+				if not root then return end
+			
+			local kamera = workspace.CurrentCamera
+			local plrH = plr.Character.Humanoid
+			pcall(function()
+				
+				local nearest, minDist, killDist = nil, math.huge, 1000
+				for _, npc in ipairs(workspace:GetDescendants()) do
+					if npc:IsA("Model") and npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChild("Humanoid") and not game.Players:GetPlayerFromCharacter(npc) then
+						local hrp, hum = npc.HumanoidRootPart, npc.Humanoid
+						local dist = (hrp.Position - root.Position).Magnitude
+						if hum.Health > 0 and dist < minDist and dist <= killDist then
+							repeat task.wait()
+							nearest, minDist = npc, dist
+							kamera.CameraSubject = npc.Head
+							kamera.CameraType = Enum.CameraType.Attach
+							player.CameraMinZoomDistance = 10
+							player.CameraMaxZoomDistance = 128
+							until hum.Health < 1 or not _G.AutoMobs
+							if not _G.AutoMobs then
+								kamera.CameraSubject = plrH
+								kamera.CameraType = Enum.CameraType.Custom
+								break
+							end
+						end
+					end
+				end
+			end)
+			kamera.CameraSubject = plrH
+			kamera.CameraType = Enum.CameraType.Custom
+			player.CameraMinZoomDistance = 0.5
+		end
+	else
+		local kamera = workspace.CurrentCamera
+		kamera.CameraSubject = Players.LocalPlayer.Character.Humanoid
+		kamera.CameraType = Enum.CameraType.Custom
+		player.CameraMinZoomDistance = 0.5
+	end
 end)
