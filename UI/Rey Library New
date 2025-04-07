@@ -270,6 +270,8 @@ function ReyUILib:CreateUI(Name, Note)
 			panel.Visible = true
 			if ReyUILib.Animation then
 				showTween:Play()
+			else
+				panel.BackgroundTransparency = 0
 			end
 		elseif panel.Visible and panel.BackgroundTransparency == 0 then
 			wow:Play()
@@ -280,6 +282,7 @@ function ReyUILib:CreateUI(Name, Note)
 				end)
 			else
 				panel.Visible = false
+				panel.BackgroundTransparency = 1
 			end
 		end
 	end)
