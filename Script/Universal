@@ -278,7 +278,7 @@ Rey:CreateSlider(Main, "Kill when Health under", 1, 100, 70, function(value)
 	OneHitHealth = value / 100
 end)
 
-Rey:CreateToggle(Main, "Kill All [BUTTON]", "[Work Without AutoFarm] one shot one kill", function(state)
+Rey:CreateToggle(Main, "Kill All [BUTTON]", "[Work Without AutoFarm] V1: Set health to 0", function(state)
 	local CoreGui = game:GetService("CoreGui")
 	local player = game.Players.LocalPlayer
 	if state then
@@ -319,7 +319,7 @@ Rey:CreateToggle(Main, "Kill All [BUTTON]", "[Work Without AutoFarm] one shot on
 	end
 end)
 
-Rey:CreateToggle(Main, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] one shot one kill", function(state)
+Rey:CreateToggle(Main, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] V2: Breakjoints", function(state)
 	local CoreGui = game:GetService("CoreGui")
 	local player = game.Players.LocalPlayer
 	if state then
@@ -348,6 +348,47 @@ Rey:CreateToggle(Main, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] one shot
 			sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
 
 			for _, object in pairs(game.Workspace:GetDescendants()) do
+				if object:IsA("Humanoid") and object.Parent.Name ~= player.Name then
+					object.Health = 0
+				end
+			end
+		end)
+	else
+		if CoreGui:FindFirstChild("Kill All V2 Button") then
+			CoreGui:FindFirstChild("Kill All V2 Button"):Destroy()
+		end
+	end
+end)
+
+Rey:CreateToggle(Main, "Kill All V3 [BUTTON]", "[Work Without AutoFarm] V3: Kill All Without Health Check", function(state)
+	local CoreGui = game:GetService("CoreGui")
+	local player = game.Players.LocalPlayer
+	if state then
+		if CoreGui:FindFirstChild("Kill All V3 Button") then
+			CoreGui:FindFirstChild("Kill All V3 Button"):Destroy()
+		end
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "Kill All V3 Button"
+		screenGui.Parent = CoreGui
+		screenGui.ResetOnSpawn = false
+		local KillAll = Instance.new("TextButton")
+		KillAll.Size = UDim2.new(0, 70, 0, 30)
+		KillAll.Position = UDim2.new(1, -130, 0, -10)
+		KillAll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		KillAll.Text = "KILL ALL V3"
+		KillAll.TextColor3 = Color3.new(255, 0, 0)
+		KillAll.BorderSizePixel = 0
+		KillAll.Font = Enum.Font.GothamBold
+		KillAll.TextSize = 14
+		KillAll.Parent = screenGui
+		KillAll.Active = true
+		KillAll.Draggable = true
+
+		KillAll.MouseButton1Click:Connect(function()
+			sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", 112412400000)
+			sethiddenproperty(game.Players.LocalPlayer, "MaxSimulationRadius", 112412400000)
+
+			for _, object in pairs(game.Workspace:GetDescendants()) do
 				if object:IsA("Model") and object:FindFirstChild("Humanoid") and object.Name ~= player.Name then
 					if object.Humanoid.Health < object.Humanoid.MaxHealth then
 						object:BreakJoints()
@@ -356,8 +397,8 @@ Rey:CreateToggle(Main, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] one shot
 			end
 		end)
 	else
-		if CoreGui:FindFirstChild("Kill All V2 Button") then
-			CoreGui:FindFirstChild("Kill All V2 Button"):Destroy()
+		if CoreGui:FindFirstChild("Kill All V3 Button") then
+			CoreGui:FindFirstChild("Kill All V3 Button"):Destroy()
 		end
 	end
 end)
