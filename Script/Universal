@@ -2,6 +2,7 @@
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 
 -- UI Setup
+local UI = Rey:CreateUI("Rey UI")
 local Main = Rey:CreateTab(UI, "Main")
 local Misc = Rey:CreateTab(UI, "Misc")
 local Settings = Rey:CreateTab(UI, "Settings")
@@ -349,7 +350,7 @@ Rey:CreateToggle(Main, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] one shot
 
 			for _, object in pairs(game.Workspace:GetDescendants()) do
 				if object:IsA("Model") and object:FindFirstChild("Humanoid") and object.Name ~= player.Name then
-					if object.Humanoid.Health < object.Humanoid.MaxHealth
+					if object.Humanoid.Health < object.Humanoid.MaxHealth then
 						object:BreakJoints()
 					end
 				end
