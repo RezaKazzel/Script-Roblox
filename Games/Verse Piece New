@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
+local UI = Rey:CreateUI("nihao")
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
 local activeConnections = {}
@@ -239,7 +240,7 @@ local function runAutoMission()
 	local questActions = {
 		["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
 		["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
-		["Goblet"] = function() move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1)); for i = 1, 750 do pressKey("E") end; sGoblet = true end,
+		["Goblet"] = function() move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame); for i = 1, 750 do pressKey("E") end; sGoblet = true end,
 		["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 750 do pressKey("E") end end,
 		["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
 		["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
@@ -307,8 +308,10 @@ function autoMob(mob, state)
 						local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
 						move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
 						if selectedWeapons then
-							selectedWeapons.Parent = LocalPlayer.Character
-							selectedWeapons:Activate()
+							pcall(function()
+								selectedWeapons.Parent = LocalPlayer.Character
+								selectedWeapons:Activate()
+							end
 						end
 						break
 					end
@@ -423,3 +426,20 @@ Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (BROKEN)", "💀💀", func
 		end
 	end) or (activeConnections["AutoBM3"] and activeConnections["AutoBM3"]:Disconnect())
 end)
+
+Rey:CreateToggle(Exclusive, "Delete announce", "-", function(state)
+	if state then
+		local Players = game:GetService("Players")
+		local player = Players.LocalPlayer
+		local main = player:WaitForChild("PlayerGui"):WaitForChild("Annouce"):WaitForChild("Main")
+		
+		announce = main.ChildAdded:Connect(function(child)
+			child:Destroy()
+		end)
+	else
+		if announce then
+			announce:Disconnect()
+			announce = nil
+		end
+	end
+end)end)
