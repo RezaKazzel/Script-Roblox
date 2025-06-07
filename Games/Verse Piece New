@@ -310,7 +310,7 @@ function autoMob(mob, state)
 							pcall(function()
 								selectedWeapons.Parent = LocalPlayer.Character
 								selectedWeapons:Activate()
-							end
+							end)
 						end
 						break
 					end
@@ -441,4 +441,4 @@ Rey:CreateToggle(Exclusive, "Delete announce", "-", function(state)
 			announce = nil
 		end
 	end
-end)end)
+end)
