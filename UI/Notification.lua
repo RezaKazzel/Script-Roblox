@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local MaxStack = 4
-local NotifScale = 0.8
+local NotifScale = 0.9
 local FixedWidth = 280
 
 shared.NotifActive = shared.NotifActive or {}
