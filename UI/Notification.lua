@@ -232,3 +232,5 @@ function Notif(theme, titleText, descText, duration)
 		SpawnNextFromQueue()
 	end)
 end
+
+return Notif
