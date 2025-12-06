@@ -676,7 +676,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to NPC", getNPCList, function(selectedNpcN
     end
 end, true)
 
-Rey:CreateNote(MiscTab, "hirauin ini buat dropdown doang biar ga ngebug \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+Rey:CreateNote(MiscTab, "hirauin ini buat dropdown doang biar ga ngebug \n\n\n\n\n\n\n\n\n\n")
 
 Rey:CreateToggle(SettingsTab, "Lepas Pembatas AutoFarm", "Baca note dibawah untuk detail", function(state)
     _G.RestrictAutoFarm = state
