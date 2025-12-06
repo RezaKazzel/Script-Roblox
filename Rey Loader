@@ -3,21 +3,21 @@ Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Scr
 local ListGame = {
 	-- Verse Piece
 	--[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
-	[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece%20New'))()"
+	[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece%20New'))()",
+	[8321616508]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Rogue%20Piece'))()"
 }
-local GameName = ""
-pcall(function() GameName = " - "..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end)
+
+local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 local Note = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Update'))()
 if Note then
-	UI = Rey:CreateUI("Rey UI"..GameName, Note)
+	UI = Rey:CreateUI("Rey UI - "..GameName, Note)
 else
-	UI = Rey:CreateUI("Rey UI"..GameName)
+	UI = Rey:CreateUI("Rey UI - "..GameName)
 end
 
 if ListGame[game.GameId] ~= nil then
 	loadstring(ListGame[tonumber(game.GameId)])()
 end
 
---OLD VER loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal-2"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
