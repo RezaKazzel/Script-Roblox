@@ -9,6 +9,25 @@ local loopThread
 local charConn
 local obsConn
 
+task.spawn(function()
+local p = game.Players.LocalPlayer
+local r = game:GetService("ReplicatedStorage").Remotes.Serverside
+
+local function setup(character)
+	if character:FindFirstChild("Haki") then return end
+	local conn
+	conn = character.ChildAdded:Connect(function(child)
+		if child.Name == "Haki" then
+			conn:Disconnect()
+		end
+	end)
+	r:FireServer("Server","Misc","Haki",1)
+end
+
+if p.Character then setup(p.Character) end
+p.CharacterAdded:Connect(setup)
+end)
+
 local function mute(char)
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
