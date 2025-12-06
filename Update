@@ -1,6 +1,7 @@
 local ListGame = {
 	--// Verse Piece
 	[6471449680]="Update 1:\n-- Farm Gems\n-- Auto Black Market\n-- Auto Mission (Lv.1000+)\n-- Auto Bosses\n-- Auto Vasto Lorde"
+	[8321616508]="Update 1:\n-- God Mode (Required: Observation Haki)\n-- Fast Attack M1 (Basic Attack, Required: Equipped Tool)\n-- Busoshoku Skip Level (Lag But OP)"
 }
 
 if ListGame[game.GameId] ~= nil then
