@@ -1,0 +1,109 @@
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
+local Exclusive = Rey:CreateTab(UI, "Exclusive+")
+
+local p = game.Players.LocalPlayer
+local r = game:GetService("ReplicatedStorage").Remotes.Serverside
+
+local on = false
+local loopThread
+local charConn
+local obsConn
+
+local function mute(char)
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	if obsConn then obsConn:Disconnect() obsConn = nil end
+
+	if hrp:FindFirstChild("Observation") then
+		hrp.Observation.Volume = 0
+	else
+		obsConn = hrp.ChildAdded:Connect(function(c)
+			if c.Name == "Observation" then
+				c.Volume = 0
+			end
+		end)
+	end
+end
+
+local function startLoop()
+	loopThread = task.spawn(function()
+		while on do
+			r:FireServer("Server","Misc","Observation",1)
+			task.wait()
+		end
+	end)
+end
+
+local function stopAll()
+	on = false
+	if obsConn then obsConn:Disconnect() obsConn = nil end
+	if charConn then charConn:Disconnect() charConn = nil end
+end
+
+Rey:CreateToggle(Exclusive, "God Mode", "require: Observation Haki", function(state)
+	if state then
+		if on then return end
+		on = true
+		if p.Character then mute(p.Character) end
+		charConn = p.CharacterAdded:Connect(mute)
+		startLoop()
+	else
+		stopAll()
+	end
+end)
+
+local lp = game.Players.LocalPlayer
+local r = game:GetService("ReplicatedStorage").Remotes.Serverside
+
+local function getChar()
+	return workspace.Main.Characters:FindFirstChild(lp.Name)
+end
+
+local on = false
+local th
+
+local function getTool()
+	local c = getChar()
+	if not c then return end
+	local tool = c:FindFirstChildWhichIsA("Tool")
+	if not tool then return end
+	local tipe = tool.ToolTip
+	return tool, tipe
+end
+
+local function start()
+	th = task.spawn(function()
+		while on do
+			local tool, tipe = getTool()
+			if tool and tipe then
+				pcall(function()
+					r:FireServer("Server", tipe, "M1s", tool.Name, 1)
+				end)
+			end
+			task.wait()
+		end
+	end)
+end
+
+local function stop()
+	on = false
+end
+
+Rey:CreateToggle(Exclusive, "Fast Attack M1", "require: Equipped Tool", function(state)
+	if state then
+		if on then return end
+		on = true
+		start()
+	else
+		stop()
+	end
+end)
+
+Rey:CreateNote(Exclusive, "jangan dipencet klo gadipake, ngelag tar")
+Rey:CreateButton(Exclusive, "Farm Level Busoshoku Haki", "lvl up tiap pake jadi akan lag, pelan² aja", "Lvl. UP", function()
+	for i=1,500 do
+		r:FireServer("Server","Misc","Haki",1)
+		r:FireServer("Server","Misc","Haki",2)
+	end
+end)
