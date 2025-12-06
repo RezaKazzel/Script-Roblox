@@ -637,13 +637,20 @@ Rey:CreateDropdown(MiscTab, "Teleport to Player", getPlayerList, function(select
 end, true)
 
 local NpcFolder = game.Workspace
+local npcCache = {}
+
 local function getNPCList()
 	local npc = {}
+    npcCache = {}
+    
 	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if v.Name:lower() ~= "keyframe" and v:IsA("Model") and v.Parent ~= LocalPlayer.Character then 
-			if checksTable(npc, v.Name) then
-				table.insert(npc, v.Name)
-			end
+        if v.Name:lower() ~= "keyframe" and v:IsA("Model") and v.Parent ~= LocalPlayer.Character then
+            if v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart then
+                if checksTable(npc, v.Name) then 
+                    table.insert(npc, v.Name)
+                    npcCache[v.Name] = v 
+                end
+            end
 		end
 	end
 	return npc
@@ -651,17 +658,10 @@ end
 
 Rey:CreateDropdown(MiscTab, "Teleport to NPC", getNPCList, function(selectedNpcName)
 	local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	local targetNpc
-	for _, v in ipairs(NpcFolder:GetDescendants()) do
-		if v.Name == selectedNpcName then
-			targetNpc = v
-			break
-		end
-	end
+	local targetNpc = npcCache[selectedNpcName] 
 
 	if targetNpc and playerHRP then
 		local targetCFrame = nil
-
 		if targetNpc:FindFirstChild("HumanoidRootPart") then
 			targetCFrame = targetNpc.HumanoidRootPart.CFrame
 		elseif targetNpc.PrimaryPart then
@@ -680,6 +680,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to NPC", getNPCList, function(selectedNpcN
 		end
 	end
 end, true)
+
 
 Rey:CreateNote(MiscTab, "hirauin ini buat dropdown doang biar ga ngebug \n\n\n\n\n\n\n\n\n\n")
 
