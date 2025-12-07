@@ -1,0 +1,78 @@
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Hapus GUI lama kalau ada
+if CoreGui:FindFirstChild("Plus") then
+    CoreGui:FindFirstChild("Plus"):Destroy()
+end
+
+-- Buat ScreenGui baru
+local gui = Instance.new("ScreenGui")
+gui.Name = "Plus"
+gui.Parent = CoreGui
+
+-- Tombol ON/OFF
+local AutoClick = Instance.new("TextButton")
+AutoClick.Name = "AutoClicker"
+AutoClick.Size = UDim2.new(0, 70, 0, 30)
+AutoClick.Position = UDim2.new(1, -80, 0, 10)
+AutoClick.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+AutoClick.Text = "OFF"
+AutoClick.TextColor3 = Color3.new(0, 0, 0)
+AutoClick.BorderSizePixel = 0
+AutoClick.Font = Enum.Font.GothamBold
+AutoClick.TextSize = 14
+AutoClick.Parent = gui
+AutoClick.Active = true
+AutoClick.Draggable = true
+
+-- Frame utama berbentuk gambar
+local Chisato = Instance.new("ImageLabel")
+Chisato.Name = "Chisato"
+Chisato.Size = UDim2.new(0, 100, 0, 50)
+Chisato.Position = UDim2.new(0.5, -50, 0.5, -50)
+Chisato.BackgroundTransparency = 1
+Chisato.Image = "rbxassetid://77979587260332"
+Chisato.Active = true
+Chisato.Draggable = true
+Chisato.Parent = gui
+
+-- Flag untuk auto click
+local autoClicking = false
+
+-- Fungsi auto click
+local function autoClick()
+    local framePos = Chisato.AbsolutePosition
+    local frameSize = Chisato.AbsoluteSize
+
+    local targetX = framePos.X + frameSize.X / 2 + 60
+    local targetY = framePos.Y + frameSize.Y / 2 + 40
+
+    VirtualInputManager:SendMouseButtonEvent(targetX, targetY, 0, true, game, 0)
+    VirtualInputManager:SendMouseButtonEvent(targetX, targetY, 0, false, game, 0)
+end
+
+spawn(function()
+    while true do
+        if autoClicking then
+            autoClick()
+        end
+        task.wait()
+    end
+end)
+
+local AutoClickPos = AutoClick.Position
+AutoClick.MouseButton1Click:Connect(function()
+	if AutoClick.Position ~= AutoClickPos then AutoClickPos = AutoClick.Position return end
+    autoClicking = not autoClicking
+    if autoClicking then
+        AutoClick.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        AutoClick.Text = "ON"
+        Chisato.Active = false
+    else
+        AutoClick.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        AutoClick.Text = "OFF"
+        Chisato.Active = true
+    end
+end)
