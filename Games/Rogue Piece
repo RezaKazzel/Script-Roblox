@@ -234,34 +234,66 @@ local function startGodModeLoop()
 	end)
 end
 
+
 local function setupCharacterObservers()
 	if player.Character then 
 		muteObservation(player.Character)
+		
 		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
 		if hrp then
 			cleanupConnection("observationChildAdded")
 			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
+				elseif child.Name == "Dodge" then
+					task.wait(0.1)
+					if child.Parent then
+						child:Destroy()
+					end
 				end
 			end)
 		end
+		
+		cleanupConnection("characterDodgeRemover")
+		activeConnections["characterDodgeRemover"] = player.Character.ChildAdded:Connect(function(child)
+			if child.Name == "Dodge" then
+				task.wait(0.1)
+				if child.Parent then
+					child:Destroy()
+				end
+			end
+		end)
 	end
 	
-	-- Setup untuk karakter baru (respawn)
 	cleanupConnection("characterAddedGodMode")
 	activeConnections["characterAddedGodMode"] = player.CharacterAdded:Connect(function(character)
 		task.wait(0.5)
 		muteObservation(character)
+		
 		local hrp = character:WaitForChild("HumanoidRootPart", 5)
 		if hrp then
 			cleanupConnection("observationChildAdded")
 			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
+				elseif child.Name == "Dodge" then
+					task.wait(0.1)
+					if child.Parent then
+						child:Destroy()
+					end
 				end
 			end)
 		end
+		
+		cleanupConnection("characterDodgeRemover")
+		activeConnections["characterDodgeRemover"] = character.ChildAdded:Connect(function(child)
+			if child.Name == "Dodge" then
+				task.wait(0.1)
+				if child.Parent then
+					child:Destroy()
+				end
+			end
+		end)
 	end)
 end
 
@@ -274,6 +306,7 @@ local function toggleGodMode(state)
 	else
 		cleanupConnection("characterAddedGodMode")
 		cleanupConnection("observationChildAdded")
+		cleanupConnection("characterDodgeRemover")
 		stopThread("godMode")
 	end
 end
@@ -388,6 +421,36 @@ Rey:CreateButton(Exclusive, "Farm Level Busoshoku Haki", "Level up gradually to 
 		end
 	end
 end)
+
+Rey:CreateNote(Exclusive, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
+Rey:CreateButton(Exclusive, "Disable Mobile Check Skill", "baca note diatas.", "DISABLE", function()
+    local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
+    if mobileUI then
+        local check = mobileUI:FindFirstChild("Check")
+        if check then
+            check.Disabled = true
+        end
+    end
+end)
+
+
+-- == Force Open Menu
+local guiButtons = {
+    "Title_Frame",
+    "Teleport", 
+    "Capsule",
+    "Boss Spawn"
+}
+
+for _, buttonName in ipairs(guiButtons) do
+    Rey:CreateToggle(Exclusive, "Force " .. buttonName, "Force open " .. buttonName .. " menu", function(state)
+        local playerGui = player.PlayerGui
+        local buttonFrame = playerGui.Button:FindFirstChild(buttonName)
+        if buttonFrame then
+            buttonFrame.Visible = state
+        end
+    end)
+end
 
 -- ============ CLEANUP SYSTEM ============
 local function cleanupAll()
