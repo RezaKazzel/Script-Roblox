@@ -79,6 +79,132 @@ task.spawn(function()
 	end)
 end)
 
+-- ============ AUTO BOSSES ============
+
+local autoBossActive = false
+local autoBossConnection = nil
+local lastBossName = ""
+
+local function findBossFolder()
+    local mainFolder = workspace:FindFirstChild("Main")
+    if not mainFolder then return nil end
+    
+    local charactersFolder = mainFolder:FindFirstChild("Characters")
+    if not charactersFolder then return nil end
+    
+    for _, islandFolder in pairs(charactersFolder:GetChildren()) do
+        local bossFolder = islandFolder:FindFirstChild("Boss")
+        if bossFolder then
+            for _, bossModel in pairs(bossFolder:GetChildren()) do
+                if bossModel:IsA("Model") then
+                    local humanoidRootPart = bossModel:FindFirstChild("HumanoidRootPart")
+                    local humanoid = bossModel:FindFirstChild("Humanoid")
+                    
+                    if humanoidRootPart and humanoid and humanoid.Health > 0 then
+                        return {
+                            Model = bossModel,
+                            HRP = humanoidRootPart,
+                            Humanoid = humanoid,
+                            Island = islandFolder.Name,
+                            Name = bossModel.Name
+                        }
+                    end
+                end
+            end
+        end
+    end
+    
+    return nil
+end
+
+local function attackBoss(boss)
+    if not boss or not boss.Model or not boss.Model.Parent then return false end
+    
+    local character = player.Character
+    if not character then return false end
+    
+    local tool = character:FindFirstChildWhichIsA("Tool")
+    if not tool then return false end
+    
+    local toolType = tool.ToolTip
+    if not toolType then return false end
+    
+    local success = pcall(function()
+        remote:FireServer("Server", toolType, "M1s", tool.Name, 1)
+    end)
+    
+    return success
+end
+
+local function removeBodyVelocity()
+    local torso = player.Character and (player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("LowerTorso"))
+    if torso and torso:FindFirstChild("BodyVelocity") then
+        torso.BodyVelocity:Destroy()
+    end
+end
+
+local function toggleAutoBosses(state)
+    autoBossActive = state
+    
+    if autoBossConnection then
+        autoBossConnection:Disconnect()
+        autoBossConnection = nil
+    end
+    
+    removeBodyVelocity()
+    
+    if state then
+        autoBossConnection = RunService.Heartbeat:Connect(function()
+            if not player.Character then 
+                removeBodyVelocity()
+                return 
+            end
+            
+            local playerHRP = player.Character:FindFirstChild("HumanoidRootPart")
+            if not playerHRP then 
+                removeBodyVelocity()
+                return 
+            end
+            
+            local boss = findBossFolder()
+            
+            if boss then
+                if boss.Name ~= lastBossName then
+                    Notif("info", "Boss Detected", "Boss just Spawned: "..boss.Name, 5)
+                    lastBossName = boss.Name
+                end
+                
+                local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("LowerTorso")
+                if torso and not torso:FindFirstChild("BodyVelocity") then
+                    local bv = Instance.new("BodyVelocity", torso)
+                    bv.Velocity = Vector3.new(0, 0.1, 0)
+                    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                end
+                
+                if boss.Humanoid and boss.Humanoid.Health > 0 then
+                    local targetPosition = boss.HRP.Position + Vector3.new(0, boss.HRP.Size.Y / 2 + 5, 0)
+                    playerHRP.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+                    attackBoss(boss)
+                end
+            else
+                removeBodyVelocity()
+                lastBossName = ""
+            end
+        end)
+    end
+end
+
+Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto Farm Bosses ( Bug )", toggleAutoBosses)
+
+player.CharacterAdded:Connect(function(character)
+    task.wait(1)
+    
+    if autoBossActive then
+        toggleAutoBosses(false)
+        toggleAutoBosses(true)
+    end
+end)
+
 -- ============ GOD MODE (OBSERVATION) ============
 local function muteObservation(character)
 	if not character or character.Parent == nil then return end
