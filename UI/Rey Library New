@@ -3,6 +3,8 @@ local ReyUILib = {}
 
 Data = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 ReyUILib.Data = ReyUILib.Data or {}
+Notif = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Notification.lua"))()
+
 
 alldropdown = {}
 local function Finds(Table, Name)
