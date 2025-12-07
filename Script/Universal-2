@@ -549,6 +549,9 @@ Rey:CreateToggle(MiscTab, "Full Bright", "Mencerahkan seluruh map", function(sta
 	end
 end)
 
+Rey:CreateButton(MiscTab, "Auto Clicker", "Chisato version", "Load", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Auto%20Clicker%20Chisato'))()
+end)
 
 Rey:CreateToggle(MiscTab, "Noclip", "Berjalan menembus objek", function(state)
 	_G.Noclip = state
