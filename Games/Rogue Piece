@@ -1,103 +1,106 @@
 local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 
-local p = game.Players.LocalPlayer
-local r = game:GetService("ReplicatedStorage").Remotes.Serverside
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-local on = false
-local loopThread
-local charConn
-local obsConn
+local player = Players.LocalPlayer
+local remote = ReplicatedStorage.Remotes.Serverside
 
-task.spawn(function()
-local p = game.Players.LocalPlayer
-local r = game:GetService("ReplicatedStorage").Remotes.Serverside
+local activeConnections = {}
+local activeThreads = {}
+local toggleStates = {
+	godMode = false,
+	fastAttack = false,
+	fixFishing = false
+}
 
-local function setup(character)
-	if character:FindFirstChild("Haki") then return end
-	local conn
-	conn = character.ChildAdded:Connect(function(child)
-		if child.Name == "Haki" then
-			conn:Disconnect()
-		end
-	end)
-	r:FireServer("Server","Misc","Haki",1)
+-- ============ HELPER FUNCTIONS ============
+local function safeDisconnect(connection)
+	if connection and typeof(connection) == "RBXScriptConnection" then
+		connection:Disconnect()
+		return true
+	end
+	return false
 end
 
-if p.Character then setup(p.Character) end
-p.CharacterAdded:Connect(setup)
-end)
+local function cleanupConnection(key)
+	if activeConnections[key] then
+		safeDisconnect(activeConnections[key])
+		activeConnections[key] = nil
+	end
+end
 
-local function mute(char)
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+local function stopThread(key)
+	if activeThreads[key] then
+		task.cancel(activeThreads[key])
+		activeThreads[key] = nil
+	end
+end
 
-	if obsConn then obsConn:Disconnect() obsConn = nil end
+local function startThread(key, func)
+	stopThread(key)
+	activeThreads[key] = task.spawn(func)
+end
 
-	if hrp:FindFirstChild("Observation") then
-		hrp.Observation.Volume = 0
-	else
-		obsConn = hrp.ChildAdded:Connect(function(c)
-			if c.Name == "Observation" then
-				c.Volume = 0
+-- ============ AUTO HAKI SETUP ============
+task.spawn(function()
+	local function setupHaki(character)
+		if not character or character.Parent == nil then return end
+		
+		if character:FindFirstChild("Haki") then return end
+		
+		local hakiConnection
+		hakiConnection = character.ChildAdded:Connect(function(child)
+			if child.Name == "Haki" then
+				safeDisconnect(hakiConnection)
 			end
 		end)
+		
+		pcall(function()
+			remote:FireServer("Server", "Misc", "Haki", 1)
+		end)
 	end
-end
-
-local function startLoop()
-	loopThread = task.spawn(function()
-		while on do
-			r:FireServer("Server","Misc","Observation",1)
-			task.wait()
+	
+	if player.Character then 
+		setupHaki(player.Character) 
+	end
+	
+	local charAddedConn
+	charAddedConn = player.CharacterAdded:Connect(function(character)
+		task.wait(0.5)
+		setupHaki(character)
+	end)
+	game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
+		if leavingPlayer == player then
+			safeDisconnect(charAddedConn)
 		end
 	end)
-end
-
-local function stopAll()
-	on = false
-	if obsConn then obsConn:Disconnect() obsConn = nil end
-	if charConn then charConn:Disconnect() charConn = nil end
-end
-
-Rey:CreateToggle(Exclusive, "God Mode", "require: Observation Haki", function(state)
-	if state then
-		if on then return end
-		on = true
-		if p.Character then mute(p.Character) end
-		charConn = p.CharacterAdded:Connect(mute)
-		startLoop()
-	else
-		stopAll()
-	end
 end)
 
-local lp = game.Players.LocalPlayer
-local r = game:GetService("ReplicatedStorage").Remotes.Serverside
-
-local function getChar()
-	return workspace.Main.Characters:FindFirstChild(lp.Name)
+-- ============ GOD MODE (OBSERVATION) ============
+local function muteObservation(character)
+	if not character or character.Parent == nil then return end
+	
+	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+	if not humanoidRootPart then return end
+	
+	local observation = humanoidRootPart:FindFirstChild("Observation")
+	if observation then
+		observation.Volume = 0
+		return true
+	end
+	
+	return false
 end
 
-local on = false
-local th
-
-local function getTool()
-	local c = getChar()
-	if not c then return end
-	local tool = c:FindFirstChildWhichIsA("Tool")
-	if not tool then return end
-	local tipe = tool.ToolTip
-	return tool, tipe
-end
-
-local function start()
-	th = task.spawn(function()
-		while on do
-			local tool, tipe = getTool()
-			if tool and tipe then
+local function startGodModeLoop()
+	startThread("godMode", function()
+		while toggleStates.godMode do
+			if player.Character and player.Character.Parent ~= nil then
 				pcall(function()
-					r:FireServer("Server", tipe, "M1s", tool.Name, 1)
+					remote:FireServer("Server", "Misc", "Observation", 1)
 				end)
 			end
 			task.wait()
@@ -105,24 +108,200 @@ local function start()
 	end)
 end
 
-local function stop()
-	on = false
+local function setupCharacterObservers()
+	if player.Character then 
+		muteObservation(player.Character)
+		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			cleanupConnection("observationChildAdded")
+			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+				if child.Name == "Observation" then
+					child.Volume = 0
+				end
+			end)
+		end
+	end
+	
+	-- Setup untuk karakter baru (respawn)
+	cleanupConnection("characterAddedGodMode")
+	activeConnections["characterAddedGodMode"] = player.CharacterAdded:Connect(function(character)
+		task.wait(0.5)
+		muteObservation(character)
+		local hrp = character:WaitForChild("HumanoidRootPart", 5)
+		if hrp then
+			cleanupConnection("observationChildAdded")
+			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+				if child.Name == "Observation" then
+					child.Volume = 0
+				end
+			end)
+		end
+	end)
 end
 
-Rey:CreateToggle(Exclusive, "Fast Attack M1", "require: Equipped Tool", function(state)
+local function toggleGodMode(state)
+	toggleStates.godMode = state
+	
 	if state then
-		if on then return end
-		on = true
-		start()
+		setupCharacterObservers()
+		startGodModeLoop()
 	else
-		stop()
+		cleanupConnection("characterAddedGodMode")
+		cleanupConnection("observationChildAdded")
+		stopThread("godMode")
+	end
+end
+
+Rey:CreateToggle(Exclusive, "God Mode", "Requires: Observation Haki", toggleGodMode)
+
+-- ============ FAST ATTACK M1 ============
+local function getCharacter()
+	local charactersFolder = workspace:FindFirstChild("Main")
+	if not charactersFolder then return nil end
+	
+	charactersFolder = charactersFolder:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	
+	return charactersFolder:FindFirstChild(player.Name)
+end
+
+local function getEquippedTool()
+	local character = getCharacter()
+	if not character then return nil, nil end
+	
+	local tool = character:FindFirstChildWhichIsA("Tool")
+	if not tool then return nil, nil end
+	
+	return tool, tool.ToolTip
+end
+
+local function startFastAttackLoop()
+	startThread("fastAttack", function()
+		while toggleStates.fastAttack do
+			local character = getCharacter()
+			if character and character.Parent ~= nil then
+				local tool, toolType = getEquippedTool()
+				if tool and toolType then
+					pcall(function()
+						remote:FireServer("Server", toolType, "M1s", tool.Name, 1)
+					end)
+				end
+			end
+			task.wait()
+		end
+	end)
+end
+
+local function toggleFastAttack(state)
+	toggleStates.fastAttack = state
+	
+	if state then
+		startFastAttackLoop()
+	else
+		stopThread("fastAttack")
+	end
+end
+
+Rey:CreateToggle(Exclusive, "Fast Attack M1", "Requires: Equipped Tool", toggleFastAttack)
+
+-- ============ FIX FISHING POSITION ============
+local function setFishingPosition(fishingFrame)
+	if fishingFrame and fishingFrame.Parent ~= nil then
+		fishingFrame.Position = UDim2.new(0.3, 0, 0, -30)
+	end
+end
+
+local function setupFishingFix()
+	cleanupConnection("fixFishing")
+	local playerGui = player:WaitForChild("PlayerGui", 10)
+	if not playerGui then return end
+	local HUD = playerGui:WaitForChild("HUD", 10)
+	if not HUD then return end
+	local existingFishing = HUD:FindFirstChild("Fishing")
+	if existingFishing then
+		setFishingPosition(existingFishing)
+	end
+	activeConnections["fixFishing"] = HUD.ChildAdded:Connect(function(child)
+		if child.Name == "Fishing" then
+			setFishingPosition(child)
+		end
+	end)
+end
+
+local function toggleFixFishingPosition(state)
+	toggleStates.fixFishing = state
+	
+	if state then
+		setupFishingFix()
+		cleanupConnection("playerGuiAdded")
+		activeConnections["playerGuiAdded"] = player.CharacterAdded:Connect(function()
+			if toggleStates.fixFishing then
+				setupFishingFix()
+			end
+		end)
+	else
+		cleanupConnection("fixFishing")
+		cleanupConnection("playerGuiAdded")
+	end
+end
+
+Rey:CreateToggle(Exclusive, "Fix Fishing Position", "mancing rek", toggleFixFishingPosition)
+
+-- ============ OTHER FEATURES ============
+Rey:CreateNote(Exclusive, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
+
+Rey:CreateButton(Exclusive, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", function()
+	for i = 1, 500 do
+		if player.Character and player.Character.Parent ~= nil then
+			pcall(function()
+				remote:FireServer("Server", "Misc", "Haki", 1)
+				remote:FireServer("Server", "Misc", "Haki", 2)
+			end)
+		else
+			break
+		end
 	end
 end)
 
-Rey:CreateNote(Exclusive, "jangan dipencet klo gadipake, ngelag tar")
-Rey:CreateButton(Exclusive, "Farm Level Busoshoku Haki", "lvl up tiap pake jadi akan lag, pelan² aja", "Lvl. UP", function()
-	for i=1,500 do
-		r:FireServer("Server","Misc","Haki",1)
-		r:FireServer("Server","Misc","Haki",2)
+-- ============ CLEANUP SYSTEM ============
+local function cleanupAll()
+	for key, connection in pairs(activeConnections) do
+		safeDisconnect(connection)
+	end
+	table.clear(activeConnections)
+	
+	for key, thread in pairs(activeThreads) do
+		if thread then
+			task.cancel(thread)
+		end
+	end
+	table.clear(activeThreads)
+	
+	for key, _ in pairs(toggleStates) do
+		toggleStates[key] = false
+	end
+end
+
+local playerRemovingConn
+playerRemovingConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
+	if leavingPlayer == player then
+		safeDisconnect(playerRemovingConn)
+		cleanupAll()
+	end
+end)
+
+player.CharacterAdded:Connect(function()
+	if toggleStates.godMode then
+		setupCharacterObservers()
+	end
+	
+	if toggleStates.fixFishing then
+		setupFishingFix()
+	end
+end)
+
+game:GetService("CoreGui").DescendantRemoving:Connect(function(descendant)
+	if descendant == UI then
+		cleanupAll()
 	end
 end)
