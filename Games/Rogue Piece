@@ -56,6 +56,13 @@ function Utilities.CleanupConnection(key)
 	end
 end
 
+-- TAMBAHKAN FUNGSI INI
+function Utilities.AddConnection(key, connection)
+	Utilities.CleanupConnection(key)
+	State.Connections[key] = connection
+	return connection
+end
+
 function Utilities.StopThread(key)
 	if State.Threads[key] then
 		task.cancel(State.Threads[key])
@@ -68,9 +75,10 @@ function Utilities.StartThread(key, func)
 	State.Threads[key] = task.spawn(func)
 end
 
-function Utilities.FireRemote(v)
+function Utilities.FireRemote(...)
+	local args = {...}
 	pcall(function()
-		remote:FireServer(v)
+		remote:FireServer(unpack(args))
 	end)
 end
 
@@ -265,21 +273,22 @@ function GodMode.StartLoop()
 	Utilities.StartThread("godMode", function()
 		while State.Toggles.GodMode do
 			if player.Character and player.Character.Parent ~= nil then
-				Utilities.FireRemote("Server", "Misc", "Observation", 1)
+				Utilities.FireRemote("Server", "Misc", "Observation", 1)  -- PAKAI Utilities.FireRemote
 			end
 			task.wait()
 		end
 	end)
 end
 
-function GodMode.SetupObservers()
+function GodMode.SetupObservers()  -- GANTI NAMA DARI setupCharacterObservers
+	local player = Players.LocalPlayer
+	
 	if player.Character then 
 		GodMode.MuteObservation(player.Character)
 		
 		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
 		if hrp then
-			Utilities.CleanupConnection("observationChildAdded")
-			State.Connections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+			Utilities.AddConnection("observationChildAdded", hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
 				elseif child.Name == "Dodge" then
@@ -288,48 +297,46 @@ function GodMode.SetupObservers()
 						child:Destroy()
 					end
 				end
-			end)
+			end))
 		end
 		
-		Utilities.CleanupConnection("characterDodgeRemover")
-		State.Connections["characterDodgeRemover"] = player.Character.ChildAdded:Connect(function(child)
+		Utilities.AddConnection("characterDodgeRemover", player.Character.ChildAdded:Connect(function(child)
 			if child.Name == "Dodge" then
 				task.wait(0.1)
 				if child.Parent then
 					child:Destroy()
 				end
 			end
-		end)
+		end))
 	end
 	
-	Utilities.CleanupConnection("characterAddedGodMode")
-	State.Connections["characterAddedGodMode"] = player.CharacterAdded:Connect(function(character)
+	Utilities.AddConnection("characterAddedGodMode", player.CharacterAdded:Connect(function(character)
 		task.wait(0.5)
 		GodMode.MuteObservation(character)
 		
 		local hrp = character:WaitForChild("HumanoidRootPart", 5)
 		if hrp then
-			Utilities.CleanupConnection("observationChildAdded")
-			State.Connections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+			Utilities.AddConnection("observationChildAdded", hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
 				elseif child.Name == "Dodge" then
+					task.wait(0.1)
 					if child.Parent then
 						child:Destroy()
 					end
 				end
-			end)
+			end))
 		end
 		
-		Utilities.CleanupConnection("characterDodgeRemover")
-		State.Connections["characterDodgeRemover"] = character.ChildAdded:Connect(function(child)
+		Utilities.AddConnection("characterDodgeRemover", character.ChildAdded:Connect(function(child)
 			if child.Name == "Dodge" then
+				task.wait(0.1)
 				if child.Parent then
 					child:Destroy()
 				end
 			end
-		end)
-	end)
+		end))
+	end))
 end
 
 function GodMode.Toggle(state)
@@ -343,7 +350,6 @@ function GodMode.Toggle(state)
 		Utilities.CleanupConnection("observationChildAdded")
 		Utilities.CleanupConnection("characterDodgeRemover")
 		Utilities.StopThread("godMode")
-		Utilities.FireRemote("Server", "Misc", "Observation", 2)
 	end
 end
 
@@ -357,7 +363,7 @@ function FastAttack.GetCharacter()
 	charactersFolder = charactersFolder:FindFirstChild("Characters")
 	if not charactersFolder then return nil end
 	
-	return charactersFolder:FindFirstChild(player.Name)
+	return charactersFolder:FindFirstChild(player.Name)  -- PAKAI player, BUKAN game.Players.LocalPlayer
 end
 
 function FastAttack.GetEquippedTool()
@@ -377,7 +383,7 @@ function FastAttack.StartLoop()
 			if character and character.Parent ~= nil then
 				local tool, toolType = FastAttack.GetEquippedTool()
 				if tool and toolType then
-					Utilities.FireRemote("Server", toolType, "M1s", tool.Name, 1)
+					Utilities.FireRemote("Server", toolType, "M1s", tool.Name, 1)  -- PAKAI Utilities.FireRemote
 				end
 			end
 			task.wait()
@@ -454,9 +460,7 @@ Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto Farm Bosses (Bug)", function(st
 end)
 
 -- God Mode
-Rey:CreateToggle(Exclusive, "God Mode", "Requires: Observation Haki", function(state)
-	GodMode.Toggle(state)
-end)
+Rey:CreateToggle(Exclusive, "God Mode", "Requires: Observation Haki", GodMode.Toggle)
 
 -- Fast Attack
 Rey:CreateToggle(Exclusive, "Fast Attack M1", "Requires: Equipped Tool", function(state)
@@ -475,6 +479,57 @@ Rey:CreateButton(Exclusive, "Start Fishing", "takda kata mancing harus di air", 
 		remote:FireServer("Server", "Misc", "Fishing", true)
 	end
 end)
+
+local function getBossList()
+    local bossList = {}
+    local bossSpawnUI = player.PlayerGui.Button["Boss Spawn"]
+    
+    if bossSpawnUI then
+        local frame = bossSpawnUI:FindFirstChild("Frame")
+        if frame then
+            for _, child in pairs(frame:GetChildren()) do
+                if child:IsA("Frame") and child.Name ~= "Frame" then
+                    local button = child:FindFirstChild("Button")
+                    if button then
+                        table.insert(bossList, child.Name)
+                    end
+                end
+            end
+        end
+    end
+    
+    return bossList
+end
+
+local bossOptions = getBossList()
+local selectedBossName = nil
+
+Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, function(selectedBoss)
+    selectedBossName = selectedBoss
+    
+    local bossSpawnUI = player.PlayerGui.Button["Boss Spawn"]
+    if bossSpawnUI then
+	    bossSpawnUI.Visible = true
+        local frame = bossSpawnUI:FindFirstChild("Frame")
+        if frame and selectedBossName then
+            local bossFrame = frame:FindFirstChild(selectedBossName)
+            if bossFrame then
+                local button = bossFrame:FindFirstChild("Button")
+                if button then
+                    local GuiService = game:GetService("GuiService")
+                    local VIM = game:GetService("VirtualInputManager")
+                    
+                    GuiService.SelectedObject = button
+                    VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                    VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                    task.wait()
+                    GuiService.SelectedObject = nil
+                    bossSpawnUI.Visible = false
+                end
+            end
+        end
+    end
+end, false)
 
 Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu kaya Akaza", function(state)
 _G.AutoBuzz = state
@@ -522,7 +577,6 @@ else
 	local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
 	if bossSpawn then
 		bossSpawn.BackgroundTransparency = 0
-		bossSpawn.Visible = false
 	    for _, descendant in ipairs(bossSpawn:GetDescendants()) do
 	        if descendant:IsA("GuiObject") then
 	            descendant.Visible = true
@@ -531,10 +585,12 @@ else
 	            end
 	        end
 	    end
-	    bossSpawn.Visible = true
+	    bossSpawn.Visible = false
 	end
 end
 end)
+
+Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
 
 -- Haki Level Farm
 Rey:CreateNote(Exclusive2, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
@@ -570,7 +626,7 @@ local menuButtons = {
 }
 
 for _, buttonName in ipairs(menuButtons) do
-	Rey:CreateToggle(Exclusive, "Force " .. buttonName, "Force open " .. buttonName .. " menu", function(state)
+	Rey:CreateToggle(Exclusive2, "Force " .. buttonName, "Force open " .. buttonName .. " menu", function(state)
 		local playerGui = player.PlayerGui
 		local buttonFrame = playerGui.Button:FindFirstChild(buttonName)
 		if buttonFrame then
