@@ -1,23 +1,47 @@
-local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
-local Exclusive = Rey:CreateTab(UI, "Exclusive+")
+-- Rogue Piece
+-- Optimized and Beautified Version
 
+-- ============ INITIALIZATION ============
+local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20New"))()
+local Notif = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Notification.lua"))()
+
+-- ============ SERVICES ============
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
+-- ============ VARIABLES ============
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage.Remotes.Serverside
+local VIM = VirtualInputManager
 
-local activeConnections = {}
-local activeThreads = {}
-local toggleStates = {
-	godMode = false,
-	fastAttack = false,
-	fixFishing = false
+-- ============ STATE MANAGEMENT ============
+local State = {
+	Connections = {},
+	Threads = {},
+	Toggles = {
+		GodMode = false,
+		FastAttack = false,
+		AutoFishing = false,
+		AutoBoss = false
+	},
+	Boss = {
+		Active = false,
+		Connection = nil,
+		LastName = ""
+	}
 }
 
--- ============ HELPER FUNCTIONS ============
-local function safeDisconnect(connection)
+-- ============ UI SETUP ============
+local Exclusive = Rey:CreateTab(UI, "Exclusive+")
+local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
+
+-- ============ UTILITY FUNCTIONS ============
+local Utilities = {}
+
+function Utilities.SafeDisconnect(connection)
 	if connection and typeof(connection) == "RBXScriptConnection" then
 		connection:Disconnect()
 		return true
@@ -25,192 +49,208 @@ local function safeDisconnect(connection)
 	return false
 end
 
-local function cleanupConnection(key)
-	if activeConnections[key] then
-		safeDisconnect(activeConnections[key])
-		activeConnections[key] = nil
+function Utilities.CleanupConnection(key)
+	if State.Connections[key] then
+		Utilities.SafeDisconnect(State.Connections[key])
+		State.Connections[key] = nil
 	end
 end
 
-local function stopThread(key)
-	if activeThreads[key] then
-		task.cancel(activeThreads[key])
-		activeThreads[key] = nil
+function Utilities.StopThread(key)
+	if State.Threads[key] then
+		task.cancel(State.Threads[key])
+		State.Threads[key] = nil
 	end
 end
 
-local function startThread(key, func)
-	stopThread(key)
-	activeThreads[key] = task.spawn(func)
+function Utilities.StartThread(key, func)
+	Utilities.StopThread(key)
+	State.Threads[key] = task.spawn(func)
 end
 
--- ============ AUTO HAKI SETUP ============
-task.spawn(function()
-	local function setupHaki(character)
-		if not character or character.Parent == nil then return end
-		
-		if character:FindFirstChild("Haki") then return end
-		
-		local hakiConnection
-		hakiConnection = character.ChildAdded:Connect(function(child)
-			if child.Name == "Haki" then
-				safeDisconnect(hakiConnection)
-			end
-		end)
-		
-		pcall(function()
-			remote:FireServer("Server", "Misc", "Haki", 1)
-		end)
-	end
-	
-	if player.Character then 
-		setupHaki(player.Character) 
-	end
-	
-	local charAddedConn
-	charAddedConn = player.CharacterAdded:Connect(function(character)
-		task.wait(0.5)
-		setupHaki(character)
+function Utilities.FireRemote(v)
+	pcall(function()
+		remote:FireServer(v)
 	end)
-	game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
-		if leavingPlayer == player then
-			safeDisconnect(charAddedConn)
-		end
-	end)
-end)
-
--- ============ AUTO BOSSES ============
-
-local autoBossActive = false
-local autoBossConnection = nil
-local lastBossName = ""
-
-local function findBossFolder()
-    local mainFolder = workspace:FindFirstChild("Main")
-    if not mainFolder then return nil end
-    
-    local charactersFolder = mainFolder:FindFirstChild("Characters")
-    if not charactersFolder then return nil end
-    
-    for _, islandFolder in pairs(charactersFolder:GetChildren()) do
-        local bossFolder = islandFolder:FindFirstChild("Boss")
-        if bossFolder then
-            for _, bossModel in pairs(bossFolder:GetChildren()) do
-                if bossModel:IsA("Model") then
-                    local humanoidRootPart = bossModel:FindFirstChild("HumanoidRootPart")
-                    local humanoid = bossModel:FindFirstChild("Humanoid")
-                    
-                    if humanoidRootPart and humanoid and humanoid.Health > 0 then
-                        return {
-                            Model = bossModel,
-                            HRP = humanoidRootPart,
-                            Humanoid = humanoid,
-                            Island = islandFolder.Name,
-                            Name = bossModel.Name
-                        }
-                    end
-                end
-            end
-        end
-    end
-    
-    return nil
 end
 
-local function attackBoss(boss)
-    if not boss or not boss.Model or not boss.Model.Parent then return false end
-    
-    local character = player.Character
-    if not character then return false end
-    
-    local tool = character:FindFirstChildWhichIsA("Tool")
-    if not tool then return false end
-    
-    local toolType = tool.ToolTip
-    if not toolType then return false end
-    
-    local success = pcall(function()
-        remote:FireServer("Server", toolType, "M1s", tool.Name, 1)
-    end)
-    
-    return success
+function Utilities.SendNotification(type, title, message, duration)
+	Notif(type, title, message, duration)
 end
 
-local function removeBodyVelocity()
-    local torso = player.Character and (player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("LowerTorso"))
-    if torso and torso:FindFirstChild("BodyVelocity") then
-        torso.BodyVelocity:Destroy()
-    end
-end
+-- ============ HAKI SYSTEM ============
+local HakiSystem = {}
 
-local function toggleAutoBosses(state)
-    autoBossActive = state
-    
-    if autoBossConnection then
-        autoBossConnection:Disconnect()
-        autoBossConnection = nil
-    end
-    
-    removeBodyVelocity()
-    
-    if state then
-        autoBossConnection = RunService.Heartbeat:Connect(function()
-            if not player.Character then 
-                removeBodyVelocity()
-                return 
-            end
-            
-            local playerHRP = player.Character:FindFirstChild("HumanoidRootPart")
-            if not playerHRP then 
-                removeBodyVelocity()
-                return 
-            end
-            
-            local boss = findBossFolder()
-            
-            if boss then
-                if boss.Name ~= lastBossName then
-                    Notif("info", "Boss Detected", "Boss just Spawned: "..boss.Name, 5)
-                    lastBossName = boss.Name
-                end
-                
-                local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("LowerTorso")
-                if torso and not torso:FindFirstChild("BodyVelocity") then
-                    local bv = Instance.new("BodyVelocity", torso)
-                    bv.Velocity = Vector3.new(0, 0.1, 0)
-                    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-                end
-                
-                if boss.Humanoid and boss.Humanoid.Health > 0 then
-                    local targetPosition = boss.HRP.Position + Vector3.new(0, boss.HRP.Size.Y / 2 + 5, 0)
-                    playerHRP.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-                    attackBoss(boss)
-                end
-            else
-                removeBodyVelocity()
-                lastBossName = ""
-            end
-        end)
-    end
-end
-
-Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto Farm Bosses ( Bug )", toggleAutoBosses)
-
-player.CharacterAdded:Connect(function(character)
-    task.wait(1)
-    
-    if autoBossActive then
-        toggleAutoBosses(false)
-        toggleAutoBosses(true)
-    end
-end)
-
--- ============ GOD MODE (OBSERVATION) ============
-local function muteObservation(character)
+function HakiSystem.Setup(character)
 	if not character or character.Parent == nil then return end
 	
+	if character:FindFirstChild("Haki") then return end
+	
+	local hakiConnection
+	hakiConnection = character.ChildAdded:Connect(function(child)
+		if child.Name == "Haki" then
+			if hakiConnection then
+				hakiConnection:Disconnect()
+				hakiConnection = nil
+			end
+		end
+	end)
+	
+	remote:FireServer("Server", "Misc", "Haki", 1)
+	
+	task.delay(3, function()
+		if hakiConnection then
+			hakiConnection:Disconnect()
+			hakiConnection = nil
+		end
+	end)
+end
+
+function HakiSystem.Initialize()
+	if player.Character then 
+		HakiSystem.Setup(player.Character) 
+	end
+	
+	player.CharacterAdded:Connect(function(character)
+		task.wait(1)
+		HakiSystem.Setup(character)
+	end)
+end
+
+task.spawn(HakiSystem.Initialize)
+
+-- ============ BOSS SYSTEM ============
+local BossSystem = {}
+
+function BossSystem.Find()
+	local mainFolder = workspace:FindFirstChild("Main")
+	if not mainFolder then return nil end
+	
+	local charactersFolder = mainFolder:FindFirstChild("Characters")
+	if not charactersFolder then return nil end
+	
+	for _, islandFolder in pairs(charactersFolder:GetChildren()) do
+		local bossFolder = islandFolder:FindFirstChild("Boss")
+		if bossFolder then
+			for _, bossModel in pairs(bossFolder:GetChildren()) do
+				if bossModel:IsA("Model") then
+					local humanoidRootPart = bossModel:FindFirstChild("HumanoidRootPart")
+					local humanoid = bossModel:FindFirstChild("Humanoid")
+					
+					if humanoidRootPart and humanoid and humanoid.Health > 0 then
+						return {
+							Model = bossModel,
+							HRP = humanoidRootPart,
+							Humanoid = humanoid,
+							Island = islandFolder.Name,
+							Name = bossModel.Name
+						}
+					end
+				end
+			end
+		end
+	end
+	
+	return nil
+end
+
+function BossSystem.Attack(bossData)
+	if not bossData or not bossData.Model or not bossData.Model.Parent then 
+		return false 
+	end
+	
+	local character = player.Character
+	if not character then return false end
+	
+	local tool = character:FindFirstChildWhichIsA("Tool")
+	if not tool then return false end
+	
+	local toolType = tool.ToolTip
+	if not toolType then return false end
+	
+	return pcall(function()
+		remote:FireServer("Server", toolType, "M1s", tool.Name, 1)
+	end)
+end
+
+function BossSystem.RemoveVelocity()
+	local character = player.Character
+	if not character then return end
+	
+	local torso = character:FindFirstChild("Torso") or character:FindFirstChild("LowerTorso")
+	if torso and torso:FindFirstChild("BodyVelocity") then
+		torso.BodyVelocity:Destroy()
+	end
+end
+
+function BossSystem.Toggle(state)
+	State.Boss.Active = state
+	
+	if State.Boss.Connection then
+		State.Boss.Connection:Disconnect()
+		State.Boss.Connection = nil
+	end
+	
+	BossSystem.RemoveVelocity()
+	
+	if state then
+		State.Boss.Connection = RunService.Heartbeat:Connect(function()
+			if not player.Character then 
+				BossSystem.RemoveVelocity()
+				return 
+			end
+			
+			local playerHRP = player.Character:FindFirstChild("HumanoidRootPart")
+			if not playerHRP then 
+				BossSystem.RemoveVelocity()
+				return 
+			end
+			
+			local boss = BossSystem.Find()
+			
+			if boss then
+				if boss.Name ~= State.Boss.LastName then
+					Utilities.SendNotification("info", "Boss Detected", "Boss Spawned: " .. boss.Name, 5)
+					State.Boss.LastName = boss.Name
+				end
+				
+				local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("LowerTorso")
+				if torso and not torso:FindFirstChild("BodyVelocity") then
+					local bv = Instance.new("BodyVelocity", torso)
+					bv.Velocity = Vector3.new(0, 0.1, 0)
+					bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+				end
+				
+				if boss.Humanoid and boss.Humanoid.Health > 0 then
+					local targetPosition = boss.HRP.Position + Vector3.new(0, boss.HRP.Size.Y / 2 + 5, 0)
+					playerHRP.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
+					BossSystem.Attack(boss)
+				end
+			else
+				BossSystem.RemoveVelocity()
+				State.Boss.LastName = ""
+			end
+		end)
+	end
+end
+
+player.CharacterAdded:Connect(function(character)
+	task.wait(1)
+	
+	if State.Boss.Active then
+		BossSystem.Toggle(false)
+		BossSystem.Toggle(true)
+	end
+end)
+
+-- ============ GOD MODE SYSTEM ============
+local GodMode = {}
+
+function GodMode.MuteObservation(character)
+	if not character or character.Parent == nil then return false end
+	
 	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-	if not humanoidRootPart then return end
+	if not humanoidRootPart then return false end
 	
 	local observation = humanoidRootPart:FindFirstChild("Observation")
 	if observation then
@@ -221,28 +261,25 @@ local function muteObservation(character)
 	return false
 end
 
-local function startGodModeLoop()
-	startThread("godMode", function()
-		while toggleStates.godMode do
+function GodMode.StartLoop()
+	Utilities.StartThread("godMode", function()
+		while State.Toggles.GodMode do
 			if player.Character and player.Character.Parent ~= nil then
-				pcall(function()
-					remote:FireServer("Server", "Misc", "Observation", 1)
-				end)
+				Utilities.FireRemote("Server", "Misc", "Observation", 1)
 			end
 			task.wait()
 		end
 	end)
 end
 
-
-local function setupCharacterObservers()
+function GodMode.SetupObservers()
 	if player.Character then 
-		muteObservation(player.Character)
+		GodMode.MuteObservation(player.Character)
 		
 		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
 		if hrp then
-			cleanupConnection("observationChildAdded")
-			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+			Utilities.CleanupConnection("observationChildAdded")
+			State.Connections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
 				elseif child.Name == "Dodge" then
@@ -254,8 +291,8 @@ local function setupCharacterObservers()
 			end)
 		end
 		
-		cleanupConnection("characterDodgeRemover")
-		activeConnections["characterDodgeRemover"] = player.Character.ChildAdded:Connect(function(child)
+		Utilities.CleanupConnection("characterDodgeRemover")
+		State.Connections["characterDodgeRemover"] = player.Character.ChildAdded:Connect(function(child)
 			if child.Name == "Dodge" then
 				task.wait(0.1)
 				if child.Parent then
@@ -265,19 +302,18 @@ local function setupCharacterObservers()
 		end)
 	end
 	
-	cleanupConnection("characterAddedGodMode")
-	activeConnections["characterAddedGodMode"] = player.CharacterAdded:Connect(function(character)
+	Utilities.CleanupConnection("characterAddedGodMode")
+	State.Connections["characterAddedGodMode"] = player.CharacterAdded:Connect(function(character)
 		task.wait(0.5)
-		muteObservation(character)
+		GodMode.MuteObservation(character)
 		
 		local hrp = character:WaitForChild("HumanoidRootPart", 5)
 		if hrp then
-			cleanupConnection("observationChildAdded")
-			activeConnections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
+			Utilities.CleanupConnection("observationChildAdded")
+			State.Connections["observationChildAdded"] = hrp.ChildAdded:Connect(function(child)
 				if child.Name == "Observation" then
 					child.Volume = 0
 				elseif child.Name == "Dodge" then
-					task.wait(0.1)
 					if child.Parent then
 						child:Destroy()
 					end
@@ -285,10 +321,9 @@ local function setupCharacterObservers()
 			end)
 		end
 		
-		cleanupConnection("characterDodgeRemover")
-		activeConnections["characterDodgeRemover"] = character.ChildAdded:Connect(function(child)
+		Utilities.CleanupConnection("characterDodgeRemover")
+		State.Connections["characterDodgeRemover"] = character.ChildAdded:Connect(function(child)
 			if child.Name == "Dodge" then
-				task.wait(0.1)
 				if child.Parent then
 					child:Destroy()
 				end
@@ -297,24 +332,25 @@ local function setupCharacterObservers()
 	end)
 end
 
-local function toggleGodMode(state)
-	toggleStates.godMode = state
+function GodMode.Toggle(state)
+	State.Toggles.GodMode = state
 	
 	if state then
-		setupCharacterObservers()
-		startGodModeLoop()
+		GodMode.SetupObservers()
+		GodMode.StartLoop()
 	else
-		cleanupConnection("characterAddedGodMode")
-		cleanupConnection("observationChildAdded")
-		cleanupConnection("characterDodgeRemover")
-		stopThread("godMode")
+		Utilities.CleanupConnection("characterAddedGodMode")
+		Utilities.CleanupConnection("observationChildAdded")
+		Utilities.CleanupConnection("characterDodgeRemover")
+		Utilities.StopThread("godMode")
+		Utilities.FireRemote("Server", "Misc", "Observation", 2)
 	end
 end
 
-Rey:CreateToggle(Exclusive, "God Mode", "Requires: Observation Haki", toggleGodMode)
+-- ============ FAST ATTACK SYSTEM ============
+local FastAttack = {}
 
--- ============ FAST ATTACK M1 ============
-local function getCharacter()
+function FastAttack.GetCharacter()
 	local charactersFolder = workspace:FindFirstChild("Main")
 	if not charactersFolder then return nil end
 	
@@ -324,8 +360,8 @@ local function getCharacter()
 	return charactersFolder:FindFirstChild(player.Name)
 end
 
-local function getEquippedTool()
-	local character = getCharacter()
+function FastAttack.GetEquippedTool()
+	local character = FastAttack.GetCharacter()
 	if not character then return nil, nil end
 	
 	local tool = character:FindFirstChildWhichIsA("Tool")
@@ -334,16 +370,14 @@ local function getEquippedTool()
 	return tool, tool.ToolTip
 end
 
-local function startFastAttackLoop()
-	startThread("fastAttack", function()
-		while toggleStates.fastAttack do
-			local character = getCharacter()
+function FastAttack.StartLoop()
+	Utilities.StartThread("fastAttack", function()
+		while State.Toggles.FastAttack do
+			local character = FastAttack.GetCharacter()
 			if character and character.Parent ~= nil then
-				local tool, toolType = getEquippedTool()
+				local tool, toolType = FastAttack.GetEquippedTool()
 				if tool and toolType then
-					pcall(function()
-						remote:FireServer("Server", toolType, "M1s", tool.Name, 1)
-					end)
+					Utilities.FireRemote("Server", toolType, "M1s", tool.Name, 1)
 				end
 			end
 			task.wait()
@@ -351,146 +385,250 @@ local function startFastAttackLoop()
 	end)
 end
 
-local function toggleFastAttack(state)
-	toggleStates.fastAttack = state
+function FastAttack.Toggle(state)
+	State.Toggles.FastAttack = state
 	
 	if state then
-		startFastAttackLoop()
+		FastAttack.StartLoop()
 	else
-		stopThread("fastAttack")
+		Utilities.StopThread("fastAttack")
 	end
 end
 
-Rey:CreateToggle(Exclusive, "Fast Attack M1", "Requires: Equipped Tool", toggleFastAttack)
+-- ============ FISHING SYSTEM ============
+local FishingSystem = {}
 
--- ============ FIX FISHING POSITION ============
-local function setFishingPosition(fishingFrame)
-	if fishingFrame and fishingFrame.Parent ~= nil then
-		fishingFrame.Position = UDim2.new(0.3, 0, 0, -30)
-	end
-end
-
-local function setupFishingFix()
-	cleanupConnection("fixFishing")
+function FishingSystem.Setup()
+	Utilities.CleanupConnection("autoFishing")
+	Utilities.StopThread("autoFishing")
+	
 	local playerGui = player:WaitForChild("PlayerGui", 10)
 	if not playerGui then return end
+	
 	local HUD = playerGui:WaitForChild("HUD", 10)
 	if not HUD then return end
-	local existingFishing = HUD:FindFirstChild("Fishing")
-	if existingFishing then
-		setFishingPosition(existingFishing)
-	end
-	activeConnections["fixFishing"] = HUD.ChildAdded:Connect(function(child)
-		if child.Name == "Fishing" then
-			setFishingPosition(child)
+	
+	Utilities.StartThread("autoFishing", function()
+		while State.Toggles.AutoFishing do
+			task.wait()
+			
+			local fishing = HUD:FindFirstChild("Fishing")
+			if fishing then
+				local button = fishing:FindFirstChild("Button")
+				if button then
+					GuiService.SelectedObject = button
+					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+					task.wait()
+					GuiService.SelectedObject = nil
+				end
+			end
 		end
 	end)
 end
 
-local function toggleFixFishingPosition(state)
-	toggleStates.fixFishing = state
+function FishingSystem.Toggle(state)
+	State.Toggles.AutoFishing = state
 	
 	if state then
-		setupFishingFix()
-		cleanupConnection("playerGuiAdded")
-		activeConnections["playerGuiAdded"] = player.CharacterAdded:Connect(function()
-			if toggleStates.fixFishing then
-				setupFishingFix()
+		FishingSystem.Setup()
+		Utilities.CleanupConnection("playerCharAdded")
+		State.Connections["playerCharAdded"] = player.CharacterAdded:Connect(function()
+			task.wait(1)
+			if State.Toggles.AutoFishing then
+				FishingSystem.Setup()
 			end
 		end)
 	else
-		cleanupConnection("fixFishing")
-		cleanupConnection("playerGuiAdded")
+		Utilities.CleanupConnection("autoFishing")
+		Utilities.StopThread("autoFishing")
+		Utilities.CleanupConnection("playerCharAdded")
+		GuiService.SelectedObject = nil
 	end
 end
 
-Rey:CreateToggle(Exclusive, "Fix Fishing Position", "mancing rek", toggleFixFishingPosition)
+-- ============ UI COMPONENTS ============
+-- Auto Bosses
+Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto Farm Bosses (Bug)", function(state)
+	BossSystem.Toggle(state)
+end)
 
--- ============ OTHER FEATURES ============
-Rey:CreateNote(Exclusive, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
+-- God Mode
+Rey:CreateToggle(Exclusive, "God Mode", "Requires: Observation Haki", function(state)
+	GodMode.Toggle(state)
+end)
 
-Rey:CreateButton(Exclusive, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", function()
+-- Fast Attack
+Rey:CreateToggle(Exclusive, "Fast Attack M1", "Requires: Equipped Tool", function(state)
+	FastAttack.Toggle(state)
+end)
+
+-- Auto Fishing
+Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto Fishing System", function(state)
+	FishingSystem.Toggle(state)
+end)
+
+-- Start Fishing
+Rey:CreateButton(Exclusive, "Start Fishing", "takda kata mancing harus di air", "gas", function()
+	local fishing = player:FindFirstChild("Fishing")
+	if not fishing then
+		remote:FireServer("Server", "Misc", "Fishing", true)
+	end
+end)
+
+Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu kaya Akaza", function(state)
+_G.AutoBuzz = state
+if _G.AutoBuzz then
+	local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
+	if bossSpawn then
+		bossSpawn.BackgroundTransparency = 1
+	    local spawnFrame = bossSpawn.Spawn
+	    if spawnFrame then
+	        local button = spawnFrame.Button
+	        if button then
+	            for _, descendant in ipairs(bossSpawn:GetDescendants()) do
+	                if descendant:IsA("GuiObject") then
+	                    if descendant == button or descendant == spawnFrame or descendant == bossSpawn then
+	                        descendant.Visible = true
+	                        if descendant:IsA("Frame") then
+	                            descendant.BackgroundTransparency = 1
+	                        end
+	                    else
+	                        descendant.Visible = false
+	                    end
+	                end
+	            end
+	            button.Visible = true
+	            spawnFrame.Visible = true
+	            bossSpawn.Visible = true
+	        end
+	    end
+	end
+	
+	task.spawn(function()
+		while _G.AutoBuzz do task.wait(1)
+			pcall(function()
+				local obj = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"].Spawn.Button
+				
+				GuiService.SelectedObject = obj
+				VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+				VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+				task.wait()
+				GuiService.SelectedObject = nil
+			end)
+		end
+	end)
+else
+	local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
+	if bossSpawn then
+		bossSpawn.BackgroundTransparency = 0
+		bossSpawn.Visible = false
+	    for _, descendant in ipairs(bossSpawn:GetDescendants()) do
+	        if descendant:IsA("GuiObject") then
+	            descendant.Visible = true
+	            if descendant:IsA("Frame") then
+	                descendant.BackgroundTransparency = 0
+	            end
+	        end
+	    end
+	    bossSpawn.Visible = true
+	end
+end
+end)
+
+-- Haki Level Farm
+Rey:CreateNote(Exclusive2, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
+Rey:CreateButton(Exclusive2, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", function()
 	for i = 1, 500 do
 		if player.Character and player.Character.Parent ~= nil then
-			pcall(function()
-				remote:FireServer("Server", "Misc", "Haki", 1)
-				remote:FireServer("Server", "Misc", "Haki", 2)
-			end)
+			Utilities.FireRemote("Server", "Misc", "Haki", 1)
+			Utilities.FireRemote("Server", "Misc", "Haki", 2)
 		else
 			break
 		end
 	end
 end)
 
-Rey:CreateNote(Exclusive, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
-Rey:CreateButton(Exclusive, "Disable Mobile Check Skill", "baca note diatas.", "DISABLE", function()
-    local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
-    if mobileUI then
-        local check = mobileUI:FindFirstChild("Check")
-        if check then
-            check.Disabled = true
-        end
-    end
+-- Mobile Check Disabler
+Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
+Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", function()
+	local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
+	if mobileUI then
+		local check = mobileUI:FindFirstChild("Check")
+		if check then
+			check.Disabled = true
+		end
+	end
 end)
 
-
--- == Force Open Menu
-local guiButtons = {
-    "Title_Frame",
-    "Teleport", 
-    "Capsule",
-    "Boss Spawn"
+-- Force Open Menu Buttons
+local menuButtons = {
+	"Title_Frame",
+	"Teleport", 
+	"Capsule",
+	"Boss Spawn"
 }
 
-for _, buttonName in ipairs(guiButtons) do
-    Rey:CreateToggle(Exclusive, "Force " .. buttonName, "Force open " .. buttonName .. " menu", function(state)
-        local playerGui = player.PlayerGui
-        local buttonFrame = playerGui.Button:FindFirstChild(buttonName)
-        if buttonFrame then
-            buttonFrame.Visible = state
-        end
-    end)
+for _, buttonName in ipairs(menuButtons) do
+	Rey:CreateToggle(Exclusive, "Force " .. buttonName, "Force open " .. buttonName .. " menu", function(state)
+		local playerGui = player.PlayerGui
+		local buttonFrame = playerGui.Button:FindFirstChild(buttonName)
+		if buttonFrame then
+			buttonFrame.Visible = state
+		end
+	end)
 end
 
 -- ============ CLEANUP SYSTEM ============
-local function cleanupAll()
-	for key, connection in pairs(activeConnections) do
-		safeDisconnect(connection)
+local Cleanup = {}
+
+function Cleanup.All()
+	for key, connection in pairs(State.Connections) do
+		Utilities.SafeDisconnect(connection)
 	end
-	table.clear(activeConnections)
+	table.clear(State.Connections)
 	
-	for key, thread in pairs(activeThreads) do
+	for key, thread in pairs(State.Threads) do
 		if thread then
 			task.cancel(thread)
 		end
 	end
-	table.clear(activeThreads)
+	table.clear(State.Threads)
 	
-	for key, _ in pairs(toggleStates) do
-		toggleStates[key] = false
+	for key, _ in pairs(State.Toggles) do
+		State.Toggles[key] = false
 	end
+	
+	State.Boss.Active = false
+	State.Boss.LastName = ""
+	
+	BossSystem.RemoveVelocity()
 end
 
 local playerRemovingConn
 playerRemovingConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
 	if leavingPlayer == player then
-		safeDisconnect(playerRemovingConn)
-		cleanupAll()
+		Utilities.SafeDisconnect(playerRemovingConn)
+		Cleanup.All()
 	end
 end)
 
 player.CharacterAdded:Connect(function()
-	if toggleStates.godMode then
-		setupCharacterObservers()
+	if State.Toggles.GodMode then
+		GodMode.SetupObservers()
 	end
 	
-	if toggleStates.fixFishing then
-		setupFishingFix()
+	if State.Boss.Active then
+		BossSystem.Toggle(false)
+		BossSystem.Toggle(true)
 	end
 end)
 
 game:GetService("CoreGui").DescendantRemoving:Connect(function(descendant)
 	if descendant == UI then
-		cleanupAll()
+		Cleanup.All()
 	end
 end)
+
+-- ============ FINAL MESSAGE ============
+Utilities.SendNotification("success", "Rogue Piece", "Script Loaded Successfully!", 5)
