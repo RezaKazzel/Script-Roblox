@@ -494,7 +494,7 @@ function ReyUILib:CreateUI(Name, Note)
 		self.UISettings["Disable Animation"] = table.find(selected, "Disable Animation") 
 		self.UISettings["Mute Sound Effect"] = table.find(selected, "Mute Sound Effect")
 		self:ApplyFeatureSettings()
-	})
+	end)
 	
 	self:CreateButton(settingsTabContent, "Load Extension", "Advance Feature", "Load", function()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
@@ -2501,3 +2501,4 @@ function ReyUILib:CreateConfigManager(parent)
 end
 
 return ReyUILib
+
