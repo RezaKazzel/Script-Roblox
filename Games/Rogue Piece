@@ -514,7 +514,6 @@ function AutoFarmBossFish.CheckFishing()
 	local fishing = player:FindFirstChild("Fishing")
 	if not fishing then
 		remote:FireServer("Server", "Misc", "Fishing", true)
-		return false
 	end
 	return true
 end
@@ -654,11 +653,9 @@ function AutoFarmBossFish.StartLoop()
 			local boss = AutoFarmBossFish.FindBoss()
 			
 			if boss then
-				-- Ada boss, cancel fishing dan attack boss
 				if lastState ~= "boss" then
 					AutoFarmBossFish.CancelFishing()
 					lastState = "boss"
-					-- Equip tools saat mulai boss fight
 					EquipSelectedTools()
 				end
 				
@@ -666,7 +663,6 @@ function AutoFarmBossFish.StartLoop()
 				AutoFarmBossFish.TeleportToBoss(boss)
 				AutoFarmBossFish.AttackBoss(boss)
 			else
-				-- Tidak ada boss, mulai fishing
 				if lastState ~= "fishing" then
 					AutoFarmBossFish.RemoveBodyVelocity()
 					lastState = "fishing"
@@ -715,7 +711,7 @@ function Muzan.Buy()
 	local inventory = player.Inventory
 	local bossToken = inventory:FindFirstChild("Boss Token")
 	
-	if bossToken and bossToken:FindFirstChild("Value") and bossToken.Value > 750 then
+	if bossToken and bossToken.Value > 750 then
 		local shop = player.PlayerGui.Button["Shop Item"]
 		if not shop then return false end
 		
@@ -843,88 +839,73 @@ end
 -- ============ AUTO SPAWN BOSS SYSTEM ============
 local AutoSpawn = {}
 
-function AutoSpawn.SetupUI()
-	local bossUI = player.PlayerGui.Button["Boss Spawn"]
-	if not bossUI then return end
-	
-	bossUI.BackgroundTransparency = 1
-	local spawnFrame = bossUI.Spawn
-	if not spawnFrame then return end
-	
-	local button = spawnFrame.Button
-	if not button then return end
-	
-	for _, obj in ipairs(bossUI:GetDescendants()) do
-		if obj:IsA("GuiObject") then
-			local isMain = obj == button or obj == spawnFrame or obj == bossUI
-			obj.Visible = isMain
-			if obj:IsA("Frame") and isMain then
-				obj.BackgroundTransparency = 1
-			end
-		end
-	end
-	
-	button.Visible = true
-	spawnFrame.Visible = true
-	bossUI.Visible = true
-end
-
-function AutoSpawn.RestoreUI()
-	local bossUI = player.PlayerGui.Button["Boss Spawn"]
-	if not bossUI then return end
-	
-	bossUI.BackgroundTransparency = 0
-	for _, obj in ipairs(bossUI:GetDescendants()) do
-		if obj:IsA("GuiObject") then
-			obj.Visible = true
-			if obj:IsA("Frame") then
-				obj.BackgroundTransparency = 0
-			end
-		end
-	end
-	bossUI.Visible = false
-end
-
-function AutoSpawn.StartLoop()
-	Utils.StartThread("autoSpawn", function()
-		while State.Toggles.AutoSpawnBoss do
-			local inventory = player.Inventory
-			local summonOrb = inventory:FindFirstChild("Summon Orb")
-			
-			if not summonOrb or not summonOrb:FindFirstChild("Value") then
-				continue
-			end
-			
-			if State.Toggles.AutoFarmBossFish and summonOrb.Value < 750 then
-				continue
-			end
-			
-			pcall(function()
-				local obj = player.PlayerGui.Button["Boss Spawn"].Spawn.Button
-				GuiService.SelectedObject = obj
-				VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-				VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-				task.wait(0.1)
-				GuiService.SelectedObject = nil
-			end)
-			
-			task.wait(1)
-		end
-	end)
-end
-
 function AutoSpawn.Toggle(state)
-	State.Toggles.AutoSpawnBoss = state
-	
 	if state then
-		AutoSpawn.SetupUI()
-		AutoSpawn.StartLoop()
+		local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
+		if bossSpawn then
+			bossSpawn.BackgroundTransparency = 1
+			local spawnFrame = bossSpawn.Spawn
+			if spawnFrame then
+				local button = spawnFrame.Button
+				if button then
+					for _, descendant in ipairs(bossSpawn:GetDescendants()) do
+						if descendant:IsA("GuiObject") then
+							if descendant == button or descendant == spawnFrame or descendant == bossSpawn then
+								descendant.Visible = true
+								if descendant:IsA("Frame") then
+									descendant.BackgroundTransparency = 1
+								end
+							else
+								descendant.Visible = false
+							end
+						end
+					end
+					button.Visible = true
+					spawnFrame.Visible = true
+					bossSpawn.Visible = true
+				end
+			end
+		end
+		
+		task.spawn(function()
+			while AutoSpawn.Running do task.wait(0.8)
+				pcall(function()
+					local inventory = game:GetService("Players").LocalPlayer.Inventory
+					local summonOrb = inventory:FindFirstChild("Summon Orb")
+					
+					if summonOrb then
+						if State.Toggles.AutoFarmBossFish and summonOrb.Value < 750 then
+							return
+						end
+					end
+					
+					local obj = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"].Spawn.Button
+					GuiService.SelectedObject = obj
+					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+					task.wait()
+					GuiService.SelectedObject = nil
+				end)
+			end
+		end)
 	else
-		AutoSpawn.RestoreUI()
-		Utils.StopThread("autoSpawn")
+		AutoSpawn.Running = false
+		
+		local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
+		if bossSpawn then
+			bossSpawn.BackgroundTransparency = 0
+			for _, descendant in ipairs(bossSpawn:GetDescendants()) do
+				if descendant:IsA("GuiObject") then
+					descendant.Visible = true
+					if descendant:IsA("Frame") then
+						descendant.BackgroundTransparency = 0
+					end
+				end
+			end
+			bossSpawn.Visible = false
+		end
 	end
 end
-
 -- ============ UI COMPONENTS ============
 Rey:CreateMultipleDropdown(Exclusive, "Pilih Tools", GetTools, function(selectedList)
 	selectedTools = {}
@@ -976,7 +957,11 @@ Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, function(boss)
 	end
 end, false)
 
-Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Pilih boss terlebih dahulu", AutoSpawn.Toggle)
+Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", function(state)
+	AutoSpawn.Running = state
+	AutoSpawn.Toggle(state)
+end)
+
 Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
 
 -- ============ EXCLUSIVE 2 ============
@@ -1097,6 +1082,7 @@ Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, function(selection)
 end, true)
 
 Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu)
+Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
 
 -- ============ CLEANUP ============
 local Cleanup = {}
