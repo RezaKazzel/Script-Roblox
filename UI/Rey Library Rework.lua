@@ -422,11 +422,13 @@ function ReyUILib:CreateUI(Name, Note)
 	
 	Create("Sound", {
 		SoundId = "rbxassetid://80843441506433",
+		Name = "Mambo",
 		Parent = SFX
 	})
 	
 	Create("Sound", {
 		SoundId = "rbxassetid://90255863401034",
+		Name = "Wow",
 		Parent = SFX
 	})
 	
@@ -453,16 +455,26 @@ function ReyUILib:CreateUI(Name, Note)
 		
 		if not isOpen then
 			panel.Visible = true
-			showTween:Play()
+			if not self.UISettings["Disable Animation"] then
+				showTween:Play()
+			else
+				panel.Position = UDim2.new(0.5, -250, 0.5, -200)
+				panel.BackgroundTransparency = 0
+				panel.Size = UDim2.new(0, 500, 0, 350)
+			end
 			isOpen = true
 		else
-			hideTween:Play()
-			hideTween.Completed:Wait()
-			panel.Visible = false
+			if not self.UISettings["Disable Animation"] then
+				hideTween:Play()
+				hideTween.Completed:Wait()
+				panel.Visible = false
+			else
+				panel.Visible = false
+			end
 			isOpen = false
 		end
 	end)
-
+	
 	local settingsTabContent = self:CreateTab({
 		ScreenGui = screenGui,
 		Panel = panel,
@@ -475,10 +487,24 @@ function ReyUILib:CreateUI(Name, Note)
 	
 	local configManager = self:CreateConfigManager(settingsTabContent)
 	self:CreateNote(settingsTabContent, "💾 Save named configs\n📂 Load saved configs\n🗑️ Delete configs\n🔄 Refresh list")
+	
+	local disableOptions = {"Disable Notif", "Disable Animation", "Mute Sound Effect"}
+	self:CreateMultipleDropdown(settingsTabContent, "Disable Features", disableOptions, function(selected)
+		self.UISettings["Disable Notif"] = table.find(selected, "Disable Notif")
+		self.UISettings["Disable Animation"] = table.find(selected, "Disable Animation") 
+		self.UISettings["Mute Sound Effect"] = table.find(selected, "Mute Sound Effect")
+		self:ApplyFeatureSettings()
+	})
+	
+	self:CreateButton(settingsTabContent, "Load Extension", "Advance Feature", "Load", function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
+	end)
+	
 	task.spawn(function()
 		wait(0.5)
 		self:Notify("success", "Rey UI", "Library loaded successfully!", 3)
 	end)
+	
 	return {
 		ScreenGui = screenGui,
 		Panel = panel,
@@ -1561,6 +1587,10 @@ function ReyUILib:CreateInput(parent, title, description, callback)
 end
 
 function ReyUILib:Notify(style, title, description, duration)
+	if self.UISettings["Disable Notif"] then
+		return
+	end
+
 	local TweenService = game:GetService("TweenService")
 	local TextService = game:GetService("TextService")
 	local Players = game:GetService("Players")
@@ -1969,6 +1999,26 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 	end
 end
 
+function ReyUILib:ApplyFeatureSettings()
+	if self.UISettings["Mute Sound Effect"] then
+		if self.SFX then
+			for _, sound in pairs(self.SFX:GetChildren()) do
+				if sound:IsA("Sound") then
+					sound.Volume = 0
+				end
+			end
+		end
+	else
+		if self.SFX then
+			for _, sound in pairs(self.SFX:GetChildren()) do
+				if sound:IsA("Sound") then
+					sound.Volume = 1
+				end
+			end
+		end
+	end
+end
+
 function ReyUILib:SaveConfig()
 	local success = SaveConfig()
 	if success then
@@ -1989,6 +2039,7 @@ function ReyUILib:LoadConfig()
 		end
 		self:UpdateUIElements()
 		self:ExecuteAllCallbacks()
+		self:ApplyFeatureSettings()
 		self:Notify("success", "Config Loaded", "Settings loaded successfully!", 3)
 		return true
 	end
