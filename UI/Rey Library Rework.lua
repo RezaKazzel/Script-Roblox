@@ -888,8 +888,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				dropdownButton.Text = optionText
 				dropdownList.Visible = false
 				ReyUILib.UISettings[Name] = optionText
-				local callbackParam = Options[1] and type(Options[1]) == "table" and option or optionText
-				Callback(callbackParam)
+				Callback(optionText)
 			end)
 		end
 		
@@ -2508,3 +2507,4 @@ function ReyUILib:CreateConfigManager(parent)
 end
 
 return ReyUILib
+
