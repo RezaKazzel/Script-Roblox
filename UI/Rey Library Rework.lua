@@ -883,12 +883,13 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				Parent = optionButton,
 				CornerRadius = UDim.new(0, 6)
 			})
-
+			
 			optionButton.MouseButton1Click:Connect(function()
 				dropdownButton.Text = optionText
 				dropdownList.Visible = false
 				ReyUILib.UISettings[Name] = optionText
-				Callback(option)
+				local callbackParam = Options[1] and type(Options[1]) == "table" and option or optionText
+				Callback(callbackParam)
 			end)
 		end
 		
@@ -1865,6 +1866,12 @@ function ReyUILib:UpdateUIElements()
 				if elementData.DropdownButton then
 					elementData.DropdownButton.Text = savedValue or elementName
 					elementData.Selected = savedValue
+					if self.CallbackManager.Dropdowns[elementName] then
+						task.spawn(function()
+							wait(0.05)
+							self.CallbackManager.Dropdowns[elementName](savedValue)
+						end)
+					end
 				end
 				
 			elseif elementData.Type == "MultiDropdown" then
@@ -2501,4 +2508,3 @@ function ReyUILib:CreateConfigManager(parent)
 end
 
 return ReyUILib
-
