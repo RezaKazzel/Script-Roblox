@@ -6,7 +6,7 @@ local Commands = {}
 local function findPlayer(name)
     name = name:lower()
     for _, p in pairs(game.Players:GetPlayers()) do
-        if p.Name:lower():find(name) then
+        if p.Name:lower():find(name) or p.DisplayName:lower():find(name) then
             return p
         end
     end
