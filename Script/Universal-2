@@ -1,9 +1,5 @@
-local Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua"))()
-local Notif = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Notification.lua"))()
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
@@ -12,816 +8,784 @@ local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
 
-local activeConnections = {}
-local Distance = 10
-local Folder = game.Workspace
-local range = 100
-local OneHitHealth = 0.7
-local AutoFarmMob = nil
-local AutoEquipTool = nil
-local infJumpDebounce = false
-local TeleportCheck = false
-_G.SaveConfig = nil
-_G.OneHit = false
-_G.AutoClick = false
-_G.AutoGrab = false
-_G.RestrictAutoFarm = false
-_G.RE = true
-
-local nc = nil
+local ActiveConnections = {}
 local HumanModCons = {}
+local State = {
+    Distance = 10,
+    SelectedFolder = workspace,
+    NPCFolder = workspace,
+    Range = 100,
+    OneHitHealth = 0.7,
+    SelectedMob = nil,
+    SelectedTool = nil,
+    InfJumpDebounce = false,
+    TeleportCheck = false,
+    OneHit = false,
+    AutoClick = false,
+    AutoGrab = false,
+    RestrictAutoFarm = false,
+    Noclip = false
+}
 
 local AutoFarmTab = Rey:CreateTab(UI, "Auto Farm")
-local EtcTab = Rey:CreateTab(UI, "Utility")
+local UtilityTab = Rey:CreateTab(UI, "Utility")
 local MiscTab = Rey:CreateTab(UI, "Misc")
-local SettingsTab = Rey:CreateTab(UI, "Settings")
 
-local function getFolder(modelName)
-	for _, v in ipairs(Folder:GetDescendants()) do
-		if v:IsA("Model") and v.Name == modelName and v:FindFirstChild("HumanoidRootPart") then
-			local obj = v
-			while obj and not obj:IsA("Folder") do
-				if obj.Parent and obj.Parent:IsA("Folder") then
-					return obj.Parent
-				end
-				obj = obj.Parent
-			end
-		end
-	end
-	return nil
+local Utils = {}
+
+function Utils.Disconnect(key)
+    if ActiveConnections[key] then
+        ActiveConnections[key]:Disconnect()
+        ActiveConnections[key] = nil
+    end
 end
 
-local function getNearby(range)
-	local enemies = {}
-	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
-	local rootPart = Character.HumanoidRootPart
-
-	for _, obj in ipairs(Folder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
-			local humanoid = obj.Humanoid
-			local enemyRootPart = obj.HumanoidRootPart
-			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
-
-			if humanoid and humanoid.Health > 0 and distance <= range then
-				table.insert(enemies, obj)
-			end
-		end
-	end
-
-	table.sort(enemies, function(a, b)
-		return a.Humanoid.Health < b.Humanoid.Health
-	end)
-
-	return enemies
+function Utils.AddConnection(key, conn)
+    Utils.Disconnect(key)
+    ActiveConnections[key] = conn
 end
 
-local function OneHits(object)
-	task.spawn(function()
-		local currentHealth = object.Humanoid.Health
-		repeat
-			local before = object.Humanoid.Health
-			if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * OneHitHealth then
-				object.Humanoid.Health = 0
-			end
-			task.wait(1.5)
-			if object then
-				object.Humanoid.Health = before
-			end
-		until not object or object.Parent == nil or object.Humanoid.Health <= 0
-	end)
+function Utils.StartThread(key, func)
+    if ActiveConnections[key] then
+        coroutine.close(ActiveConnections[key])
+        ActiveConnections[key] = nil
+    end
+    ActiveConnections[key] = coroutine.create(func)
+    coroutine.resume(ActiveConnections[key])
 end
 
-local function checksTable(tbl, value)
-	for _, v in ipairs(tbl) do
-		if v == value then
-			return false
-		end
-	end
-	return true
+function Utils.FireRemote(remotePath, ...)
+	local args = {...}
+    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+    for _, part in ipairs(remotePath:split(".")) do
+        remote = remote and remote:FindFirstChild(part)
+    end
+    if remote and remote:IsA("RemoteEvent") then
+        pcall(function() remote:FireServer(unpack(args)) end)
+    end
 end
 
-local function Monsters()
-	local options = {}
-	for _, v in ipairs(Folder:GetDescendants()) do
-		if v:FindFirstChild("HumanoidRootPart") then
-			if checksTable(options, v.Name) then
-				table.insert(options, v.Name)
-			end
-		end
-	end
-	return options
+function Utils.GetMobFolder(modelName)
+    for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
+            local currentObj = obj
+            while currentObj and not currentObj:IsA("Folder") do
+                if currentObj.Parent and currentObj.Parent:IsA("Folder") then
+                    return currentObj.Parent
+                end
+                currentObj = currentObj.Parent
+            end
+        end
+    end
+    return nil
 end
 
-local function getBackpackTools()
-	local tools = {}
-	for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
-		if item:IsA("Tool") then
-			table.insert(tools, item.Name)
-		end
-	end
-	return tools
+function Utils.GetNearbyEnemies(range)
+    local enemies = {}
+    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
+    local rootPart = Character.HumanoidRootPart
+
+    for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
+            local humanoid = obj.Humanoid
+            local enemyRootPart = obj.HumanoidRootPart
+            local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
+
+            if humanoid and humanoid.Health > 0 and distance <= range then
+                table.insert(enemies, obj)
+            end
+        end
+    end
+
+    table.sort(enemies, function(a, b)
+        return a.Humanoid.Health < b.Humanoid.Health
+    end)
+
+    return enemies
 end
 
-local function getFolders()
-	local parent = game.Workspace
-	local folders = {}
-	for _, descendant in ipairs(parent:GetDescendants()) do
-		if descendant:IsA("Folder") then
-			table.insert(folders, descendant)
-		end
-	end
-	return folders
+function Utils.ApplyOneHit(object)
+    task.spawn(function()
+        repeat
+            local beforeHealth = object.Humanoid.Health
+            if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * State.OneHitHealth then
+                object.Humanoid.Health = 0
+            end
+            task.wait(1.5)
+            if object then
+                object.Humanoid.Health = beforeHealth
+            end
+        until not object or object.Parent == nil or object.Humanoid.Health <= 0
+    end)
 end
 
-local function getPlayerList()
-	local playerNames = {}
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer then
-			table.insert(playerNames, player.Name)
-		end
-	end
-	return playerNames
+function Utils.IsInTable(tbl, value)
+    for _, v in ipairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
 end
 
-Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Monsters, function(selectedOption)
-	AutoFarmMob = selectedOption
-	Notif("info", "Auto Farm", "Selected Mob: "..selectedOption, 3)
+function Utils.GetMonsterList()
+    return function()
+        local currentFolder = State.SelectedFolder
+        local monsters = {}
+        
+        for _, obj in ipairs(currentFolder:GetDescendants()) do
+            if obj:FindFirstChild("HumanoidRootPart") then
+                if not Utils.IsInTable(monsters, obj.Name) then
+                    table.insert(monsters, obj.Name)
+                end
+            end
+        end
+        return monsters
+    end
+end
+
+function Utils.GetBackpackTools()
+    local tools = {}
+    for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            table.insert(tools, item.Name)
+        end
+    end
+    return tools
+end
+
+function Utils.GetFolders()
+    local folders = {}
+    for _, descendant in ipairs(workspace:GetDescendants()) do
+        if descendant:IsA("Folder") then
+            table.insert(folders, descendant)
+        end
+    end
+    return folders
+end
+
+function Utils.GetPlayerList()
+    local players = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(players, player.Name)
+        end
+    end
+    return players
+end
+
+function Utils.SetupBodyVelocity()
+    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+    if torso and not torso:FindFirstChild("BodyVelocity") then
+        local bv = Instance.new("BodyVelocity", torso)
+        bv.Velocity = Vector3.new(0, 0.1, 0)
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    end
+end
+
+function Utils.RemoveBodyVelocity()
+    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+    if torso and torso:FindFirstChild("BodyVelocity") then
+        torso.BodyVelocity:Destroy()
+    end
+end
+
+local AutoFarm = {}
+
+function AutoFarm.ToggleEquip(state)
+    Utils.Disconnect("AutoEquip")
+    
+    if state and State.SelectedTool then
+        Utils.AddConnection("AutoEquip", RunService.RenderStepped:Connect(function()
+            for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool:IsA("Tool") and tool.Name == State.SelectedTool then
+                    tool.Parent = LocalPlayer.Character
+                end
+            end
+        end))
+    end
+end
+
+function AutoFarm.ToggleFarm(state)
+    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+    Utils.Disconnect("AutoFarm")
+    Utils.RemoveBodyVelocity()
+    
+    if state and State.SelectedMob and torso then
+        local mobFolder = Utils.GetMobFolder(State.SelectedMob)
+        if not mobFolder then
+            Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
+            return
+        end
+
+        Utils.SetupBodyVelocity()
+        
+        Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
+            local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+            if not playerRoot then return end
+
+            for _, mob in ipairs(mobFolder:GetChildren()) do
+                if mob:IsA("Model") and mob.Name == State.SelectedMob and mob:FindFirstChild("HumanoidRootPart") then
+                    local mobRoot = mob.HumanoidRootPart
+                    local mobHumanoid = mob:FindFirstChild("Humanoid")
+                    
+                    if mobRoot and playerRoot and mobHumanoid and mobHumanoid.Health > 0 then
+                        if State.OneHit then Utils.ApplyOneHit(mob) end
+                        
+                        local targetPos = mobRoot.Position + Vector3.new(0, mobRoot.Size.Y / 2 + State.Distance, 0)
+                        playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
+                        
+                        if not State.RestrictAutoFarm then
+                            break
+                        end
+                    end
+                end
+            end
+        end))
+    end
+end
+
+function AutoFarm.ToggleFarmNearby(state)
+    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+    Utils.Disconnect("AutoFarmNearby")
+    Utils.RemoveBodyVelocity()
+    
+    if state and torso then
+        local checkDelay = 0.3
+        local timer = 0
+        local target = nil
+        
+        Utils.SetupBodyVelocity()
+        
+        Utils.AddConnection("AutoFarmNearby", RunService.Heartbeat:Connect(function(deltaTime)
+            local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+            if not playerRoot then return end
+            
+            timer = timer + deltaTime
+            if timer >= checkDelay then
+                timer = 0
+                local nearby = Utils.GetNearbyEnemies(State.Range)
+                target = nearby[1]
+            end
+                
+            if target and target.Parent and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+                if State.OneHit then Utils.ApplyOneHit(target) end
+                
+                local targetRoot = target.HumanoidRootPart
+                local targetPos = targetRoot.Position + Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
+                playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
+            else
+                target = nil
+                timer = checkDelay
+            end
+        end))
+    end
+end
+
+local AutoClick = {}
+
+function AutoClick.Toggle(state)
+    State.AutoClick = state
+    
+    if state then
+        Utils.StartThread("AutoClick", function()
+            while State.AutoClick do
+                task.wait()
+                local char = LocalPlayer.Character
+                
+                local function Attack()
+                    local tool = char and char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
+                end
+
+                if pcall(Attack) then
+                else
+                    local VirtualUser = game:GetService("VirtualUser")
+                    VirtualUser:CaptureController()
+                    VirtualUser:Button1Down(Vector2.new(0, 0))
+                    VirtualUser:Button1Up(Vector2.new(0, 0))
+                end
+            end
+        end)
+    else
+        if ActiveConnections["AutoClick"] then
+            coroutine.close(ActiveConnections["AutoClick"])
+            ActiveConnections["AutoClick"] = nil
+        end
+    end
+end
+
+local AutoGrab = {}
+
+function AutoGrab.Toggle(state)
+    State.AutoGrab = state
+    
+    if state then
+        Utils.StartThread("AutoGrab", function()
+            while State.AutoGrab do
+                task.wait(0.2)
+                local playerRoot = Character and Character.HumanoidRootPart
+                if playerRoot then
+                    for _, item in ipairs(workspace:GetDescendants()) do
+                        if item:IsA("Tool") then
+                            local handle = item:FindFirstChild("Handle")
+                            if handle then
+                                handle.CFrame = playerRoot.CFrame
+                            elseif item:FindFirstChild("CFrame") then
+                                item.CFrame = playerRoot.CFrame
+                            elseif item:FindFirstChild("handler") then
+                                item.handler.CFrame = playerRoot.CFrame
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if ActiveConnections["AutoGrab"] then
+            coroutine.close(ActiveConnections["AutoGrab"])
+            ActiveConnections["AutoGrab"] = nil
+        end
+    end
+end
+
+local EquipAllTools = {}
+
+function EquipAllTools.Toggle(state)
+    Utils.Disconnect("EquipAllTools")
+
+    if state then
+        Utils.AddConnection("EquipAllTools", RunService.RenderStepped:Connect(function()
+            for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                if tool:IsA("Tool") then
+                    tool.Parent = LocalPlayer.Character
+                end
+            end
+        end))
+    end
+end
+
+local Noclip = {}
+
+function Noclip.Toggle(state)
+    State.Noclip = state
+    Utils.Disconnect("Noclip")
+
+    if state then
+        Utils.AddConnection("Noclip", RunService.Stepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide == true then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end))
+    end
+end
+
+local EdgeJump = {}
+
+function EdgeJump.Toggle(state)
+    if HumanModCons.EdgeJumpLoop then 
+        HumanModCons.EdgeJumpLoop:Disconnect() 
+        HumanModCons.EdgeJumpLoop = nil 
+    end
+    if HumanModCons.EdgeJumpChar then 
+        HumanModCons.EdgeJumpChar:Disconnect() 
+        HumanModCons.EdgeJumpChar = nil 
+    end
+
+    if state then
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildWhichIsA("Humanoid")
+        local lastState, lastCFrame
+
+        local function EdgeJumpFunc()
+            if char and humanoid and HumanoidRootPart then
+                local currentState = humanoid:GetState()
+                
+                if lastState ~= currentState and currentState == Enum.HumanoidStateType.Freefall and lastState ~= Enum.HumanoidStateType.Jumping then
+                    HumanoidRootPart.CFrame = lastCFrame
+                    HumanoidRootPart.Velocity = Vector3.new(HumanoidRootPart.Velocity.X, humanoid.JumpPower or humanoid.JumpHeight, HumanoidRootPart.Velocity.Z)
+                end
+                lastState = currentState
+                lastCFrame = HumanoidRootPart.CFrame
+            end
+        end
+        
+        EdgeJumpFunc()
+        HumanModCons.EdgeJumpLoop = RunService.RenderStepped:Connect(EdgeJumpFunc)
+        HumanModCons.EdgeJumpChar = LocalPlayer.CharacterAdded:Connect(function(newChar)
+            char, humanoid = newChar, newChar:WaitForChild("Humanoid")
+            HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+            EdgeJumpFunc()
+            if HumanModCons.EdgeJumpLoop then HumanModCons.EdgeJumpLoop:Disconnect() end
+            HumanModCons.EdgeJumpLoop = RunService.RenderStepped:Connect(EdgeJumpFunc)
+        end)
+    end
+end
+
+local InfiniteJump = {}
+
+function InfiniteJump.Toggle(state)
+    if _G.InfiniteJumpConn then 
+        _G.InfiniteJumpConn:Disconnect() 
+        _G.InfiniteJumpConn = nil 
+    end
+
+    if state then
+        _G.InfiniteJumpConn = UserInputService.JumpRequest:Connect(function()
+            if not State.InfJumpDebounce then
+                State.InfJumpDebounce = true
+                local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass('Humanoid')
+                if humanoid then
+                    humanoid:ChangeState("Jumping")
+                end
+                task.wait()
+                State.InfJumpDebounce = false
+            end
+        end)
+    end
+end
+
+local Brightness = {}
+
+function Brightness.Toggle(state)
+    local Lighting = game:GetService("Lighting")
+    
+    if _G.BrightLoop then
+        _G.BrightLoop:Disconnect()
+        _G.BrightLoop = nil
+    end
+
+    if state then
+        _G.BrightLoop = RunService.RenderStepped:Connect(function()
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 100000
+            Lighting.GlobalShadows = false
+            Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        end)
+    end
+end
+
+local KillAll = {}
+
+function KillAll.CreateButton(name, text, positionY, killFunc)
+    local buttonName = name .. " [BUTTON]"
+    
+    return Rey:CreateToggle(UtilityTab, buttonName, "Kill all enemies", function(state)
+        local coreGui = CoreGui:FindFirstChild(buttonName)
+        
+        if state then
+            if coreGui then coreGui:Destroy() end
+            
+            local screenGui = Instance.new("ScreenGui")
+            screenGui.Name = buttonName
+            screenGui.Parent = CoreGui
+            screenGui.ResetOnSpawn = false
+            
+            local killBtn = Instance.new("TextButton")
+            killBtn.Size = UDim2.new(0, 70, 0, 30)
+            killBtn.Position = UDim2.new(1, -130, 0, positionY)
+            killBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            killBtn.Text = text
+            killBtn.TextColor3 = Color3.new(1, 0, 0)
+            killBtn.BorderSizePixel = 0
+            killBtn.Font = Enum.Font.GothamBold
+            killBtn.TextSize = 14
+            killBtn.Parent = screenGui
+            killBtn.Active = true
+            killBtn.Draggable = true
+
+            killBtn.MouseButton1Click:Connect(function()
+                sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
+                sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
+                killFunc()
+                Rey:Notify("success", buttonName, "Killed all enemies!", 2)
+            end)
+        else
+            if coreGui then coreGui:Destroy() end
+        end
+    end)
+end
+
+local NPCCache = {}
+local function GetNPCList()
+    return function()
+        local npcs = {}
+        NPCCache = {}
+        local currentNPCFolder = State.NPCFolder
+        
+        for _, obj in ipairs(currentNPCFolder:GetDescendants()) do
+            if obj.Name:lower() ~= "keyframe" and obj:IsA("Model") and obj.Parent ~= LocalPlayer.Character then
+                if obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart then
+                    if not Utils.IsInTable(npcs, obj.Name) then 
+                        table.insert(npcs, obj.Name)
+                        NPCCache[obj.Name] = obj
+                    end
+                end
+            end
+        end
+        return npcs
+    end
+end
+
+local ServerHop = {}
+
+function ServerHop.Hop()
+    local http = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    local placeId, currentJobId = game.PlaceId, game.JobId
+
+    if http then
+        local servers = {}
+        local response = http({
+            Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", placeId)
+        })
+        
+        local data = game:GetService("HttpService"):JSONDecode(response.Body)
+
+        if data and data.data then
+            for _, server in next, data.data do
+                if type(server) == "table" and tonumber(server.playing) and tonumber(server.maxPlayers) and server.playing < server.maxPlayers and server.id ~= currentJobId then
+                    table.insert(servers, 1, server.id)
+                end
+            end
+        end
+
+        if #servers > 0 then
+            TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+        else
+            Rey:Notify("error", "Server Hop", "No suitable server found", 3)
+        end
+    else
+        Rey:Notify("error", "Server Hop", "Executor not compatible", 3)
+    end
+end
+
+function ServerHop.AutoLoad(state)
+    if state then
+        local queueTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+        
+        LocalPlayer.OnTeleport:Connect(function()
+            if not State.TeleportCheck and queueTeleport then
+                State.TeleportCheck = true
+                task.wait(1)
+                queueTeleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader'))()")
+            end
+        end)
+    else
+        State.TeleportCheck = false
+    end
+end
+
+Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Utils.GetMonsterList(), function(selected)
+    State.SelectedMob = selected
+    Rey:Notify("info", "Auto Farm", "Selected Mob: "..selected, 3)
 end, true)
 
 Rey:CreateSlider(AutoFarmTab, "Distance from Mob", 1, 20, 11, function(value)
-	Distance = value
+    State.Distance = value
 end)
 
-Rey:CreateDropdown(AutoFarmTab, "▼ Select Tool ▼", getBackpackTools, function(selectedOption)
-	AutoEquipTool = selectedOption
-	Notif("info", "Auto Equip Selected Tools", "Selected Tools: "..selectedOption, 3)
+Rey:CreateDropdown(AutoFarmTab, "▼ Select Tool ▼", Utils.GetBackpackTools, function(selected)
+    State.SelectedTool = selected
+    Rey:Notify("info", "Auto Equip", "Selected Tool: "..selected, 3)
 end, true)
 
-Rey:CreateToggle(AutoFarmTab, "Auto Equip Selected Tool", "Equip tool sesuai yg dipilih", function(state)
-	if activeConnections["Auto Equip Selected Tool"] then
-		activeConnections["Auto Equip Selected Tool"]:Disconnect()
-		activeConnections["Auto Equip Selected Tool"] = nil
-	end
+Rey:CreateToggle(AutoFarmTab, "Auto Equip Selected Tool", "Equip selected tool automatically", AutoFarm.ToggleEquip)
 
-	if state and AutoEquipTool then
-		activeConnections["Auto Equip Selected Tool"] = RunService.RenderStepped:Connect(function()
-			for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-				if tool:IsA("Tool") and tool.Name == AutoEquipTool then
-					tool.Parent = LocalPlayer.Character
-				end
-			end
-		end)
-	end
+Rey:CreateToggle(AutoFarmTab, "AutoFarm (Selected Mob)", "Farm selected mob", AutoFarm.ToggleFarm)
+
+Rey:CreateToggle(AutoFarmTab, "AutoFarm V2 (Nearby)", "Farm nearby enemies", AutoFarm.ToggleFarmNearby)
+
+Rey:CreateSlider(AutoFarmTab, "Nearby Distance", 1, 100, 10, function(value)
+    State.Range = value * 10
 end)
 
-Rey:CreateToggle(AutoFarmTab, "AutoFarm (Selected Mob)", "Janlupa pilih mob", function(state)
-	local torso = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("LowerTorso"))
+Rey:CreateToggle(UtilityTab, "Auto Click/Attack", "Attack automatically", AutoClick.Toggle)
 
-	if activeConnections["AutoFarm"] then
-		activeConnections["AutoFarm"]:Disconnect()
-		activeConnections["AutoFarm"] = nil
-	end
+Rey:CreateToggle(UtilityTab, "Auto Grab Items", "Collect dropped items", AutoGrab.Toggle)
 
-	if torso and torso:FindFirstChild("BodyVelocity") then
-		torso:FindFirstChild("BodyVelocity"):Destroy()
-	end
+Rey:CreateToggle(UtilityTab, "Equip All Tools", "Equip all tools from backpack", EquipAllTools.Toggle)
 
-	if state and AutoFarmMob and torso then
-		local SelectedMob = getFolder(AutoFarmMob)
-		if not SelectedMob then
-			Notif("error", "Auto Farm", "Mob folder not found.", 3)
-			return
-		end
-
-		local bv = Instance.new("BodyVelocity", torso)
-		bv.velocity = Vector3.new(0, 0.1, 0)
-		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-
-		activeConnections["AutoFarm"] = RunService.Heartbeat:Connect(function()
-			local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if not playerHRP then return end
-
-			for _, v in ipairs(SelectedMob:GetChildren()) do
-				if v:IsA("Model") and v.Name == AutoFarmMob and v:FindFirstChild("HumanoidRootPart") then
-					local mobHRP = v.HumanoidRootPart
-					local mobHumanoid = v:FindFirstChild("Humanoid")
-					
-					if mobHRP and playerHRP and mobHumanoid and mobHumanoid.Health > 0 then
-						if _G.OneHit then OneHits(v) end
-						
-						local targetPosition = mobHRP.Position + Vector3.new(0, mobHRP.Size.Y / 2 + Distance, 0)
-						
-						playerHRP.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0))
-						
-						if not _G.RestrictAutoFarm then
-							break
-						end
-					end
-				end
-			end
-		end)
-	end
+Rey:CreateToggle(UtilityTab, "1 Hit Kill", "Kill enemies with one hit", function(state)
+    State.OneHit = state
 end)
 
-Rey:CreateToggle(AutoFarmTab, "AutoFarm V2 (Nearby)", "AutoFarm Nearby (Kinda Bug)", function(state)
-	local torso = LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("LowerTorso"))
-	local currentMob = nil
-	
-	if activeConnections["AutoFarmNearby"] then
-		activeConnections["AutoFarmNearby"]:Disconnect()
-		activeConnections["AutoFarmNearby"] = nil
-	end
-
-	if torso and torso:FindFirstChild("BodyVelocity") then
-		torso:FindFirstChild("BodyVelocity"):Destroy()
-	end
-	
-	if state and torso then
-		local checkDelay = 0.3
-		local timer = 0
-		local targetMob = nil
-		
-		local bv = Instance.new("BodyVelocity", torso)
-		bv.velocity = Vector3.new(0, 0.1, 0)
-		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		
-		activeConnections["AutoFarmNearby"] = RunService.Heartbeat:Connect(function(dt)
-			local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if not playerHRP then return end
-			
-			timer = timer + dt
-			if timer >= checkDelay then
-				timer = 0
-				local nearbyEnemies = getNearby(range)
-				targetMob = nearbyEnemies[1]
-			end
-				
-			if targetMob and targetMob.Parent and targetMob:FindFirstChild("HumanoidRootPart") and targetMob:FindFirstChild("Humanoid") and targetMob.Humanoid.Health > 0 then
-				if currentMob ~= targetMob then
-					currentMob = targetMob
-					Notif("info", "Auto Farm Nearby", "Selected Mob: "..targetMob.Name, 3)
-				end
-
-				if _G.OneHit then OneHits(targetMob) end
-				
-				local mobHRP = targetMob.HumanoidRootPart
-				local targetPosition = mobHRP.Position + Vector3.new(0, mobHRP.Size.Y / 2 + Distance, 0)
-				
-				playerHRP.CFrame = CFrame.new(targetPosition, targetPosition - Vector3.new(0,1,0))
-			else
-				targetMob = nil
-				timer = checkDelay 
-			end
-		end)
-	end
+Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 70, function(value)
+    State.OneHitHealth = value / 100
 end)
 
-Rey:CreateSlider(AutoFarmTab, "Nearby Distance (Range)", 1, 100, 10, function(value)
-	range = value * 10
+KillAll.CreateButton("Kill All V1", "KILL V1", -10, function()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name and obj.Health < obj.MaxHealth then
+            obj.Health = 0
+        end
+    end
 end)
 
-Rey:CreateToggle(EtcTab, "Auto Click/Attack", "Menyerang/Menggunakan Tool secara otomatis", function(state)
-	_G.AutoClick = state
-	task.spawn(function()
-		while _G.AutoClick do
-			task.wait()
-			local character = LocalPlayer.Character
-			local backpack = LocalPlayer:FindFirstChild("Backpack")
-
-			local function activateTool()
-				local tool = character and character:FindFirstChildOfClass("Tool")
-				if tool then
-					tool:Activate()
-				end
-			end
-
-			if pcall(activateTool) then
-			else
-				local VirtualUser = game:GetService("VirtualUser")
-				VirtualUser:CaptureController()
-				VirtualUser:Button1Down(Vector2.new(0, 0))
-				VirtualUser:Button1Up(Vector2.new(0, 0))
-			end
-		end
-	end)
+KillAll.CreateButton("Kill All V2", "KILL V2", 30, function()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
+            if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
+                obj:BreakJoints()
+            end
+        end
+    end
 end)
 
-Rey:CreateToggle(EtcTab, "Auto Grab Items", "Menarik item drop ke posisi player", function(state)
-	_G.AutoGrab = state
-	task.spawn(function()
-		while _G.AutoGrab do
-			task.wait(0.2)
-			local playerHRP = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart
-			if playerHRP then
-				for _, v in ipairs(game.Workspace:GetDescendants()) do
-					if v:IsA("Tool") then
-						if v:FindFirstChild("Handle") then
-							v.Handle.CFrame = playerHRP.CFrame
-						elseif v:FindFirstChild("CFrame") and v.CFrame.Position then
-							v.CFrame = playerHRP.CFrame
-						elseif v:FindFirstChild("handler") then
-							v.handler.CFrame = playerHRP.CFrame
-						end
-					end
-				end
-			end
-		end
-	end)
+KillAll.CreateButton("Kill All V3", "KILL V3", 70, function()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
+            obj.Health = 0
+        end
+    end
 end)
 
-Rey:CreateToggle(EtcTab, "Equip all tools", "Memakai semua tool dari backpack secara otomatis", function(state)
-	if activeConnections["Equip All Tools"] then
-		activeConnections["Equip All Tools"]:Disconnect()
-		activeConnections["Equip All Tools"] = nil
-	end
-
-	if state then
-		activeConnections["Equip All Tools"] = RunService.RenderStepped:Connect(function()
-			for _, v in ipairs(LocalPlayer.Backpack:GetChildren()) do
-				if v:IsA("Tool") then
-					v.Parent = LocalPlayer.Character
-				end
-			end
-		end)
-	end
+Rey:CreateButton(MiscTab, "Fly Gui", "Dark theme fly script", "Load", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
 end)
 
-Rey:CreateToggle(EtcTab, "1 Hit enemies (Damage Modify)", "Hanya bekerja saat AutoFarm aktif", function(state)
-	_G.OneHit = state
+Rey:CreateButton(MiscTab, "[FE] Invisible", "Become invisible", "Load", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Invisible'))()
 end)
 
-Rey:CreateSlider(EtcTab, "Kill when Health under (% of Max)", 1, 100, 70, function(value)
-	OneHitHealth = value / 100
+Rey:CreateButton(MiscTab, "[FE] Rewind", "Rewind to previous position", "Load", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Rewind'))()
 end)
 
---- Kill All V1 ---
-
-Rey:CreateToggle(EtcTab, "Kill All V1 [BUTTON]", "[Work Without AutoFarm] V1: KILL ALL V1", function(state)
-	local buttonName = "Kill All V1 [BUTTON]"
-	local buttonText = "KILL ALL V1"
-	local version = 1 -- Digunakan untuk posisi
-
-	local coreGui = CoreGui:FindFirstChild(buttonName)
-
-	if state then
-		if coreGui then
-			coreGui:Destroy()
-		end
-		
-		local screenGui = Instance.new("ScreenGui")
-		screenGui.Name = buttonName
-		screenGui.Parent = CoreGui
-		screenGui.ResetOnSpawn = false
-		
-		local KillAllBtn = Instance.new("TextButton")
-		KillAllBtn.Size = UDim2.new(0, 70, 0, 30)
-		KillAllBtn.Position = UDim2.new(1, -130, 0, -10 + (version-1) * 40)
-		KillAllBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		KillAllBtn.Text = buttonText
-		KillAllBtn.TextColor3 = Color3.new(1, 0, 0)
-		KillAllBtn.BorderSizePixel = 0
-		KillAllBtn.Font = Enum.Font.GothamBold
-		KillAllBtn.TextSize = 14
-		KillAllBtn.Parent = screenGui
-		KillAllBtn.Active = true
-		KillAllBtn.Draggable = true
-
-		KillAllBtn.MouseButton1Click:Connect(function()
-			sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
-			sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
-			
-			-- Kill Action V1: Set Health to 0 with Health Check
-			for _, object in pairs(game.Workspace:GetDescendants()) do
-				if object:IsA("Humanoid") and object.Parent.Name ~= LocalPlayer.Name and object.Health < object.MaxHealth then
-					object.Health = 0
-				end
-			end
-			
-			Notif("success", buttonName, "Killed all eligible targets!", 1)
-		end)
-	else
-		if coreGui then
-			coreGui:Destroy()
-		end
-	end
+Rey:CreateToggle(MiscTab, "Player ESP", "See other players through walls", function(state)
+    if state then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+    end
 end)
 
---- Kill All V2 ---
+Rey:CreateToggle(MiscTab, "Full Bright", "Brighten the entire map", Brightness.Toggle)
 
-Rey:CreateToggle(EtcTab, "Kill All V2 [BUTTON]", "[Work Without AutoFarm] V2: KILL ALL V2", function(state)
-	local buttonName = "Kill All V2 [BUTTON]"
-	local buttonText = "KILL ALL V2"
-	local version = 2 -- Digunakan untuk posisi
-
-	local coreGui = CoreGui:FindFirstChild(buttonName)
-
-	if state then
-		if coreGui then
-			coreGui:Destroy()
-		end
-		
-		local screenGui = Instance.new("ScreenGui")
-		screenGui.Name = buttonName
-		screenGui.Parent = CoreGui
-		screenGui.ResetOnSpawn = false
-		
-		local KillAllBtn = Instance.new("TextButton")
-		KillAllBtn.Size = UDim2.new(0, 70, 0, 30)
-		KillAllBtn.Position = UDim2.new(1, -130, 0, -10 + (version-1) * 40)
-		KillAllBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		KillAllBtn.Text = buttonText
-		KillAllBtn.TextColor3 = Color3.new(1, 0, 0)
-		KillAllBtn.BorderSizePixel = 0
-		KillAllBtn.Font = Enum.Font.GothamBold
-		KillAllBtn.TextSize = 14
-		KillAllBtn.Parent = screenGui
-		KillAllBtn.Active = true
-		KillAllBtn.Draggable = true
-
-		KillAllBtn.MouseButton1Click:Connect(function()
-			sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
-			sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
-			
-			-- Kill Action V2: BreakJoints with Health Check
-			for _, object in pairs(game.Workspace:GetDescendants()) do
-				if object:IsA("Model") and object:FindFirstChild("Humanoid") and object.Name ~= LocalPlayer.Name then
-					if object.Humanoid.Health < object.Humanoid.MaxHealth then
-						object:BreakJoints()
-					end
-				end
-			end
-			
-			Notif("success", buttonName, "Killed all eligible targets!", 1)
-		end)
-	else
-		if coreGui then
-			coreGui:Destroy()
-		end
-	end
+Rey:CreateButton(MiscTab, "Auto Clicker", "Chisato version auto clicker", "Load", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Auto%20Clicker%20Chisato'))()
 end)
 
---- Kill All V3 ---
+Rey:CreateToggle(MiscTab, "Noclip", "Walk through objects", Noclip.Toggle)
 
-Rey:CreateToggle(EtcTab, "Kill All V3 [BUTTON]", "[Work Without AutoFarm] V3: KILL ALL V3", function(state)
-	local buttonName = "Kill All V3 [BUTTON]"
-	local buttonText = "KILL ALL V3"
-	local version = 3 -- Digunakan untuk posisi
+Rey:CreateToggle(MiscTab, "Edge Jump", "Auto jump at edges", EdgeJump.Toggle)
 
-	local coreGui = CoreGui:FindFirstChild(buttonName)
+Rey:CreateToggle(MiscTab, "Infinite Jump", "Jump infinitely", InfiniteJump.Toggle)
 
-	if state then
-		if coreGui then
-			coreGui:Destroy()
-		end
-		
-		local screenGui = Instance.new("ScreenGui")
-		screenGui.Name = buttonName
-		screenGui.Parent = CoreGui
-		screenGui.ResetOnSpawn = false
-		
-		local KillAllBtn = Instance.new("TextButton")
-		KillAllBtn.Size = UDim2.new(0, 70, 0, 30)
-		KillAllBtn.Position = UDim2.new(1, -130, 0, -10 + (version-1) * 40)
-		KillAllBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		KillAllBtn.Text = buttonText
-		KillAllBtn.TextColor3 = Color3.new(1, 0, 0)
-		KillAllBtn.BorderSizePixel = 0
-		KillAllBtn.Font = Enum.Font.GothamBold
-		KillAllBtn.TextSize = 14
-		KillAllBtn.Parent = screenGui
-		KillAllBtn.Active = true
-		KillAllBtn.Draggable = true
+Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
+    local target = Players:FindFirstChild(playerName)
+    local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
 
-		KillAllBtn.MouseButton1Click:Connect(function()
-			sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
-			sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
-			
-			-- Kill Action V3: Set Health to 0 without Health Check
-			for _, object in pairs(game.Workspace:GetDescendants()) do
-				if object:IsA("Humanoid") and object.Parent.Name ~= LocalPlayer.Name then
-					object.Health = 0
-				end
-			end
-			
-			Notif("success", buttonName, "Killed all eligible targets!", 1)
-		end)
-	else
-		if coreGui then
-			coreGui:Destroy()
-		end
-	end
-end)
-
-Rey:CreateButton(MiscTab, "Fly Gui", "Dark Theme Fly Gui", "Load", function()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
-end)
-
-Rey:CreateButton(MiscTab, "[ FE ] Invisible", "Hampir bekerja di semua game", "Load", function()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Invisible'))()
-end)
-
-Rey:CreateButton(MiscTab, "[ FE ] Rewind", "Mundur ke posisi sebelumnya", "Load", function()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Rewind'))()
-end)
-
-Rey:CreateToggle(MiscTab, "Esp Players", "Melihat posisi player lain", function(state)
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
-end)
-
-Rey:CreateToggle(MiscTab, "Full Bright", "Mencerahkan seluruh map", function(state)
-	local Lighting = game:GetService("Lighting")
-	
-	local function brightFunc()
-		Lighting.Brightness = 2
-		Lighting.ClockTime = 14
-		Lighting.FogEnd = 100000
-		Lighting.GlobalShadows = false
-		Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-	end
-	
-	if _G.brightLoop then
-		_G.brightLoop:Disconnect()
-		_G.brightLoop = nil
-	end
-
-	if state then
-		_G.brightLoop = RunService.RenderStepped:Connect(brightFunc)
-	end
-end)
-
-Rey:CreateButton(MiscTab, "Auto Clicker", "Chisato version", "Load", function()
-	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Auto%20Clicker%20Chisato'))()
-end)
-
-Rey:CreateToggle(MiscTab, "Noclip", "Berjalan menembus objek", function(state)
-	_G.Noclip = state
-	
-	if nc then
-		nc:Disconnect()
-		nc = nil
-	end
-
-	if _G.Noclip then
-		nc = RunService.Stepped:Connect(function()
-			local char = LocalPlayer.Character
-			if char then
-				for _, child in pairs(char:GetDescendants()) do
-					if child:IsA("BasePart") and child.CanCollide == true then
-						child.CanCollide = false
-					end
-				end
-			end
-		end)
-	end
-end)
-
-Rey:CreateToggle(MiscTab, "Edge Jump", "Lompat otomatis ketika di ujung block", function(mhm)
-	pcall(function()
-		if HumanModCons.ejLoop then HumanModCons.ejLoop:Disconnect() HumanModCons.ejLoop = nil end
-		if HumanModCons.ejCA then HumanModCons.ejCA:Disconnect() HumanModCons.ejCA = nil end
-	end)
-
-	if mhm then
-		local Char = LocalPlayer.Character
-		local Human = Char and Char:FindFirstChildWhichIsA("Humanoid")
-		local state, laststate, lastcf
-
-		local function edgejump()
-			if Char and Human and HumanoidRootPart then
-				laststate = state
-				state = Human:GetState()
-				
-				if laststate ~= state and state == Enum.HumanoidStateType.Freefall and laststate ~= Enum.HumanoidStateType.Jumping then
-					HumanoidRootPart.CFrame = lastcf
-					HumanoidRootPart.Velocity = Vector3.new(HumanoidRootPart.Velocity.X, Human.JumpPower or Human.JumpHeight, HumanoidRootPart.Velocity.Z)
-				end
-				lastcf = HumanoidRootPart.CFrame
-			end
-		end
-		
-		edgejump()
-		HumanModCons.ejLoop = RunService.RenderStepped:Connect(edgejump)
-		HumanModCons.ejCA = LocalPlayer.CharacterAdded:Connect(function(nChar)
-			Char, Human = nChar, nChar:WaitForChild("Humanoid")
-			HumanoidRootPart = Char:WaitForChild("HumanoidRootPart")
-			edgejump()
-			if HumanModCons.ejLoop then HumanModCons.ejLoop:Disconnect() end
-			HumanModCons.ejLoop = RunService.RenderStepped:Connect(edgejump)
-		end)
-	end 
-end)
-
-Rey:CreateToggle(MiscTab, "Infinite Jump", "[Mungkin tidak bekerja di beberapa game]", function(state)
-	if _G.InfJump then _G.InfJump:Disconnect() _G.InfJump = nil end
-
-	if state then
-		_G.InfJump = UserInputService.JumpRequest:Connect(function()
-			if not infJumpDebounce then
-				infJumpDebounce = true
-				local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass('Humanoid')
-				if humanoid then
-					humanoid:ChangeState("Jumping")
-				end
-				task.wait()
-				infJumpDebounce = false
-			end
-		end)
-	end
-end)
-
-Rey:CreateDropdown(MiscTab, "Teleport to Player", getPlayerList, function(selectedPlayer)
-	local targetPlayer = Players:FindFirstChild(selectedPlayer)
-	local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-
-	if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and playerHRP then
-		local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-		playerHRP.CFrame = CFrame.new(targetPosition)
-	end
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
+        local targetPos = target.Character.HumanoidRootPart.Position
+        playerRoot.CFrame = CFrame.new(targetPos)
+    end
 end, true)
 
-local NpcFolder = game.Workspace
-local npcCache = {}
+Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList(), function(npcName)
+    local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+    local npc = NPCCache[npcName]
 
-local function getNPCList()
-	local npc = {}
-    npcCache = {}
-    
-	for _, v in ipairs(NpcFolder:GetDescendants()) do
-        if v.Name:lower() ~= "keyframe" and v:IsA("Model") and v.Parent ~= LocalPlayer.Character then
-            if v:FindFirstChild("HumanoidRootPart") or v.PrimaryPart then
-                if checksTable(npc, v.Name) then 
-                    table.insert(npc, v.Name)
-                    npcCache[v.Name] = v 
+    if npc and playerRoot then
+        local targetCFrame = nil
+        if npc:FindFirstChild("HumanoidRootPart") then
+            targetCFrame = npc.HumanoidRootPart.CFrame
+        elseif npc.PrimaryPart then
+            targetCFrame = npc.PrimaryPart.CFrame
+        else
+            for _, part in ipairs(npc:GetChildren()) do
+                if part:IsA("BasePart") then
+                    targetCFrame = part.CFrame
+                    break
                 end
             end
-		end
-	end
-	return npc
+        end
+
+        if targetCFrame then
+            playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+        end
+    end
+end, true)
+
+Rey:CreateNote(MiscTab, "This note is for spacing purposes to prevent UI bugs\n\n\n\n")
+
+Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
+    State.RestrictAutoFarm = state
+end)
+
+Rey:CreateNote(UI.SettingsTab, "**Enabled**: AutoFarm will TP to all mobs repeatedly\n**Disabled**: AutoFarm will lock onto 1 mob")
+
+Rey:CreateDropdown(UI.SettingsTab, "▼ Select AutoFarm Folder ▼", Utils.GetFolders, function(folder)
+    State.SelectedFolder = folder
+end, true)
+
+Rey:CreateDropdown(UI.SettingsTab, "▼ Select NPC Folder ▼", Utils.GetFolders, function(folder)
+    State.NPCFolder = folder
+end, true)
+
+Rey:CreateButton(UI.SettingsTab, "Boost FPS", "Improve performance and FPS", "Tap", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
+end)
+
+Rey:CreateToggle(UI.SettingsTab, "Auto Load on Server Hop", "Automatically load script after server hop", ServerHop.AutoLoad)
+
+Rey:CreateButton(UI.SettingsTab, "Hop Server", "Join another public server", "Tap", ServerHop.Hop)
+
+Rey:CreateButton(UI.SettingsTab, "Rejoin", "Rejoin current server", "Tap", function()
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+end)
+
+local Cleanup = {}
+
+function Cleanup.All()
+    for key, conn in pairs(ActiveConnections) do
+        if type(conn) == "thread" then
+            coroutine.close(conn)
+        else
+            conn:Disconnect()
+        end
+    end
+    table.clear(ActiveConnections)
+    
+    for key, conn in pairs(HumanModCons) do
+        conn:Disconnect()
+    end
+    table.clear(HumanModCons)
+    
+    if _G.InfiniteJumpConn then
+        _G.InfiniteJumpConn:Disconnect()
+        _G.InfiniteJumpConn = nil
+    end
+    
+    if _G.BrightLoop then
+        _G.BrightLoop:Disconnect()
+        _G.BrightLoop = nil
+    end
+    
+    Utils.RemoveBodyVelocity()
+    
+    for key, _ in pairs(State) do
+        if type(State[key]) == "boolean" then
+            State[key] = false
+        end
+    end
 end
 
-Rey:CreateDropdown(MiscTab, "Teleport to NPC", getNPCList, function(selectedNpcName)
-	local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	local targetNpc = npcCache[selectedNpcName] 
-
-	if targetNpc and playerHRP then
-		local targetCFrame = nil
-		if targetNpc:FindFirstChild("HumanoidRootPart") then
-			targetCFrame = targetNpc.HumanoidRootPart.CFrame
-		elseif targetNpc.PrimaryPart then
-			targetCFrame = targetNpc.PrimaryPart.CFrame
-		else
-			for _, part in ipairs(targetNpc:GetChildren()) do
-				if part:IsA("BasePart") then
-					targetCFrame = part.CFrame
-					break
-				end
-			end
-		end
-
-		if targetCFrame then
-			playerHRP.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-		end
-	end
-end, true)
-
-
-Rey:CreateNote(MiscTab, "hirauin ini buat dropdown doang biar ga ngebug \n\n\n\n\n\n\n\n\n\n")
-
-Rey:CreateToggle(SettingsTab, "Lepas Pembatas AutoFarm", "Baca note dibawah untuk detail", function(state)
-	_G.RestrictAutoFarm = state
+local removeConn
+removeConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == LocalPlayer then
+        removeConn:Disconnect()
+        Cleanup.All()
+    end
 end)
 
-Rey:CreateNote(SettingsTab, "Jika **dihidupkan**, AutoFarm akan TP ke semua mob sekaligus berulang kali.\nJika **dimatikan**, AutoFarm akan mengunci (lock) 1 Mob.")
-
-Rey:CreateDropdown(SettingsTab, "▼ Select Folder for AutoFarm ▼", getFolders, function(selectedOption)
-	Folder = selectedOption
-end, true)
-
-Rey:CreateDropdown(SettingsTab, "▼ Select Folder for Tp NPC ▼", getFolders, function(selectedOption)
-	NpcFolder = selectedOption
-end, true)
-
-Rey:CreateButton(SettingsTab, "BOOST FPS", "Meningkatkan kinerja dan FPS", "Tap", function()
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
-end)
-
-Rey:CreateToggle(SettingsTab, "Auto Load Rey Hub Jika Server Hop", "(Jika tidak bekerja, executor Anda mungkin tidak mendukung fitur ini)", function(state)
-	if state then
-		local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-		
-		LocalPlayer.OnTeleport:Connect(function()
-			if not TeleportCheck and queueteleport then
-				TeleportCheck = true
-				task.wait(1)
-				queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader'))()")
-			end
-		end)
-	else
-		TeleportCheck = false
-	end
-end)
-
-Rey:CreateButton(SettingsTab, "Hop Server", "Pindah ke server publik lain", "Tap", function()
-	local httprequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-	local PlaceId, JobId = game.PlaceId, game.JobId
-
-	if httprequest then
-		local servers = {}
-		local req = httprequest({
-			Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", PlaceId)
-		})
-		
-		local body = HttpService:JSONDecode(req.Body)
-
-		if body and body.data then
-			for _, v in next, body.data do
-				if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.playing < v.maxPlayers and v.id ~= JobId then
-					table.insert(servers, 1, v.id)
-				end
-			end
-		end
-
-		if #servers > 0 then
-			TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)], LocalPlayer)
-		else
-			warn("Serverhop couldn't find a suitable server.")
-			Notif("error", "Server Hop", "Tidak dapat menemukan server publik yang kosong.", 3)
-		end
-	else
-		warn("Incompatible exploit. Your exploit does not support this command (missing request).")
-		Notif("error", "Server Hop", "Executor tidak kompatibel (Missing request).", 3)
-	end
-end)
-
-Rey:CreateButton(SettingsTab, "Rejoin", "Masuk kembali ke server ini", "Tap", function()
-	TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
-end)
-
-local Volume = 0.5
-Rey:CreateSlider(SettingsTab, "Sound Effect Volume", 0, 100, 100, function(value)
-	Volume = value / 100
-	for i, v in ipairs(UI.SFX:GetChildren()) do
-		v.Volume = Volume
-	end
-end)
-
-Rey:CreateToggle(SettingsTab, "Turn Off Rey Animation", "Mematikan animasi UI Rey", function(value)
-	Rey.Animation = not value
-end)
-
-Rey:CreateToggle(SettingsTab, "Save Config Data", "Config akan disimpan", function(value)
-	_G.SaveConfig = value
-	_G.RE = nil
-	
-	task.spawn(function()
-		local filePath = "REY HUB/Reylib.json"
-		
-		while _G.SaveConfig do
-			if _G.RE then break end
-			task.wait(0.1)
-			
-			local Data = {}
-			if isfile(filePath) then
-				local success, decodedData = pcall(function() return HttpService:JSONDecode(readfile(filePath)) end)
-				if success and type(decodedData) == 'table' then
-					Data = decodedData
-				end
-			end
-			
-			if not Data["Games"] then Data["Games"] = {} end
-			if not Data["Games"][tostring(game.GameId)] then
-				Data["Games"][tostring(game.GameId)] = {}
-			end
-
-			for _, v in pairs(Rey.Data) do
-				if type(v) ~= "function" then
-					Data["Games"][tostring(game.GameId)][_] = v
-				end
-			end
-
-			local Encode = HttpService:JSONEncode(Data)
-			writefile(filePath, tostring(Encode))
-		end
-		
-		while not _G.SaveConfig do
-			if _G.RE then break end
-			task.wait(0.1)
-			
-			local Data = {}
-			if isfile(filePath) then
-				local success, decodedData = pcall(function() return HttpService:JSONDecode(readfile(filePath)) end)
-				if success and type(decodedData) == 'table' then
-					Data = decodedData
-				end
-			end
-			
-			if Data["Games"] then
-				Data["Games"][tostring(game.GameId)] = nil
-			end
-			
-			local Encode = HttpService:JSONEncode(Data)
-			writefile(filePath, tostring(Encode))
-		end
-		_G.RE = true
-	end)
+game:GetService("CoreGui").DescendantRemoving:Connect(function(desc)
+    if desc == UI then
+        Cleanup.All()
+    end
 end)
