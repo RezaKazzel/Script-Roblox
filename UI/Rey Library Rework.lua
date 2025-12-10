@@ -861,7 +861,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		ClipsDescendants = true,
 		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
-		ZIndex = 2,
+		ZIndex = 100,
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
@@ -1064,7 +1064,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		ClipsDescendants = true,
 		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
-		ZIndex = 2,
+		ZIndex = 100,
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
@@ -1277,7 +1277,8 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
         Size = UDim2.new(1, -10, 0, 70),
         BackgroundColor3 = Color3.fromRGB(60, 60, 60),
         BorderSizePixel = 2,
-        BorderColor3 = Color3.fromRGB(30, 30, 30)
+        BorderColor3 = Color3.fromRGB(30, 30, 30),
+        ZIndex = 1
     })
 
     Create("UICorner", {
