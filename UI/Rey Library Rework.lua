@@ -822,7 +822,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		Name = Name,
 		Parent = Tab,
 		Size = UDim2.new(1, -10, 0, 40),
-		BackgroundTransparency = 1
+		BackgroundTransparency = 1,
+		ZIndex = 1
 	})
 
 	local dropdownFrame = Create("Frame", {
@@ -830,7 +831,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0),
 		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
 		BorderSizePixel = 2,
-		BorderColor3 = Color3.fromRGB(30, 30, 30)
+		BorderColor3 = Color3.fromRGB(30, 30, 30),
+		ZIndex = 2
 	})
 
 	Create("UICorner", {
@@ -847,12 +849,13 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
 		Text = Name,
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
+		ZIndex = 2
 	})
 
 	local dropdownList = Create("ScrollingFrame", {
 		Name = Name,
-		Parent = dropdownFrame,
+		Parent = containerFrame,
 		Size = UDim2.new(1, 0, 0, 150),
 		Position = UDim2.new(0, 0, 1, 0),
 		BackgroundColor3 = Color3.fromRGB(50, 50, 50),
@@ -861,7 +864,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		ClipsDescendants = true,
 		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
-		ZIndex = 100,
+		ZIndex = 5,
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
@@ -925,7 +928,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				TextSize = 12,
 				Text = optionText,
 				BorderSizePixel = 0,
-				ZIndex = 2
+				ZIndex = 6
 			})
 	
 			Create("UICorner", {
@@ -968,7 +971,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 			Position = UDim2.new(0.85, 5, 0, 0),
 			BackgroundColor3 = Color3.fromRGB(50, 50, 50),
 			BorderSizePixel = 2,
-			BorderColor3 = Color3.fromRGB(30, 30, 30)
+			BorderColor3 = Color3.fromRGB(30, 30, 30),
+			ZIndex = 6
 		})
 
 		Create("UICorner", {
@@ -982,7 +986,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 			Position = UDim2.new(0, 4, 0, 4),
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://122032243989747",
-			ImageColor3 = Color3.fromRGB(255, 255, 255)
+			ImageColor3 = Color3.fromRGB(255, 255, 255),
+			ZIndex = 6
 		})
 
 		local debounce = false
@@ -1025,7 +1030,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		Name = Name,
 		Parent = Tab,
 		Size = UDim2.new(1, -10, 0, 40),
-		BackgroundTransparency = 1
+		BackgroundTransparency = 1,
+		ZIndex = 1
 	})
 
 	local dropdownFrame = Create("Frame", {
@@ -1033,7 +1039,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		Size = UDim2.new(Refresh and 0.85 or 1, Refresh and -5 or 0, 1, 0),
 		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
 		BorderSizePixel = 2,
-		BorderColor3 = Color3.fromRGB(30, 30, 30)
+		BorderColor3 = Color3.fromRGB(30, 30, 30),
+		ZIndex = 2
 	})
 
 	Create("UICorner", {
@@ -1050,12 +1057,13 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
 		Text = Name,
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
+		ZIndex = 3
 	})
 
 	local dropdownList = Create("ScrollingFrame", {
 		Name = Name,
-		Parent = dropdownFrame,
+		Parent = containerFrame,
 		Size = UDim2.new(1, 0, 0, 150),
 		Position = UDim2.new(0, 0, 1, 0),
 		BackgroundColor3 = Color3.fromRGB(50, 50, 50),
@@ -1064,7 +1072,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		ClipsDescendants = true,
 		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
-		ZIndex = 100,
+		ZIndex = 5,
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
@@ -1127,7 +1135,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			TextSize = 12,
 			Text = optionText,
 			BorderSizePixel = 0,
-			ZIndex = 2
+			ZIndex = 5
 		})
 	
 		Create("UICorner", {
@@ -1223,7 +1231,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			Position = UDim2.new(0.85, 5, 0, 0),
 			BackgroundColor3 = Color3.fromRGB(50, 50, 50),
 			BorderSizePixel = 2,
-			BorderColor3 = Color3.fromRGB(30, 30, 30)
+			BorderColor3 = Color3.fromRGB(30, 30, 30),
+			ZIndex = 6
 		})
 
 		Create("UICorner", {
@@ -1237,7 +1246,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			Position = UDim2.new(0, 4, 0, 4),
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://122032243989747",
-			ImageColor3 = Color3.fromRGB(255, 255, 255)
+			ImageColor3 = Color3.fromRGB(255, 255, 255),
+			ZIndex = 6
 		})
 
 		local debounce = false
@@ -1263,207 +1273,207 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 end
 
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
-    callback = callback or function() end
-    
-    self.CallbackManager.Sliders[Name] = callback
-    local savedValue = self.UISettings[Name]
-    if savedValue then
-        default = savedValue
-    end
-    
-    local containerFrame = Create("Frame", {
-        Name = Name,
-        Parent = parent,
-        Size = UDim2.new(1, -10, 0, 70),
-        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-        BorderSizePixel = 2,
-        BorderColor3 = Color3.fromRGB(30, 30, 30),
-        ZIndex = 1
-    })
+	callback = callback or function() end
+	
+	self.CallbackManager.Sliders[Name] = callback
+	local savedValue = self.UISettings[Name]
+	if savedValue then
+		default = savedValue
+	end
+	
+	local containerFrame = Create("Frame", {
+		Name = Name,
+		Parent = parent,
+		Size = UDim2.new(1, -10, 0, 70),
+		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+		BorderSizePixel = 2,
+		BorderColor3 = Color3.fromRGB(30, 30, 30),
+		ZIndex = 1
+	})
 
-    Create("UICorner", {
-        Parent = containerFrame,
-        CornerRadius = UDim.new(0, 8)
-    })
+	Create("UICorner", {
+		Parent = containerFrame,
+		CornerRadius = UDim.new(0, 8)
+	})
 
-    local titleLabel = Create("TextLabel", {
-        Name = "Title",
-        Parent = containerFrame,
-        Size = UDim2.new(0.7, 0, 0, 25),
-        Position = UDim2.new(0, 10, 0, 5),
-        BackgroundTransparency = 1,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamBold,
-        TextSize = 14,
-        Text = Name.." - "..tostring(default),
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
+	local titleLabel = Create("TextLabel", {
+		Name = "Title",
+		Parent = containerFrame,
+		Size = UDim2.new(0.7, 0, 0, 25),
+		Position = UDim2.new(0, 10, 0, 5),
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		Text = Name.." - "..tostring(default),
+		TextXAlignment = Enum.TextXAlignment.Left
+	})
 
-    local sliderBackground = Create("Frame", {
-        Parent = containerFrame,
-        Size = UDim2.new(1, -20, 0, 20),
-        Position = UDim2.new(0, 10, 0, 40),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        BorderSizePixel = 0
-    })
+	local sliderBackground = Create("Frame", {
+		Parent = containerFrame,
+		Size = UDim2.new(1, -20, 0, 20),
+		Position = UDim2.new(0, 10, 0, 40),
+		BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+		BorderSizePixel = 0
+	})
 
-    Create("UICorner", {
-        Parent = sliderBackground,
-        CornerRadius = UDim.new(0, 10)
-    })
+	Create("UICorner", {
+		Parent = sliderBackground,
+		CornerRadius = UDim.new(0, 10)
+	})
 
-    Create("UIStroke", {
-        Parent = sliderBackground,
-        Thickness = 1.8,
-        Color = Color3.fromRGB(30, 30, 30)
-    })
+	Create("UIStroke", {
+		Parent = sliderBackground,
+		Thickness = 1.8,
+		Color = Color3.fromRGB(30, 30, 30)
+	})
 
-    local sliderFill = Create("Frame", {
-        Name = "SliderFill",
-        Parent = sliderBackground,
-        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
-        BackgroundColor3 = Color3.fromRGB(85, 85, 255),
-        BorderSizePixel = 0,
-        ZIndex = 2
-    })
+	local sliderFill = Create("Frame", {
+		Name = "SliderFill",
+		Parent = sliderBackground,
+		Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+		BackgroundColor3 = Color3.fromRGB(85, 85, 255),
+		BorderSizePixel = 0,
+		ZIndex = 2
+	})
 
-    Create("UICorner", {
-        Parent = sliderFill,
-        CornerRadius = UDim.new(0, 10)
-    })
+	Create("UICorner", {
+		Parent = sliderFill,
+		CornerRadius = UDim.new(0, 10)
+	})
 
-    local sliderKnob = Create("Frame", {
-        Name = "SliderKnob",
-        Parent = sliderBackground,
-        Size = UDim2.new(0, 26, 1.5, 0),
-        Position = UDim2.new((default - min) / (max - min), -13, -0.25, 0),
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BorderSizePixel = 0,
-        ZIndex = 3
-    })
+	local sliderKnob = Create("Frame", {
+		Name = "SliderKnob",
+		Parent = sliderBackground,
+		Size = UDim2.new(0, 26, 1.5, 0),
+		Position = UDim2.new((default - min) / (max - min), -13, -0.25, 0),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BorderSizePixel = 0,
+		ZIndex = 3
+	})
 
-    Create("UICorner", {
-        Parent = sliderKnob,
-        CornerRadius = UDim.new(0, 12)
-    })
+	Create("UICorner", {
+		Parent = sliderKnob,
+		CornerRadius = UDim.new(0, 12)
+	})
 
-    Create("UIStroke", {
-        Parent = sliderKnob,
-        Thickness = 1.8,
-        Color = Color3.fromRGB(30, 30, 30)
-    })
+	Create("UIStroke", {
+		Parent = sliderKnob,
+		Thickness = 1.8,
+		Color = Color3.fromRGB(30, 30, 30)
+	})
 
-    local inputBox = Create("TextBox", {
-        Name = "InputBox",
-        Parent = containerFrame,
-        Size = UDim2.new(0.15, 0, 0, 25),
-        Position = UDim2.new(0.85, -10, 0, 5),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.Gotham,
-        TextSize = 16,
-        Text = tostring(default),
-        PlaceholderText = tostring(default),
-        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
-        TextXAlignment = Enum.TextXAlignment.Center,
-        TextYAlignment = Enum.TextYAlignment.Center
-    })
+	local inputBox = Create("TextBox", {
+		Name = "InputBox",
+		Parent = containerFrame,
+		Size = UDim2.new(0.15, 0, 0, 25),
+		Position = UDim2.new(0.85, -10, 0, 5),
+		BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.Gotham,
+		TextSize = 16,
+		Text = tostring(default),
+		PlaceholderText = tostring(default),
+		PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Center
+	})
 
-    Create("UICorner", {
-        Parent = inputBox,
-        CornerRadius = UDim.new(0, 6)
-    })
+	Create("UICorner", {
+		Parent = inputBox,
+		CornerRadius = UDim.new(0, 6)
+	})
 
-    Create("UIStroke", {
-        Parent = inputBox,
-        Thickness = 1,
-        Color = Color3.fromRGB(30, 30, 30)
-    })
-    
-    local currentValue = default
-    self.UIElements[Name] = {
-        Type = "Slider",
-        Frame = containerFrame,
-        TitleLabel = titleLabel,
-        ValueLabel = valueLabel,
-        InputBox = inputBox,
-        SliderFill = sliderFill,
-        SliderKnob = sliderKnob,
-        SliderBackground = sliderBackground,
-        Min = min,
-        Max = max,
-        Value = currentValue,
-        Callback = callback
-    }
-    
-    self.UISettings[Name] = currentValue
-    
-    local function updateSlider(value, forceUpdate)
-        value = math.clamp(value, min, max)
-        if value ~= currentValue or forceUpdate then
-            currentValue = value
-            local sliderPos = (value - min) / (max - min)
-            
-            sliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
-            sliderKnob.Position = UDim2.new(sliderPos, -13, -0.25, 0)
-            titleLabel.Text = Name.." - "..tostring(value)
-            inputBox.Text = tostring(value)
-            self.UISettings[Name] = value
-            self.UIElements[Name].Value = value
-            
-            callback(value)
-        end
-    end
+	Create("UIStroke", {
+		Parent = inputBox,
+		Thickness = 1,
+		Color = Color3.fromRGB(30, 30, 30)
+	})
+	
+	local currentValue = default
+	self.UIElements[Name] = {
+		Type = "Slider",
+		Frame = containerFrame,
+		TitleLabel = titleLabel,
+		ValueLabel = valueLabel,
+		InputBox = inputBox,
+		SliderFill = sliderFill,
+		SliderKnob = sliderKnob,
+		SliderBackground = sliderBackground,
+		Min = min,
+		Max = max,
+		Value = currentValue,
+		Callback = callback
+	}
+	
+	self.UISettings[Name] = currentValue
+	
+	local function updateSlider(value, forceUpdate)
+		value = math.clamp(value, min, max)
+		if value ~= currentValue or forceUpdate then
+			currentValue = value
+			local sliderPos = (value - min) / (max - min)
+			
+			sliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
+			sliderKnob.Position = UDim2.new(sliderPos, -13, -0.25, 0)
+			titleLabel.Text = Name.." - "..tostring(value)
+			inputBox.Text = tostring(value)
+			self.UISettings[Name] = value
+			self.UIElements[Name].Value = value
+			
+			callback(value)
+		end
+	end
 
-    local function startDragging()
-        local connection
-        local lastValue = currentValue
-        
-        connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
-            if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
-                local sliderPos = math.clamp((moveInput.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
-                local value = math.floor(sliderPos * (max - min) + min)
-                
-                if value ~= lastValue then
-                    lastValue = value
-                    updateSlider(value)
-                end
-            end
-        end)
-        
-        game:GetService("UserInputService").InputEnded:Connect(function(endInput)
-            if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
-                if connection then
-                    connection:Disconnect()
-                end
-            end
-        end)
-    end
+	local function startDragging()
+		local connection
+		local lastValue = currentValue
+		
+		connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+			if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+				local sliderPos = math.clamp((moveInput.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
+				local value = math.floor(sliderPos * (max - min) + min)
+				
+				if value ~= lastValue then
+					lastValue = value
+					updateSlider(value)
+				end
+			end
+		end)
+		
+		game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+			if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+				if connection then
+					connection:Disconnect()
+				end
+			end
+		end)
+	end
 
-    sliderKnob.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            startDragging()
-        end
-    end)
+	sliderKnob.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			startDragging()
+		end
+	end)
 
-    sliderBackground.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local sliderPos = math.clamp((input.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
-            local value = math.floor(sliderPos * (max - min) + min)
-            updateSlider(value)
-        end
-    end)
+	sliderBackground.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			local sliderPos = math.clamp((input.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
+			local value = math.floor(sliderPos * (max - min) + min)
+			updateSlider(value)
+		end
+	end)
 
-    inputBox.FocusLost:Connect(function()
-        local value = tonumber(inputBox.Text)
-        if value then
-            updateSlider(value)
-        else
-            inputBox.Text = tostring(currentValue)
-        end
-    end)
+	inputBox.FocusLost:Connect(function()
+		local value = tonumber(inputBox.Text)
+		if value then
+			updateSlider(value)
+		else
+			inputBox.Text = tostring(currentValue)
+		end
+	end)
 
-    return containerFrame
+	return containerFrame
 end
 
 function ReyUILib:CreateNote(parent, text)
