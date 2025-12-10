@@ -10,13 +10,23 @@ ReyUILib.CallbackManager = {
 	Inputs = {}
 }
 
-local DataScript = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
-local ExternalData = DataScript
+local success, DataScript = pcall(function()
+	return loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
+end)
+
+local ExternalData = {["Execute"] = "0"}
+if success and type(DataScript) == "function" then
+	local success2, result = pcall(DataScript)
+	if success2 and type(result) == "table" then
+		ExternalData = result
+	end
+end
+
 ReyUILib.Data = {}
 ReyUILib.ExternalData = ExternalData
 ReyUILib.UISettings = {}
 ReyUILib.UIElements = {}
-local alldropdown = {}
+ReyUILib.alldropdown = {}
 
 local ConfigPath = "ReyHub_Config.json"
 
@@ -31,35 +41,51 @@ function ReyUILib:ExecuteAllCallbacks()
 	for toggleName, callback in pairs(self.CallbackManager.Toggles) do
 		local savedState = self.UISettings[toggleName]
 		if savedState ~= nil and type(callback) == "function" then
-			callback(savedState)
+			local state = (savedState == true)
+			self.UISettings[toggleName] = state
+			
+			if self.UIElements[toggleName] and self.UIElements[toggleName].Circle then
+				local elementData = self.UIElements[toggleName]
+				elementData.State = state
+				
+				if state then
+					elementData.Circle.Position = UDim2.new(1, -22, 0, 2)
+					elementData.Circle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+				else
+					elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
+					elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+				end
+			end
+			
+			pcall(function() callback(state) end)
 		end
 	end
 	
 	for sliderName, callback in pairs(self.CallbackManager.Sliders) do
 		local savedValue = self.UISettings[sliderName]
 		if savedValue and type(callback) == "function" then
-			callback(savedValue)
+			pcall(function() callback(savedValue) end)
 		end
 	end
 	
 	for dropdownName, callback in pairs(self.CallbackManager.Dropdowns) do
 		local savedSelection = self.UISettings[dropdownName]
 		if savedSelection and type(callback) == "function" then
-			callback(savedSelection)
+			pcall(function() callback(savedSelection) end)
 		end
 	end
 	
 	for multiName, callback in pairs(self.CallbackManager.MultiDropdowns) do
 		local savedSelections = self.UISettings[multiName]
 		if savedSelections and type(callback) == "function" then
-			callback(savedSelections)
+			pcall(function() callback(savedSelections) end)
 		end
 	end
 	
 	for inputName, callback in pairs(self.CallbackManager.Inputs) do
 		local savedValue = self.UISettings[inputName]
 		if savedValue and type(callback) == "function" then
-			callback(savedValue)
+			pcall(function() callback(savedValue) end)
 		end
 	end
 end
@@ -93,7 +119,6 @@ local function SaveConfig()
 		end
 	end
 	
-	
 	ConfigData["Games"] = ConfigData["Games"] or {}
 	ConfigData["Games"][tostring(game.GameId)] = ConfigData["Games"][tostring(game.GameId)] or {}
 	
@@ -106,15 +131,19 @@ local function SaveConfig()
 			elseif elementData.Type == "Slider" then
 				currentValue = elementData.Value or elementData.Min
 			elseif elementData.Type == "Dropdown" then
-				currentValue = elementData.Selected or elementName
+				currentValue = elementData.Selected or ""
 			elseif elementData.Type == "MultiDropdown" then
 				currentValue = elementData.Selected or {}
+			elseif elementData.Type == "Input" then
+				currentValue = elementData.Value or ""
 			end
 			
 			ReyUILib.UISettings[elementName] = currentValue
 		end
 		
-		ConfigData["Games"][tostring(game.GameId)][elementName] = currentValue
+		if type(currentValue) ~= "function" then
+			ConfigData["Games"][tostring(game.GameId)][elementName] = currentValue
+		end
 	end
 	
 	local success, encoded = pcall(function()
@@ -145,8 +174,8 @@ local function LoadConfig()
 	return {}
 end
 
-function ReyUILib:CreateUI(Name, Note)
-	local Note = Note or false
+function ReyUILib:CreateUI(Name, NoteText)
+	local Note = NoteText or false
 	local TweenService = game:GetService("TweenService")
 	local CoreGui = game:GetService("CoreGui")
 	local Players = game:GetService("Players")
@@ -157,6 +186,10 @@ function ReyUILib:CreateUI(Name, Note)
 	elseif CoreGui:FindFirstChild("ReyUI") then
 		CoreGui:FindFirstChild("ReyUI"):Destroy()
 	end
+	
+	self.UISettings["Disable Notif"] = self.UISettings["Disable Notif"] or false
+	self.UISettings["Disable Animation"] = self.UISettings["Disable Animation"] or false
+	self.UISettings["Mute Sound Effect"] = self.UISettings["Mute Sound Effect"] or false
 	
 	local screenGui = Create("ScreenGui", {
 		Name = Name or "ReyUI",
@@ -432,6 +465,8 @@ function ReyUILib:CreateUI(Name, Note)
 		Parent = SFX
 	})
 	
+	self.SFX = SFX
+	
 	local showTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0.5, -250, 0.5, -200),
 		BackgroundTransparency = 0,
@@ -490,9 +525,20 @@ function ReyUILib:CreateUI(Name, Note)
 	
 	local disableOptions = {"Disable Notif", "Disable Animation", "Mute Sound Effect"}
 	self:CreateMultipleDropdown(settingsTabContent, "Disable Features", disableOptions, function(selected)
-		self.UISettings["Disable Notif"] = table.find(selected, "Disable Notif")
-		self.UISettings["Disable Animation"] = table.find(selected, "Disable Animation") 
-		self.UISettings["Mute Sound Effect"] = table.find(selected, "Mute Sound Effect")
+		self.UISettings["Disable Notif"] = false
+		self.UISettings["Disable Animation"] = false
+		self.UISettings["Mute Sound Effect"] = false
+		
+		for _, feature in ipairs(selected) do
+			if feature == "Disable Notif" then
+				self.UISettings["Disable Notif"] = true
+			elseif feature == "Disable Animation" then
+				self.UISettings["Disable Animation"] = true
+			elseif feature == "Mute Sound Effect" then
+				self.UISettings["Mute Sound Effect"] = true
+			end
+		end
+		
 		self:ApplyFeatureSettings()
 	end)
 	
@@ -575,6 +621,11 @@ function ReyUILib:CreateTab(UI, Name)
 		UI.StartFrame.Visible = false
 		tabContent.Visible = true
 	end)
+
+	if #UI.TabContainer:GetChildren() == 1 then
+		tabContent.Visible = true
+		UI.StartFrame.Visible = false
+	end
 
 	return tabContent
 end
@@ -728,21 +779,20 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 			toggleCircle.Position = UDim2.new(0, 2, 0, 2)
 			toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 		end
-		
-		task.spawn(function()
-			task.wait(0.1)
-			Callback(state)
-		end)
 	end
-	
-	self.UISettings[Name] = state
 
 	local function toggle()
-		state = not state
-		self.UISettings[Name] = state
-		self.UIElements[Name].State = state
+		local currentState = self.UISettings[Name]
 		
-		if state then
+		if currentState == nil then
+			currentState = false
+		end
+		
+		local newState = not currentState
+		self.UISettings[Name] = newState
+		self.UIElements[Name].State = newState
+		
+		if newState then
 			toggleCircle:TweenPosition(UDim2.new(1, -22, 0, 2), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
 			toggleCircle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 		else
@@ -750,7 +800,7 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 			toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 		end
 		
-		Callback(state)
+		Callback(newState)
 	end
 
 	toggleContainer.InputBegan:Connect(function(input)
@@ -766,9 +816,10 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	local Callback = Callback or function() end
 	local Refresh = Refresh or false
 	
-	alldropdown[Name] = {
+	self.alldropdown[Name] = {
 		List = nil,
-		Container = nil
+		Container = nil,
+		OriginalOptions = Options
 	}
 	
 	local containerFrame = Create("Frame", {
@@ -818,8 +869,9 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
-	alldropdown[Name].List = dropdownList
-	alldropdown[Name].Container = dropdownFrame
+	self.alldropdown[Name].List = dropdownList
+	self.alldropdown[Name].Container = dropdownFrame
+	self.CallbackManager.Dropdowns[Name] = Callback
 
 	Create("UICorner", {
 		Parent = dropdownList,
@@ -840,17 +892,19 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
 
 	local function getOptions()
-		local optionsType = typeof(Options)
+		local optionsToUse = self.alldropdown[Name] and self.alldropdown[Name].OriginalOptions or Options
+		
+		local optionsType = typeof(optionsToUse)
 		
 		if optionsType == "function" then
-			local success, result = pcall(Options)
-			if success then
+			local success, result = pcall(optionsToUse)
+			if success and type(result) == "table" then
 				return result
 			else
 				return {}
 			end
 		elseif optionsType == "table" then
-			return Options
+			return optionsToUse
 		else
 			return {}
 		end
@@ -864,9 +918,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		end
 		
 		local options = getOptions()
-		
 		for _, option in ipairs(options) do
-			local optionText = option.Name or option
+			local optionText = tostring(option.Name or option)
 			local optionButton = Create("TextButton", {
 				Parent = dropdownList,
 				Size = UDim2.new(1, -10, 0, 30),
@@ -878,7 +931,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 				BorderSizePixel = 0,
 				ZIndex = 2
 			})
-
+	
 			Create("UICorner", {
 				Parent = optionButton,
 				CornerRadius = UDim.new(0, 6)
@@ -887,7 +940,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 			optionButton.MouseButton1Click:Connect(function()
 				dropdownButton.Text = optionText
 				dropdownList.Visible = false
-				ReyUILib.UISettings[Name] = optionText
+				self.UISettings[Name] = optionText
 				Callback(optionText)
 			end)
 		end
@@ -895,9 +948,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		updateCanvasSize()
 	end
 	
-	self.CallbackManager.Dropdowns[Name] = Callback
-	
-	local savedSelection = ReyUILib.UISettings[Name]
+	local savedSelection = self.UISettings[Name]
 	if savedSelection then
 		dropdownButton.Text = savedSelection
 	end
@@ -905,7 +956,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	loadOptions()
 	
 	dropdownButton.MouseButton1Click:Connect(function()
-		for dropdownName, dropdownData in pairs(alldropdown) do
+		for dropdownName, dropdownData in pairs(self.alldropdown) do
 			if dropdownName ~= Name and dropdownData.List and dropdownData.List.Visible then
 				dropdownData.List.Visible = false
 			end
@@ -954,7 +1005,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 		Frame = containerFrame,
 		DropdownButton = dropdownButton,
 		DropdownList = dropdownList,
-		Options = Options,
+		OriginalOptions = Options,
 		Selected = savedSelection,
 		Callback = Callback
 	}
@@ -967,7 +1018,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	local selectedOptions = {}
 	local selectedOrder = {}
 	
-	alldropdown[Name] = {
+	self.alldropdown[Name] = {
 		List = nil,
 		Container = nil,
 		SelectedOptions = selectedOptions,
@@ -1021,7 +1072,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		CanvasSize = UDim2.new(0, 0, 0, 0)
 	})
 	
-	alldropdown[Name].List = dropdownList
+	self.alldropdown[Name].List = dropdownList
 
 	Create("UICorner", {
 		Parent = dropdownList,
@@ -1047,7 +1098,18 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		if optionsType == "function" then
 			local success, result = pcall(Options)
 			if success then
-				return result
+				if typeof(result) == "function" then
+					local success2, result2 = pcall(result)
+					if success2 and type(result2) == "table" then
+						return result2
+					else
+						return {}
+					end
+				elseif type(result) == "table" then
+					return result
+				else
+					return {}
+				end
 			else
 				return {}
 			end
@@ -1059,7 +1121,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	end
 	
 	local function createOption(option)
-		local optionText = option.Name or option
+		local optionText = tostring(option.Name or option)
 		local optionButton = Create("TextButton", {
 			Parent = dropdownList,
 			Size = UDim2.new(1, -10, 0, 30),
@@ -1071,31 +1133,31 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			BorderSizePixel = 0,
 			ZIndex = 2
 		})
-
+	
 		Create("UICorner", {
 			Parent = optionButton,
 			CornerRadius = UDim.new(0, 6)
 		})
-
-		if selectedOptions[option] then
+		
+		if selectedOptions[optionText] then
 			optionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 		end
-
+	
 		optionButton.MouseButton1Click:Connect(function()
-			if selectedOptions[option] then
-				selectedOptions[option] = nil
+			if selectedOptions[optionText] then
+				selectedOptions[optionText] = nil
 				optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 				
 				for i, v in ipairs(selectedOrder) do
-					if v == option then
+					if v == optionText then
 						table.remove(selectedOrder, i)
 						break
 					end
 				end
 			else
-				selectedOptions[option] = true
+				selectedOptions[optionText] = true
 				optionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-				table.insert(selectedOrder, option)
+				table.insert(selectedOrder, optionText)
 			end
 			
 			local displayText = table.concat(selectedOrder, ", ")
@@ -1105,7 +1167,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 				dropdownButton.Text = displayText
 			end
 			
-			ReyUILib.UISettings[Name] = selectedOrder
+			self.UISettings[Name] = selectedOrder
 			Callback(selectedOrder)
 		end)
 	end
@@ -1119,8 +1181,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 		
 		selectedOptions = {}
 		selectedOrder = {}
-		alldropdown[Name].SelectedOptions = selectedOptions
-		alldropdown[Name].SelectedOrder = selectedOrder
+		self.alldropdown[Name].SelectedOptions = selectedOptions
+		self.alldropdown[Name].SelectedOrder = selectedOrder
 		
 		local options = getOptions()
 		
@@ -1133,21 +1195,22 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	
 	self.CallbackManager.MultiDropdowns[Name] = Callback
 	
-	local savedSelections = ReyUILib.UISettings[Name]
+	local savedSelections = self.UISettings[Name]
 	if savedSelections and type(savedSelections) == "table" then
-		selectedOrder = savedSelections
 		for _, option in ipairs(savedSelections) do
-			selectedOptions[option] = true
+			local optionText = tostring(option)
+			selectedOptions[optionText] = true
+			table.insert(selectedOrder, optionText)
 		end
-		if #savedSelections > 0 then
-			dropdownButton.Text = table.concat(savedSelections, ", ")
+		if #selectedOrder > 0 then
+			dropdownButton.Text = table.concat(selectedOrder, ", ")
 		end
 	end
 	
 	loadOptions()
 	
 	dropdownButton.MouseButton1Click:Connect(function()
-		for dropdownName, dropdownData in pairs(alldropdown) do
+		for dropdownName, dropdownData in pairs(self.alldropdown) do
 			if dropdownName ~= Name and dropdownData.List and dropdownData.List.Visible then
 				dropdownData.List.Visible = false
 			end
@@ -1206,7 +1269,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	callback = callback or function() end
 	
 	self.CallbackManager.Sliders[Name] = callback
-	local savedValue = ReyUILib.UISettings[Name]
+	local savedValue = self.UISettings[Name]
 	if savedValue then
 		default = savedValue
 	end
@@ -1314,7 +1377,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 		Callback = callback
 	}
 	
-	ReyUILib.UISettings[Name] = currentValue
+	self.UISettings[Name] = currentValue
 	local function updateSlider(value, forceUpdate)
 		value = math.clamp(value, min, max)
 		if value ~= currentValue or forceUpdate then
@@ -1325,7 +1388,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 			sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
 			label.Text = Name .. " - " .. value
 			inputBox.Text = tostring(value)
-			ReyUILib.UISettings[Name] = value
+			self.UISettings[Name] = value
 			self.UIElements[Name].Value = value
 			
 			callback(value)
@@ -1554,7 +1617,7 @@ function ReyUILib:CreateInput(parent, title, description, callback)
 		local text = textBox.Text
 		if text and text ~= "" then
 			valueLabel.Text = "Value set to: " .. text
-			ReyUILib.UISettings[title] = text
+			self.UISettings[title] = text
 			callback(text)
 		end
 	end
@@ -1567,7 +1630,7 @@ function ReyUILib:CreateInput(parent, title, description, callback)
 		end
 	end)
 
-	local savedValue = ReyUILib.UISettings[title]
+	local savedValue = self.UISettings[title]
 	if savedValue then
 		valueLabel.Text = "Value set to: " .. savedValue
 	end
@@ -1595,6 +1658,8 @@ function ReyUILib:Notify(style, title, description, duration)
 	local TextService = game:GetService("TextService")
 	local Players = game:GetService("Players")
 	
+	if not Players.LocalPlayer then return end
+	
 	if not self.NotifData then
 		self.NotifData = {
 			MaxStack = 4,
@@ -1604,16 +1669,21 @@ function ReyUILib:Notify(style, title, description, duration)
 			Queue = {}
 		}
 		
-		local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-		if PlayerGui:FindFirstChild("ReyNotifGui") then
-			PlayerGui:FindFirstChild("ReyNotifGui"):Destroy()
+		local success, playerGui = pcall(function()
+			return Players.LocalPlayer:WaitForChild("PlayerGui")
+		end)
+		
+		if not success then return end
+		
+		if playerGui:FindFirstChild("ReyNotifGui") then
+			playerGui:FindFirstChild("ReyNotifGui"):Destroy()
 		end
 		
 		local gui = Instance.new("ScreenGui")
 		gui.Name = "ReyNotifGui"
 		gui.ResetOnSpawn = false
 		gui.IgnoreGuiInset = true
-		gui.Parent = PlayerGui
+		gui.Parent = playerGui
 		self.NotifData.Gui = gui
 	end
 	
@@ -1836,58 +1906,95 @@ end
 
 function ReyUILib:UpdateUIElements()
 	for elementName, elementData in pairs(self.UIElements) do
-		local savedValue = self.UISettings[elementName]
-		
-		if savedValue ~= nil then
-			if elementData.Type == "Toggle" then
-				local state = (savedValue == true)
-				elementData.State = state
-				
-				if state then
-					elementData.Circle.Position = UDim2.new(1, -22, 0, 2)
-					elementData.Circle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-				else
-					elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
-					elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-				end
-				
-			elseif elementData.Type == "Slider" then
-				local value = savedValue
-				local sliderPos = (value - elementData.Min) / (elementData.Max - elementData.Min)
-				
-				elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
-				elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-				elementData.Label.Text = elementName .. " - " .. value
-				elementData.InputBox.Text = tostring(value)
-				elementData.Value = value
-				
-			elseif elementData.Type == "Dropdown" then
-				if elementData.DropdownButton then
-					elementData.DropdownButton.Text = savedValue or elementName
-					elementData.Selected = savedValue
-					if self.CallbackManager.Dropdowns[elementName] then
+		if elementData then
+			local savedValue = self.UISettings[elementName]
+			
+			if savedValue ~= nil then
+				if elementData.Type == "Toggle" then
+					local state = (savedValue == true)
+					
+					if elementData.Circle and elementData.Circle.Parent then
+						if state then
+							elementData.Circle.Position = UDim2.new(1, -22, 0, 2)
+							elementData.Circle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+						else
+							elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
+							elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+						end
+					end
+					
+					elementData.State = state
+					
+					if elementData.Callback and type(elementData.Callback) == "function" then
 						task.spawn(function()
-							wait(0.05)
-							self.CallbackManager.Dropdowns[elementName](savedValue)
+							wait(0.2)
+							pcall(elementData.Callback, state)
 						end)
 					end
-				end
-				
-			elseif elementData.Type == "MultiDropdown" then
-				if elementData.DropdownButton and type(savedValue) == "table" then
-					local displayText = table.concat(savedValue, ", ")
-					if displayText == "" then 
-						elementData.DropdownButton.Text = elementName 
-					else
-						elementData.DropdownButton.Text = displayText
+					
+				elseif elementData.Type == "Slider" then
+					if elementData.FillFrame and elementData.FillFrame.Parent then
+						local value = savedValue
+						local sliderPos = (value - elementData.Min) / (elementData.Max - elementData.Min)
+						
+						elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+						if elementData.SliderButton then
+							elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+						end
+						if elementData.Label then
+							elementData.Label.Text = elementName .. " - " .. value
+						end
+						if elementData.InputBox then
+							elementData.InputBox.Text = tostring(value)
+						end
+						elementData.Value = value
+						if elementData.Callback and type(elementData.Callback) == "function" then
+							task.spawn(function()
+								wait(0.05)
+								pcall(elementData.Callback, value)
+							end)
+						end
 					end
-					elementData.Selected = savedValue
-				end
-				
-			elseif elementData.Type == "Input" then
-				if elementData.ValueLabel then
-					elementData.ValueLabel.Text = "Value set to: " .. (savedValue or "None")
-					elementData.Value = savedValue
+					
+				elseif elementData.Type == "Dropdown" then
+					if elementData.DropdownButton and elementData.DropdownButton.Parent then
+						elementData.DropdownButton.Text = savedValue or elementName
+						elementData.Selected = savedValue
+						
+						if savedValue and savedValue ~= "" then
+							if elementData.Callback and type(elementData.Callback) == "function" then
+								task.spawn(function()
+									wait(0.1)
+									pcall(elementData.Callback, savedValue)
+								end)
+							end
+						end
+					end
+					
+				elseif elementData.Type == "MultiDropdown" then
+					if elementData.DropdownButton and elementData.DropdownButton.Parent then
+						if type(savedValue) == "table" then
+							local displayText = table.concat(savedValue, ", ")
+							if displayText == "" then 
+								elementData.DropdownButton.Text = elementName 
+							else
+								elementData.DropdownButton.Text = displayText
+							end
+							elementData.Selected = savedValue
+						end
+					end
+					
+				elseif elementData.Type == "Input" then
+					if elementData.ValueLabel and elementData.ValueLabel.Parent then
+						elementData.ValueLabel.Text = "Value set to: " .. (savedValue or "None")
+						elementData.Value = savedValue
+						if elementData.Callback and type(elementData.Callback) == "function" then
+							task.spawn(function()
+								wait(0.05)
+								pcall(elementData.Callback, savedValue)
+							end)
+						end
+					end
 				end
 			end
 		end
@@ -1955,44 +2062,42 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 							BorderSizePixel = 0,
 							ZIndex = 2
 						})
-
+		
 						Create("UICorner", {
 							Parent = optionButton,
 							CornerRadius = UDim.new(0, 6)
 						})
-
+		
 						optionButton.MouseButton1Click:Connect(function()
 							dropdownButton.Text = optionText
 							dropdownList.Visible = false
 							ReyUILib.UISettings[elementName] = optionText
 							
 							if self.CallbackManager.Dropdowns[elementName] then
-								self.CallbackManager.Dropdowns[elementName](option)
+								self.CallbackManager.Dropdowns[elementName](optionText)
 							elseif self.CallbackManager.MultiDropdowns[elementName] then
 								local dropdownData = alldropdown[elementName]
 								if dropdownData.SelectedOptions and dropdownData.SelectedOrder then
-									if dropdownData.SelectedOptions[option] then
-										dropdownData.SelectedOptions[option] = nil
+									if dropdownData.SelectedOptions[optionText] then
+										dropdownData.SelectedOptions[optionText] = nil
 										for i, v in ipairs(dropdownData.SelectedOrder) do
-											if v == option then
+											if v == optionText then
 												table.remove(dropdownData.SelectedOrder, i)
 												break
 											end
 										end
 									else
-										dropdownData.SelectedOptions[option] = true
-										table.insert(dropdownData.SelectedOrder, option)
+										dropdownData.SelectedOptions[optionText] = true
+										table.insert(dropdownData.SelectedOrder, optionText)
 									end
 									
 									local displayText = table.concat(dropdownData.SelectedOrder, ", ")
-									if displayText == "" then 
-										dropdownButton.Text = elementName 
-									else
-										dropdownButton.Text = displayText
-									end
+									dropdownButton.Text = displayText == "" and elementName or displayText
 									
 									ReyUILib.UISettings[elementName] = dropdownData.SelectedOrder
-									self.CallbackManager.MultiDropdowns[elementName](dropdownData.SelectedOrder)
+									if self.CallbackManager.MultiDropdowns[elementName] then
+										self.CallbackManager.MultiDropdowns[elementName](dropdownData.SelectedOrder)
+									end
 								end
 							end
 						end)
@@ -2006,16 +2111,14 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 end
 
 function ReyUILib:ApplyFeatureSettings()
-	if self.UISettings["Mute Sound Effect"] then
-		if self.SFX then
+	if self.SFX then
+		if self.UISettings["Mute Sound Effect"] then
 			for _, sound in pairs(self.SFX:GetChildren()) do
 				if sound:IsA("Sound") then
 					sound.Volume = 0
 				end
 			end
-		end
-	else
-		if self.SFX then
+		else
 			for _, sound in pairs(self.SFX:GetChildren()) do
 				if sound:IsA("Sound") then
 					sound.Volume = 1
@@ -2039,17 +2142,15 @@ end
 function ReyUILib:LoadConfig()
 	local loaded = LoadConfig()
 	if loaded then
-		ReyUILib.UISettings = {}
 		for name, value in pairs(loaded) do
 			ReyUILib.UISettings[name] = value
 		end
+		
 		self:UpdateUIElements()
-		self:ExecuteAllCallbacks()
 		self:ApplyFeatureSettings()
 		self:Notify("success", "Config Loaded", "Settings loaded successfully!", 3)
 		return true
 	end
-	self:Notify("warning", "No Config", "No saved settings found", 4)
 	return false
 end
 
@@ -2057,36 +2158,46 @@ function ReyUILib:ResetConfig()
 	ReyUILib.UISettings = {}
 	
 	for elementName, elementData in pairs(self.UIElements) do
-		if elementData.Type == "Toggle" then
-			elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
-			elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-			elementData.State = false
-			
-		elseif elementData.Type == "Slider" then
-			local defaultValue = elementData.Value or elementData.Min
-			local sliderPos = (defaultValue - elementData.Min) / (elementData.Max - elementData.Min)
-			elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
-			elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-			elementData.Label.Text = elementName .. " - " .. defaultValue
-			elementData.InputBox.Text = tostring(defaultValue)
-			elementData.Value = defaultValue
-			
-		elseif elementData.Type == "Dropdown" then
-			if elementData.DropdownButton then
-				elementData.DropdownButton.Text = elementName
-				elementData.Selected = nil
-			end
-			
-		elseif elementData.Type == "MultiDropdown" then
-			if elementData.DropdownButton then
-				elementData.DropdownButton.Text = elementName
-				elementData.Selected = {}
-			end
-			
-		elseif elementData.Type == "Input" then
-			if elementData.ValueLabel then
-				elementData.ValueLabel.Text = "Value set to: None"
-				elementData.Value = ""
+		if elementData then
+			if elementData.Type == "Toggle" then
+				if elementData.Circle then
+					elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
+					elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+				end
+				elementData.State = false
+				
+			elseif elementData.Type == "Slider" then
+				if elementData.FillFrame and elementData.SliderButton then
+					local defaultValue = elementData.Value or elementData.Min
+					local sliderPos = (defaultValue - elementData.Min) / (elementData.Max - elementData.Min)
+					elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+					elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
+					if elementData.Label then
+						elementData.Label.Text = elementName .. " - " .. defaultValue
+					end
+					if elementData.InputBox then
+						elementData.InputBox.Text = tostring(defaultValue)
+					end
+					elementData.Value = defaultValue
+				end
+				
+			elseif elementData.Type == "Dropdown" then
+				if elementData.DropdownButton then
+					elementData.DropdownButton.Text = elementName
+					elementData.Selected = nil
+				end
+				
+			elseif elementData.Type == "MultiDropdown" then
+				if elementData.DropdownButton then
+					elementData.DropdownButton.Text = elementName
+					elementData.Selected = {}
+				end
+				
+			elseif elementData.Type == "Input" then
+				if elementData.ValueLabel then
+					elementData.ValueLabel.Text = "Value set to: None"
+					elementData.Value = ""
+				end
 			end
 		end
 	end
@@ -2161,7 +2272,6 @@ function ReyUILib:LoadNamedConfig(configName)
 					self.UISettings[name] = value
 				end
 				self:UpdateUIElements()
-				self:ExecuteAllCallbacks()
 				return true
 			end
 		end
@@ -2326,7 +2436,9 @@ function ReyUILib:CreateConfigManager(parent)
 	})
 	
 	local function updateCanvasSize()
-		dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+		if dropdownList then
+			dropdownList.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+		end
 	end
 	
 	dropdownLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
@@ -2390,6 +2502,8 @@ function ReyUILib:CreateConfigManager(parent)
 	local selectedConfig = nil
 	
 	local function populateConfigList()
+		if not dropdownList then return end
+		
 		for _, child in ipairs(dropdownList:GetChildren()) do
 			if child:IsA("TextButton") then
 				child:Destroy()
@@ -2442,12 +2556,14 @@ function ReyUILib:CreateConfigManager(parent)
 	end
 	
 	configListButton.MouseButton1Click:Connect(function()
-		dropdownList.Visible = not dropdownList.Visible
+		if dropdownList then
+			dropdownList.Visible = not dropdownList.Visible
+		end
 	end)
 	
 	game:GetService("UserInputService").InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			if dropdownList.Visible then
+			if dropdownList and dropdownList.Visible then
 				local mousePos = game:GetService("UserInputService"):GetMouseLocation()
 				local dropdownAbsolutePos = dropdownList.AbsolutePosition
 				local dropdownSize = dropdownList.AbsoluteSize
@@ -2506,5 +2622,39 @@ function ReyUILib:CreateConfigManager(parent)
 	return configManagerFrame
 end
 
-return ReyUILib
+function ReyUILib:UpdateDropdownValue(dropdownName, value)
+	if self.UIElements[dropdownName] and self.UIElements[dropdownName].Type == "Dropdown" then
+		local elementData = self.UIElements[dropdownName]
+		if elementData.DropdownButton then
+			elementData.DropdownButton.Text = value
+		end
+		elementData.Selected = value
+		self.UISettings[dropdownName] = value
+		
+		if elementData.Callback and type(elementData.Callback) == "function" then
+			pcall(elementData.Callback, value)
+		end
+		
+		if self.CallbackManager.Dropdowns[dropdownName] then
+			pcall(self.CallbackManager.Dropdowns[dropdownName], value)
+		end
+	end
+end
 
+function ReyUILib:ClearAllDropdowns()
+	alldropdown = {}
+end
+
+function ReyUILib:GetActiveDropdowns()
+	return alldropdown
+end
+
+function ReyUILib:CloseAllDropdowns()
+	for dropdownName, dropdownData in pairs(alldropdown) do
+		if dropdownData.List and dropdownData.List.Visible then
+			dropdownData.List.Visible = false
+		end
+	end
+end
+
+return ReyUILib
