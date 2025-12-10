@@ -34,7 +34,6 @@ local State = {
 -- ============ UI SETUP ============
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
-
 -- ============ UTILITY FUNCTIONS ============
 local Utils = {}
 
@@ -443,6 +442,7 @@ function Fish.Toggle(state)
 		Utils.Cleanup("autoFishing")
 		Utils.StopThread("autoFishing")
 		Utils.Cleanup("playerCharAdded")
+		task.wait()
 		GuiService.SelectedObject = nil
 	end
 end
@@ -559,7 +559,6 @@ function AutoFarmBossFish.GetEquippedTool()
 	local char = player.Character
 	if not char then return nil, nil end
 	
-	-- Cari tool yang di-equip dari selectedTools
 	for toolName, _ in pairs(selectedTools) do
 		local tool = char:FindFirstChild(toolName)
 		if tool then
@@ -567,7 +566,6 @@ function AutoFarmBossFish.GetEquippedTool()
 		end
 	end
 	
-	-- Jika tidak ada tool yang dipilih, gunakan tool pertama yang ada
 	local anyTool = char:FindFirstChildWhichIsA("Tool")
 	if anyTool then
 		return anyTool, anyTool.ToolTip
@@ -741,7 +739,7 @@ function Muzan.Buy()
 		GuiService.SelectedObject = button
 		VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
 		VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-		task.wait(0.5)
+		task.wait(0.2)
 		GuiService.SelectedObject = nil
 		shop.Visible = false
 		return true
@@ -877,12 +875,15 @@ function AutoSpawn.Toggle(state)
 						end
 					end
 					
-					local obj = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"].Spawn.Button
-					GuiService.SelectedObject = obj
-					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-					task.wait()
-					GuiService.SelectedObject = nil
+					local obj = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"].Spawn
+					local button = obj:FindFirstChild("Button")
+					if button then
+						GuiService.SelectedObject = button
+						VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+						VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+						task.wait()
+						GuiService.SelectedObject = nil
+					end
 				end)
 			end
 		end)
@@ -1115,6 +1116,7 @@ function Cleanup.All()
 	AutoFarmBossFish.RemoveBodyVelocity()
 	AutoFarmBossFish.CancelFishing()
 	AutoSpawn.RestoreUI()
+	task.wait()
 	GuiService.SelectedObject = nil
 end
 
