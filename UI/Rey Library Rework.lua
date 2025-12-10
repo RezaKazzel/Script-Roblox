@@ -10,16 +10,12 @@ ReyUILib.CallbackManager = {
 	Inputs = {}
 }
 
-local success, DataScript = pcall(function()
+local success, ExternalData = pcall(function()
 	return loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Data"))()
 end)
 
-local ExternalData = {["Execute"] = "0"}
-if success and type(DataScript) == "function" then
-	local success2, result = pcall(DataScript)
-	if success2 and type(result) == "table" then
-		ExternalData = result
-	end
+if not success or type(ExternalData) ~= "table" then
+	ExternalData = {["Execute"] = "0"}
 end
 
 ReyUILib.Data = {}
@@ -418,7 +414,7 @@ function ReyUILib:CreateUI(Name, NoteText)
 		Size = UDim2.new(1, -50, 0, 40),
 		Position = UDim2.new(0, 100, 0, 35),
 		BackgroundTransparency = 1,
-		Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..ExternalData["Execute"],
+		Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..(ExternalData["Execute"] or 0),
 		TextColor3 = Color3.fromRGB(255, 255, 255),
 		Font = Enum.Font.Gotham,
 		TextSize = 17,
