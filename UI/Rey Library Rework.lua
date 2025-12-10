@@ -1164,6 +1164,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			end
 			
 			self.UISettings[Name] = selectedOrder
+			self.CallbackManager.MultiDropdowns[Name] = Callback
 			Callback(selectedOrder)
 		end)
 	end
@@ -2005,6 +2006,22 @@ function ReyUILib:UpdateUIElements()
 								elementData.DropdownButton.Text = displayText
 							end
 							elementData.Selected = savedValue
+							
+							if self.alldropdown[elementName] then
+								self.alldropdown[elementName].SelectedOrder = savedValue
+								self.alldropdown[elementName].SelectedOptions = {}
+								
+								for _, option in ipairs(savedValue) do
+									self.alldropdown[elementName].SelectedOptions[tostring(option)] = true
+								end
+							end
+							
+							if elementData.Callback and type(elementData.Callback) == "function" then
+								task.spawn(function()
+									wait(0.05)
+									pcall(elementData.Callback, savedValue)
+								end)
+							end
 						end
 					end
 					
