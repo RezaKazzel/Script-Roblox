@@ -1262,178 +1262,206 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 end
 
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
-	callback = callback or function() end
-	
-	self.CallbackManager.Sliders[Name] = callback
-	local savedValue = self.UISettings[Name]
-	if savedValue then
-		default = savedValue
-	end
-	
-	local containerFrame = Create("Frame", {
-		Name = Name,
-		Parent = parent,
-		Size = UDim2.new(1, -10, 0, 60),
-		BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-		BorderSizePixel = 2,
-		BorderColor3 = Color3.fromRGB(30, 30, 30)
-	})
+    callback = callback or function() end
+    
+    self.CallbackManager.Sliders[Name] = callback
+    local savedValue = self.UISettings[Name]
+    if savedValue then
+        default = savedValue
+    end
+    
+    local containerFrame = Create("Frame", {
+        Name = Name,
+        Parent = parent,
+        Size = UDim2.new(1, -10, 0, 70),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+        BorderSizePixel = 2,
+        BorderColor3 = Color3.fromRGB(30, 30, 30)
+    })
 
-	Create("UICorner", {
-		Parent = containerFrame,
-		CornerRadius = UDim.new(0, 8)
-	})
+    Create("UICorner", {
+        Parent = containerFrame,
+        CornerRadius = UDim.new(0, 8)
+    })
 
-	local label = Create("TextLabel", {
-		Name = "Label",
-		Parent = containerFrame,
-		Size = UDim2.new(1, 0, 0, 20),
-		Position = UDim2.new(0, 10, 0, 0),
-		BackgroundTransparency = 1,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		Font = Enum.Font.GothamBold,
-		TextSize = 16,
-		TextStrokeTransparency = 0.8,
-		TextStrokeColor3 = Color3.fromRGB(100, 0, 150),
-		Text = Name .. " - " .. default,
-		TextXAlignment = Enum.TextXAlignment.Left
-	})
+    local titleLabel = Create("TextLabel", {
+        Name = "Title",
+        Parent = containerFrame,
+        Size = UDim2.new(0.7, 0, 0, 25),
+        Position = UDim2.new(0, 10, 0, 5),
+        BackgroundTransparency = 1,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        Text = Name.." - "..tostring(default),
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
 
-	local sliderFrame = Create("Frame", {
-		Parent = containerFrame,
-		Size = UDim2.new(0.9, -20, 0, 30),
-		Position = UDim2.new(0, 10, 0, 25),
-		BackgroundColor3 = Color3.fromRGB(60, 20, 120),
-		BorderSizePixel = 0
-	})
+    local sliderBackground = Create("Frame", {
+        Parent = containerFrame,
+        Size = UDim2.new(1, -20, 0, 20),
+        Position = UDim2.new(0, 10, 0, 40),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        BorderSizePixel = 0
+    })
 
-	Create("UICorner", {
-		Parent = sliderFrame,
-		CornerRadius = UDim.new(0, 15)
-	})
+    Create("UICorner", {
+        Parent = sliderBackground,
+        CornerRadius = UDim.new(0, 10)
+    })
 
-	local fillFrame = Create("Frame", {
-		Name = "FillFrame",
-		Parent = sliderFrame,
-		Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
-		BackgroundColor3 = Color3.fromRGB(140, 50, 220),
-		BorderSizePixel = 0
-	})
+    Create("UIStroke", {
+        Parent = sliderBackground,
+        Thickness = 1.8,
+        Color = Color3.fromRGB(30, 30, 30)
+    })
 
-	Create("UICorner", {
-		Parent = fillFrame,
-		CornerRadius = UDim.new(0, 15)
-	})
+    local sliderFill = Create("Frame", {
+        Name = "SliderFill",
+        Parent = sliderBackground,
+        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(85, 85, 255),
+        BorderSizePixel = 0,
+        ZIndex = 2
+    })
 
-	local sliderButton = Create("ImageButton", {
-		Name = "SliderButton",
-		Parent = sliderFrame,
-		Size = UDim2.new(0, 25, 1, 0),
-		Position = UDim2.new((default - min) / (max - min), -15, 0, 0),
-		BackgroundColor3 = Color3.fromRGB(200, 100, 255),
-		BackgroundTransparency = 1,
-		Image = "rbxassetid://3570695787",
-		ScaleType = Enum.ScaleType.Slice,
-		SliceCenter = Rect.new(100, 100, 100, 100)
-	})
+    Create("UICorner", {
+        Parent = sliderFill,
+        CornerRadius = UDim.new(0, 10)
+    })
 
-	local inputBox = Create("TextBox", {
-		Name = "InputBox",
-		Parent = containerFrame,
-		Size = UDim2.new(0.1, 0, 0, 30),
-		Position = UDim2.new(0.9, -5, 0, 25),
-		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		TextColor3 = Color3.fromRGB(0, 0, 0),
-		Font = Enum.Font.GothamBold,
-		TextSize = 16,
-		Text = tostring(default),
-		TextStrokeTransparency = 0.8,
-		BackgroundTransparency = 0.2,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextYAlignment = Enum.TextYAlignment.Center
-	})
+    local sliderKnob = Create("Frame", {
+        Name = "SliderKnob",
+        Parent = sliderBackground,
+        Size = UDim2.new(0, 26, 1.5, 0),
+        Position = UDim2.new((default - min) / (max - min), -13, -0.25, 0),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        ZIndex = 3
+    })
 
-	Create("UICorner", {
-		Parent = inputBox,
-		CornerRadius = UDim.new(0, 12)
-	})
-	
-	local currentValue = default
-	self.UIElements[Name] = {
-		Type = "Slider",
-		Frame = containerFrame,
-		Label = label,
-		InputBox = inputBox,
-		FillFrame = fillFrame,
-		SliderButton = sliderButton,
-		SliderFrame = sliderFrame,
-		Min = min,
-		Max = max,
-		Value = currentValue,
-		Callback = callback
-	}
-	
-	self.UISettings[Name] = currentValue
-	local function updateSlider(value, forceUpdate)
-		value = math.clamp(value, min, max)
-		if value ~= currentValue or forceUpdate then
-			currentValue = value
-			local sliderPos = (value - min) / (max - min)
-			
-			fillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
-			sliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
-			label.Text = Name .. " - " .. value
-			inputBox.Text = tostring(value)
-			self.UISettings[Name] = value
-			self.UIElements[Name].Value = value
-			
-			callback(value)
-		end
-	end
+    Create("UICorner", {
+        Parent = sliderKnob,
+        CornerRadius = UDim.new(0, 12)
+    })
 
-	sliderButton.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			local connection
-			local lastValue = currentValue
-			
-			connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
-				if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
-					local sliderPos = math.clamp((moveInput.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
-					local value = math.floor(sliderPos * (max - min) + min)
-					
-					if value ~= lastValue then
-						lastValue = value
-						updateSlider(value)
-					end
-				end
-			end)
-			
-			game:GetService("UserInputService").InputEnded:Connect(function(endInput)
-				if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
-					connection:Disconnect()
-				end
-			end)
-		end
-	end)
+    Create("UIStroke", {
+        Parent = sliderKnob,
+        Thickness = 1.8,
+        Color = Color3.fromRGB(30, 30, 30)
+    })
 
-	sliderFrame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			local sliderPos = math.clamp((input.Position.X - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
-			local value = math.floor(sliderPos * (max - min) + min)
-			updateSlider(value)
-		end
-	end)
+    local inputBox = Create("TextBox", {
+        Name = "InputBox",
+        Parent = containerFrame,
+        Size = UDim2.new(0.15, 0, 0, 25),
+        Position = UDim2.new(0.85, -10, 0, 5),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.Gotham,
+        TextSize = 16,
+        Text = tostring(default),
+        PlaceholderText = tostring(default),
+        PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center
+    })
 
-	inputBox.FocusLost:Connect(function()
-		local value = tonumber(inputBox.Text)
-		if value then
-			updateSlider(value)
-		else
-			inputBox.Text = tostring(currentValue)
-		end
-	end)
+    Create("UICorner", {
+        Parent = inputBox,
+        CornerRadius = UDim.new(0, 6)
+    })
 
-	return containerFrame
+    Create("UIStroke", {
+        Parent = inputBox,
+        Thickness = 1,
+        Color = Color3.fromRGB(30, 30, 30)
+    })
+    
+    local currentValue = default
+    self.UIElements[Name] = {
+        Type = "Slider",
+        Frame = containerFrame,
+        TitleLabel = titleLabel,
+        ValueLabel = valueLabel,
+        InputBox = inputBox,
+        SliderFill = sliderFill,
+        SliderKnob = sliderKnob,
+        SliderBackground = sliderBackground,
+        Min = min,
+        Max = max,
+        Value = currentValue,
+        Callback = callback
+    }
+    
+    self.UISettings[Name] = currentValue
+    
+    local function updateSlider(value, forceUpdate)
+        value = math.clamp(value, min, max)
+        if value ~= currentValue or forceUpdate then
+            currentValue = value
+            local sliderPos = (value - min) / (max - min)
+            
+            sliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
+            sliderKnob.Position = UDim2.new(sliderPos, -13, -0.25, 0)
+            titleLabel.Text = Name.." - "..tostring(value)
+            inputBox.Text = tostring(value)
+            self.UISettings[Name] = value
+            self.UIElements[Name].Value = value
+            
+            callback(value)
+        end
+    end
+
+    local function startDragging()
+        local connection
+        local lastValue = currentValue
+        
+        connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
+            if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                local sliderPos = math.clamp((moveInput.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
+                local value = math.floor(sliderPos * (max - min) + min)
+                
+                if value ~= lastValue then
+                    lastValue = value
+                    updateSlider(value)
+                end
+            end
+        end)
+        
+        game:GetService("UserInputService").InputEnded:Connect(function(endInput)
+            if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                if connection then
+                    connection:Disconnect()
+                end
+            end
+        end)
+    end
+
+    sliderKnob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            startDragging()
+        end
+    end)
+
+    sliderBackground.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local sliderPos = math.clamp((input.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
+            local value = math.floor(sliderPos * (max - min) + min)
+            updateSlider(value)
+        end
+    end)
+
+    inputBox.FocusLost:Connect(function()
+        local value = tonumber(inputBox.Text)
+        if value then
+            updateSlider(value)
+        else
+            inputBox.Text = tostring(currentValue)
+        end
+    end)
+
+    return containerFrame
 end
 
 function ReyUILib:CreateNote(parent, text)
