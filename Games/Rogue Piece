@@ -963,7 +963,9 @@ end)
 Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
 
 -- ============ EXCLUSIVE 2 ============
-
+Rey:CreateToggle(Exclusive2, "Disable Announced Pop-up", "-", function(state)
+	game:GetService("Players").LocalPlayer.Setting["Announce Pop-up"].Value = not state
+end)
 Rey:CreateToggle(Exclusive2, "Auto Exchange Chest", "Auto exchange chest jika >250", Exchange.Toggle)
 Rey:CreateToggle(Exclusive2, "Auto Buy Muzan Blood", "Auto buy jika Boss Token > 750", Muzan.Toggle)
 
