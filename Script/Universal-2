@@ -527,23 +527,21 @@ end
 
 local NPCCache = {}
 local function GetNPCList()
-	return function()
-		local npcs = {}
-		NPCCache = {}
-		local currentNPCFolder = State.NPCFolder
-		
-		for _, obj in ipairs(currentNPCFolder:GetDescendants()) do
-			if obj.Name:lower() ~= "keyframe" and obj:IsA("Model") and obj.Parent ~= LocalPlayer.Character then
-				if obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart then
-					if not Utils.IsInTable(npcs, obj.Name) then 
-						table.insert(npcs, obj.Name)
-						NPCCache[obj.Name] = obj
-					end
+	local npcs = {}
+	NPCCache = {}
+	local currentNPCFolder = State.NPCFolder
+	
+	for _, obj in ipairs(currentNPCFolder:GetDescendants()) do
+		if obj.Name:lower() ~= "keyframe" and obj:IsA("Model") and obj.Parent ~= LocalPlayer.Character then
+			if obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart then
+				if not Utils.IsInTable(npcs, obj.Name) then 
+					table.insert(npcs, obj.Name)
+					NPCCache[obj.Name] = obj
 				end
 			end
 		end
-		return npcs
 	end
+	return npcs
 end
 
 local ServerHop = {}
@@ -699,7 +697,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(
 	end
 end, true)
 
-Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList(), function(npcName)
+Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList, function(npcName)
     local playerRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     local npc = NPCCache[npcName]
     
