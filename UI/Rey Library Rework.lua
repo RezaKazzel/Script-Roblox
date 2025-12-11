@@ -974,7 +974,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 			BackgroundColor3 = Color3.fromRGB(50, 50, 50),
 			BorderSizePixel = 2,
 			BorderColor3 = Color3.fromRGB(30, 30, 30),
-			ZIndex = 6
+			ZIndex = 4
 		})
 
 		Create("UICorner", {
@@ -989,7 +989,7 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://122032243989747",
 			ImageColor3 = Color3.fromRGB(255, 255, 255),
-			ZIndex = 6
+			ZIndex = 4
 		})
 
 		local debounce = false
@@ -1234,7 +1234,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			BackgroundColor3 = Color3.fromRGB(50, 50, 50),
 			BorderSizePixel = 2,
 			BorderColor3 = Color3.fromRGB(30, 30, 30),
-			ZIndex = 6
+			ZIndex = 4
 		})
 
 		Create("UICorner", {
@@ -1249,7 +1249,7 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 			BackgroundTransparency = 1,
 			Image = "rbxassetid://122032243989747",
 			ImageColor3 = Color3.fromRGB(255, 255, 255),
-			ZIndex = 6
+			ZIndex = 4
 		})
 
 		local debounce = false
