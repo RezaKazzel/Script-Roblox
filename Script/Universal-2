@@ -735,7 +735,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList(), function(npcName)
     end
 end, true)
 
-Rey:CreateNote(MiscTab, "This note is for spacing purposes to prevent UI bugs\n\n\n\n")
+Rey:CreateNote(MiscTab, "This note is for spacing purposes to prevent UI bugs\n\n\n\n\n\n\n\n")
 
 Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
 	State.RestrictAutoFarm = state
