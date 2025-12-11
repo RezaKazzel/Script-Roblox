@@ -1343,5 +1343,11 @@ player.CharacterAdded:Connect(function()
 		Boss.Toggle(true)
 	end
 end)
+
+game:GetService("CoreGui").DescendantRemoving:Connect(function(desc)
+    if desc == UI then
+        Cleanup.All()
+    end
+end)
 -- ============ FINAL ============
 Utils.Notify("success", "Rogue Piece", "Script Loaded Successfully!", 5)
