@@ -1241,7 +1241,7 @@ Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle
 
 Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle)
 
-Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", AutoSellFish)
+Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", SellFish.Toggle)
 Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
 Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
 	autoFishingV2 = state
