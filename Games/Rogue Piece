@@ -5,12 +5,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local VirtualUser = game:GetService("VirtualUser")
+
 -- ============ VARIABLES ============
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage.Remotes.Serverside
 local VIM = VirtualInputManager
-local VU = VirtualUser
+
 -- ============ STATE MANAGEMENT ============
 local State = {
 	Connections = {},
@@ -18,6 +18,7 @@ local State = {
 	Toggles = {
 		GodMode = false,
 		FastAttack = false,
+		AutoSellFish,
 		AutoFishing = false,
 		AutoBoss = false,
 		AutoSpawnBoss = false,
@@ -78,45 +79,6 @@ function Utils.FireRemote(...)
 	pcall(function()
 		remote:FireServer(unpack(args))
 	end)
-end
-
-Utils.PriorityQueue = {}
-Utils.PriorityRunning = false
-Utils.WaitingForPriority = false
-function Utils.ProcessPriority()
-	if Utils.PriorityRunning or #Utils.PriorityQueue == 0 then return end
-	
-	Utils.PriorityRunning = true
-	Utils.WaitingForPriority = true
-	
-	task.spawn(function()
-		while #Utils.PriorityQueue > 0 do
-			local job = table.remove(Utils.PriorityQueue, 1)
-			pcall(job)
-		end
-		
-		Utils.PriorityRunning = false
-		Utils.WaitingForPriority = false
-	end)
-end
-
-function Utils.Priority(job)
-	table.insert(Utils.PriorityQueue, job)
-	if not Utils.PriorityRunning then
-		Utils.ProcessPriority()
-	end
-end
-
-function Utils.WaitPriority()
-	while Utils.WaitingForPriority do
-		task.wait()
-	end
-end
-
-function Utils.CheckPriority()
-	if Utils.WaitingForPriority then
-		Utils.WaitPriority()
-	end
 end
 
 function Utils.GuiClick(button)
@@ -326,101 +288,101 @@ end)
 local God = {}
 
 function God.MuteObservation(char)
-	if not char or char.Parent == nil then return false end
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return false end
-	local obs = hrp:FindFirstChild("Observation")
-	if obs then
-		obs.Volume = 0
-		return true
-	end
-	return false
+    if not char or char.Parent == nil then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local obs = hrp:FindFirstChild("Observation")
+    if obs then
+        obs.Volume = 0
+        return true
+    end
+    return false
 end
 
 function God.StartLoop()
-	Utils.StartThread("godMode", function()
-		while State.Toggles.GodMode do
-			if player.Character and player.Character.Parent ~= nil then
-				Utils.FireRemote("Server", "Misc", "Observation", 1)
-			end
-			task.wait(1)
-		end
-	end)
+    Utils.StartThread("godMode", function()
+        while State.Toggles.GodMode do
+            if player.Character and player.Character.Parent ~= nil then
+                Utils.FireRemote("Server", "Misc", "Observation", 1)
+            end
+            task.wait(0.3)
+        end
+    end)
 end
 
 function God.SetupObservers()
-	for _, plr in pairs(game.Players:GetPlayers()) do
-		if plr.Character then 
-			God.MuteObservation(plr.Character)
-			
-			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then
-				Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
-					if child.Name == "Observation" then
-						child.Volume = 0
-					elseif child.Name == "Dodge" then
-						task.wait(0.1)
-						if child.Parent then
-							child:Destroy()
-						end
-					end
-				end))
-			end
-			
-			Utils.AddConn("dodgeRemover_" .. plr.Name, plr.Character.ChildAdded:Connect(function(child)
-				if child.Name == "Dodge" then
-					task.wait(0.1)
-					if child.Parent then
-						child:Destroy()
-					end
-				end
-			end))
-		end
-		
-		Utils.AddConn("charAddedGod_" .. plr.Name, plr.CharacterAdded:Connect(function(char)
-			task.wait(0.5)
-			God.MuteObservation(char)
-			
-			local hrp = char:WaitForChild("HumanoidRootPart", 5)
-			if hrp then
-				Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
-					if child.Name == "Observation" then
-						child.Volume = 0
-					elseif child.Name == "Dodge" then
-						task.wait(0.1)
-						if child.Parent then
-							child:Destroy()
-						end
-					end
-				end))
-			end
-			
-			Utils.AddConn("dodgeRemover_" .. plr.Name, char.ChildAdded:Connect(function(child)
-				if child.Name == "Dodge" then
-					task.wait(0.1)
-					if child.Parent then
-						child:Destroy()
-					end
-				end
-			end))
-		end))
-	end
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr.Character then 
+            God.MuteObservation(plr.Character)
+            
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
+                    if child.Name == "Observation" then
+                        child.Volume = 0
+                    elseif child.Name == "Dodge" then
+                        task.wait(0.1)
+                        if child.Parent then
+                            child:Destroy()
+                        end
+                    end
+                end))
+            end
+            
+            Utils.AddConn("dodgeRemover_" .. plr.Name, plr.Character.ChildAdded:Connect(function(child)
+                if child.Name == "Dodge" then
+                    task.wait(0.1)
+                    if child.Parent then
+                        child:Destroy()
+                    end
+                end
+            end))
+        end
+        
+        Utils.AddConn("charAddedGod_" .. plr.Name, plr.CharacterAdded:Connect(function(char)
+            task.wait(0.5)
+            God.MuteObservation(char)
+            
+            local hrp = char:WaitForChild("HumanoidRootPart", 5)
+            if hrp then
+                Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
+                    if child.Name == "Observation" then
+                        child.Volume = 0
+                    elseif child.Name == "Dodge" then
+                        task.wait(0.1)
+                        if child.Parent then
+                            child:Destroy()
+                        end
+                    end
+                end))
+            end
+            
+            Utils.AddConn("dodgeRemover_" .. plr.Name, char.ChildAdded:Connect(function(child)
+                if child.Name == "Dodge" then
+                    task.wait(0.1)
+                    if child.Parent then
+                        child:Destroy()
+                    end
+                end
+            end))
+        end))
+    end
 end
 
 function God.Toggle(state)
-	State.Toggles.GodMode = state
-	
-	if state then
-		God.SetupObservers()
-		God.StartLoop()
-	else
-		for _, plr in pairs(game.Players:GetPlayers()) do
-			Utils.Cleanup("charAddedGod_" .. plr.Name)
-			Utils.Cleanup("obsChild_" .. plr.Name)
-			Utils.Cleanup("dodgeRemover_" .. plr.Name)
-		end
-		Utils.StopThread("godMode")
-	end
+    State.Toggles.GodMode = state
+    
+    if state then
+        God.SetupObservers()
+        God.StartLoop()
+    else
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            Utils.Cleanup("charAddedGod_" .. plr.Name)
+            Utils.Cleanup("obsChild_" .. plr.Name)
+            Utils.Cleanup("dodgeRemover_" .. plr.Name)
+        end
+        Utils.StopThread("godMode")
+    end
 end
 
 -- ============ FAST ATTACK SYSTEM ============
@@ -471,73 +433,9 @@ function Fast.Toggle(state)
 	end
 end
 
--- ============ SELL FISH SYSTEM ============
-local SellFish = {}
-
-function SellFish.Setup()
-	Utils.Cleanup("autoSellFish")
-	Utils.StopThread("autoSellFish")
-	
-	local NPC = workspace:WaitForChild("Main"):WaitForChild("NPCs"):WaitForChild("Sell Fish")
-	local prompt = NPC:FindFirstChildOfClass("ProximityPrompt")
-	
-	Utils.StartThread("autoSellFish", function()
-		while State.Toggles.AutoSellFish do
-			task.wait()
-			if not NPC or not prompt then return end
-			prompt.MaxActivationDistance = 10000
-			prompt.RequiresLineOfSight = false
-			prompt.HoldDuration = 0
-			
-			local camera = workspace.CurrentCamera
-			if camera and NPC then
-				local NPCPosition = NPC:GetPivot().Position
-				local lookVector = (NPCPosition - camera.CFrame.Position).Unit
-				
-				camera.CFrame = CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + lookVector)
-			end
-			
-			task.wait()
-			VU:CaptureController()
-			VU:SetKeyDown("e")
-			VU:SetKeyUp("e")
-			
-			task.wait(3)
-		end
-	end)
-end
-
-function SellFish.Toggle(state)
-	State.Toggles.AutoSellFish = state
-	
-	if state then		
-		SellFish.Setup()
-		Utils.Cleanup("sellFishCharAdded")
-		State.Connections["sellFishCharAdded"] = player.CharacterAdded:Connect(function()
-			task.wait(1)
-			if State.Toggles.AutoSellFish then
-				SellFish.Setup()
-			end
-		end)
-	else
-		Utils.Cleanup("autoSellFish")
-		Utils.StopThread("autoSellFish")
-		Utils.Cleanup("sellFishCharAdded")
-		
-		local NPC = workspace:FindFirstChild("Main") and workspace.Main:FindFirstChild("NPCs") and workspace.Main.NPCs:FindFirstChild("Sell Fish")
-		if NPC then
-			local prompt = NPC:FindFirstChildOfClass("ProximityPrompt")
-			if prompt then
-				prompt.MaxActivationDistance = 10
-			end
-		end
-	end
-end
-
 -- ============ FISHING SYSTEM ============
 local Fish = {}
 Fish.ClickCount = 15
-
 function Fish.Setup()
 	Utils.Cleanup("autoFishing")
 	Utils.StopThread("autoFishing")
@@ -550,7 +448,6 @@ function Fish.Setup()
 	
 	Utils.StartThread("autoFishing", function()
 		while State.Toggles.AutoFishing do
-			Utils.CheckPriority()
 			task.wait()
 			
 			local fishing = HUD:FindFirstChild("Fishing")
@@ -573,8 +470,8 @@ function Fish.Toggle(state)
 	
 	if state then
 		Fish.Setup()
-		Utils.Cleanup("fishCharAdded")
-		State.Connections["fishCharAdded"] = player.CharacterAdded:Connect(function()
+		Utils.Cleanup("playerCharAdded")
+		State.Connections["playerCharAdded"] = player.CharacterAdded:Connect(function()
 			task.wait(1)
 			if State.Toggles.AutoFishing then
 				Fish.Setup()
@@ -583,7 +480,7 @@ function Fish.Toggle(state)
 	else
 		Utils.Cleanup("autoFishing")
 		Utils.StopThread("autoFishing")
-		Utils.Cleanup("fishCharAdded")
+		Utils.Cleanup("playerCharAdded")
 		task.wait()
 		GuiService.SelectedObject = nil
 	end
@@ -675,8 +572,11 @@ function AutoFarmBossFish.CheckFishing()
 end
 
 function AutoFarmBossFish.CancelFishing()
-	remote:FireServer("Server", "Misc", "Fishing", false)
-	AutoFarmBossFish.Mancing = false
+	local fishing = player:FindFirstChild("Fishing")
+	if fishing then
+		remote:FireServer("Server", "Misc", "Fishing", false)
+		AutoFarmBossFish.Mancing = false
+	end
 end
 
 function AutoFarmBossFish.FindBoss()
@@ -818,7 +718,7 @@ function AutoFarmBossFish.StartLoop()
 				if lastState ~= "fishing" then
 					AutoFarmBossFish.RemoveBodyVelocity()
 				end
-				Utils.CheckPriority()
+				
 				if AutoFarmBossFish.CheckFishing() then
 					AutoFarmBossFish.StartFishing()
 				end
@@ -869,13 +769,12 @@ function Kaneki.Craft()
 			local craftFrame = player.PlayerGui.Button:FindFirstChild("Craft")
 			if not craftFrame then return false end
 			
-			Utils.Priority(function()
-				craftFrame.Visible = true
-				pcall(function() craftButton = craftFrame.Craft_Frame.Scroll["Kaneki's Blood"].Craft.Button end)
-				if craftButton then Utils.GuiClick(craftButton) end
-				craftFrame.Visible = false
-				return true
-			end)
+			craftFrame.Visible = true
+			pcall(function() craftButton = craftFrame.Craft_Frame.Scroll["Kaneki's Blood"].Craft.Button end)
+			print(craftButton)
+			if craftButton then Utils.GuiClick(craftButton) end
+			craftFrame.Visible = false
+			return true
 		end
 	end
 	return false
@@ -936,11 +835,9 @@ function Exchange.CheckAndSell()
 				local amount = Exchange.GetAmount(amountChild.Text)
 				
 				if amount > 250 then
-					Utils.Priority(function()
-						exchange.Visible = true
-						Utils.GuiClick(button)
-						exchange.Visible = false
-					end)
+					exchange.Visible = true
+					Utils.GuiClick(button)
+					exchange.Visible = false
 				end
 			end
 		end
@@ -951,7 +848,7 @@ function Exchange.StartLoop()
 	Utils.StartThread("exchange", function()
 		while State.Toggles.AutoExchange do
 			Exchange.CheckAndSell()
-			task.wait(5)
+			task.wait(10)
 		end
 	end)
 end
@@ -1001,7 +898,7 @@ function AutoSpawn.Toggle(state)
 		end
 		
 		task.spawn(function()
-			while AutoSpawn.Running do Utils.CheckPriority() task.wait(0.8)
+			while AutoSpawn.Running do task.wait(0.8)
 				pcall(function()
 					local inventory = game:GetService("Players").LocalPlayer.Inventory
 					local summonOrb = inventory:FindFirstChild("Summon Orb")
@@ -1045,6 +942,7 @@ local Hogyoku = {}
 
 function Hogyoku.GetShardCount()
 	local success, count = pcall(function()
+		local player = game.Players.LocalPlayer
 		local inventory = player:WaitForChild("Inventory")
 		local rerollShard = inventory:WaitForChild("Reroll Shard")
 		return rerollShard.Value
@@ -1073,9 +971,10 @@ function Hogyoku.CheckAndExchange()
 	if not success or not exchangeButton then
 		return false
 	end
-	Utils.Priority(function()
-		Utils.GuiClick(exchangeButton)
-	end)
+	
+	local clickSuccess = Utils.GuiClick(exchangeButton)
+	
+	return clickSuccess
 end
 
 function Hogyoku.StartLoop()
@@ -1241,7 +1140,6 @@ Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle
 
 Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle)
 
-Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", SellFish.Toggle)
 Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
 Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
 	autoFishingV2 = state
@@ -1321,6 +1219,7 @@ function Cleanup.All()
 	Boss.RemoveVelocity()
 	AutoFarmBossFish.RemoveBodyVelocity()
 	AutoFarmBossFish.CancelFishing()
+	AutoSpawn.RestoreUI()
 	task.wait()
 	GuiService.SelectedObject = nil
 end
@@ -1345,9 +1244,10 @@ player.CharacterAdded:Connect(function()
 end)
 
 game:GetService("CoreGui").DescendantRemoving:Connect(function(desc)
-    if desc == UI then
-        Cleanup.All()
-    end
+	if desc == UI then
+		Cleanup.All()
+	end
 end)
+
 -- ============ FINAL ============
 Utils.Notify("success", "Rogue Piece", "Script Loaded Successfully!", 5)
