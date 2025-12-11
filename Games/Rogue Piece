@@ -326,101 +326,101 @@ end)
 local God = {}
 
 function God.MuteObservation(char)
-    if not char or char.Parent == nil then return false end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    local obs = hrp:FindFirstChild("Observation")
-    if obs then
-        obs.Volume = 0
-        return true
-    end
-    return false
+	if not char or char.Parent == nil then return false end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+	local obs = hrp:FindFirstChild("Observation")
+	if obs then
+		obs.Volume = 0
+		return true
+	end
+	return false
 end
 
 function God.StartLoop()
-    Utils.StartThread("godMode", function()
-        while State.Toggles.GodMode do
-            if player.Character and player.Character.Parent ~= nil then
-                Utils.FireRemote("Server", "Misc", "Observation", 1)
-            end
-            task.wait(1)
-        end
-    end)
+	Utils.StartThread("godMode", function()
+		while State.Toggles.GodMode do
+			if player.Character and player.Character.Parent ~= nil then
+				Utils.FireRemote("Server", "Misc", "Observation", 1)
+			end
+			task.wait(1)
+		end
+	end)
 end
 
 function God.SetupObservers()
-    for _, plr in pairs(game.Players:GetPlayers()) do
-        if plr.Character then 
-            God.MuteObservation(plr.Character)
-            
-            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
-                    if child.Name == "Observation" then
-                        child.Volume = 0
-                    elseif child.Name == "Dodge" then
-                        task.wait(0.1)
-                        if child.Parent then
-                            child:Destroy()
-                        end
-                    end
-                end))
-            end
-            
-            Utils.AddConn("dodgeRemover_" .. plr.Name, plr.Character.ChildAdded:Connect(function(child)
-                if child.Name == "Dodge" then
-                    task.wait(0.1)
-                    if child.Parent then
-                        child:Destroy()
-                    end
-                end
-            end))
-        end
-        
-        Utils.AddConn("charAddedGod_" .. plr.Name, plr.CharacterAdded:Connect(function(char)
-            task.wait(0.5)
-            God.MuteObservation(char)
-            
-            local hrp = char:WaitForChild("HumanoidRootPart", 5)
-            if hrp then
-                Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
-                    if child.Name == "Observation" then
-                        child.Volume = 0
-                    elseif child.Name == "Dodge" then
-                        task.wait(0.1)
-                        if child.Parent then
-                            child:Destroy()
-                        end
-                    end
-                end))
-            end
-            
-            Utils.AddConn("dodgeRemover_" .. plr.Name, char.ChildAdded:Connect(function(child)
-                if child.Name == "Dodge" then
-                    task.wait(0.1)
-                    if child.Parent then
-                        child:Destroy()
-                    end
-                end
-            end))
-        end))
-    end
+	for _, plr in pairs(game.Players:GetPlayers()) do
+		if plr.Character then 
+			God.MuteObservation(plr.Character)
+			
+			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
+					if child.Name == "Observation" then
+						child.Volume = 0
+					elseif child.Name == "Dodge" then
+						task.wait(0.1)
+						if child.Parent then
+							child:Destroy()
+						end
+					end
+				end))
+			end
+			
+			Utils.AddConn("dodgeRemover_" .. plr.Name, plr.Character.ChildAdded:Connect(function(child)
+				if child.Name == "Dodge" then
+					task.wait(0.1)
+					if child.Parent then
+						child:Destroy()
+					end
+				end
+			end))
+		end
+		
+		Utils.AddConn("charAddedGod_" .. plr.Name, plr.CharacterAdded:Connect(function(char)
+			task.wait(0.5)
+			God.MuteObservation(char)
+			
+			local hrp = char:WaitForChild("HumanoidRootPart", 5)
+			if hrp then
+				Utils.AddConn("obsChild_" .. plr.Name, hrp.ChildAdded:Connect(function(child)
+					if child.Name == "Observation" then
+						child.Volume = 0
+					elseif child.Name == "Dodge" then
+						task.wait(0.1)
+						if child.Parent then
+							child:Destroy()
+						end
+					end
+				end))
+			end
+			
+			Utils.AddConn("dodgeRemover_" .. plr.Name, char.ChildAdded:Connect(function(child)
+				if child.Name == "Dodge" then
+					task.wait(0.1)
+					if child.Parent then
+						child:Destroy()
+					end
+				end
+			end))
+		end))
+	end
 end
 
 function God.Toggle(state)
-    State.Toggles.GodMode = state
-    
-    if state then
-        God.SetupObservers()
-        God.StartLoop()
-    else
-        for _, plr in pairs(game.Players:GetPlayers()) do
-            Utils.Cleanup("charAddedGod_" .. plr.Name)
-            Utils.Cleanup("obsChild_" .. plr.Name)
-            Utils.Cleanup("dodgeRemover_" .. plr.Name)
-        end
-        Utils.StopThread("godMode")
-    end
+	State.Toggles.GodMode = state
+	
+	if state then
+		God.SetupObservers()
+		God.StartLoop()
+	else
+		for _, plr in pairs(game.Players:GetPlayers()) do
+			Utils.Cleanup("charAddedGod_" .. plr.Name)
+			Utils.Cleanup("obsChild_" .. plr.Name)
+			Utils.Cleanup("dodgeRemover_" .. plr.Name)
+		end
+		Utils.StopThread("godMode")
+	end
 end
 
 -- ============ FAST ATTACK SYSTEM ============
