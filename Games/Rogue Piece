@@ -80,6 +80,45 @@ function Utils.FireRemote(...)
 	end)
 end
 
+Utils.PriorityQueue = {}
+Utils.PriorityRunning = false
+Utils.WaitingForPriority = false
+function Utils.ProcessPriority()
+	if Utils.PriorityRunning or #Utils.PriorityQueue == 0 then return end
+	
+	Utils.PriorityRunning = true
+	Utils.WaitingForPriority = true
+	
+	task.spawn(function()
+		while #Utils.PriorityQueue > 0 do
+			local job = table.remove(Utils.PriorityQueue, 1)
+			pcall(job)
+		end
+		
+		Utils.PriorityRunning = false
+		Utils.WaitingForPriority = false
+	end)
+end
+
+function Utils.Priority(job)
+	table.insert(Utils.PriorityQueue, job)
+	if not Utils.PriorityRunning then
+		Utils.ProcessPriority()
+	end
+end
+
+function Utils.WaitPriority()
+	while Utils.WaitingForPriority do
+		task.wait()
+	end
+end
+
+function Utils.CheckPriority()
+	if Utils.WaitingForPriority then
+		Utils.WaitPriority()
+	end
+end
+
 function Utils.GuiClick(button)
 	local x = pcall(function()
 		GuiService.SelectedObject = button
@@ -304,7 +343,7 @@ function God.StartLoop()
             if player.Character and player.Character.Parent ~= nil then
                 Utils.FireRemote("Server", "Misc", "Observation", 1)
             end
-            task.wait(0.3)
+            task.wait(1)
         end
     end)
 end
@@ -447,6 +486,7 @@ function Fish.Setup()
 	
 	Utils.StartThread("autoFishing", function()
 		while State.Toggles.AutoFishing do
+			Utils.CheckPriority()
 			task.wait()
 			
 			local fishing = HUD:FindFirstChild("Fishing")
@@ -571,11 +611,8 @@ function AutoFarmBossFish.CheckFishing()
 end
 
 function AutoFarmBossFish.CancelFishing()
-	local fishing = player:FindFirstChild("Fishing")
-	if fishing then
-		remote:FireServer("Server", "Misc", "Fishing", false)
-		AutoFarmBossFish.Mancing = false
-	end
+	remote:FireServer("Server", "Misc", "Fishing", false)
+	AutoFarmBossFish.Mancing = false
 end
 
 function AutoFarmBossFish.FindBoss()
@@ -717,7 +754,7 @@ function AutoFarmBossFish.StartLoop()
 				if lastState ~= "fishing" then
 					AutoFarmBossFish.RemoveBodyVelocity()
 				end
-				
+				Utils.CheckPriority()
 				if AutoFarmBossFish.CheckFishing() then
 					AutoFarmBossFish.StartFishing()
 				end
@@ -768,12 +805,13 @@ function Kaneki.Craft()
 			local craftFrame = player.PlayerGui.Button:FindFirstChild("Craft")
 			if not craftFrame then return false end
 			
-			craftFrame.Visible = true
-			pcall(function() craftButton = craftFrame.Craft_Frame.Scroll["Kaneki's Blood"].Craft.Button end)
-			print(craftButton)
-			if craftButton then Utils.GuiClick(craftButton) end
-			craftFrame.Visible = false
-			return true
+			Utils.Priority(function()
+				craftFrame.Visible = true
+				pcall(function() craftButton = craftFrame.Craft_Frame.Scroll["Kaneki's Blood"].Craft.Button end)
+				if craftButton then Utils.GuiClick(craftButton) end
+				craftFrame.Visible = false
+				return true
+			end)
 		end
 	end
 	return false
@@ -834,9 +872,11 @@ function Exchange.CheckAndSell()
 				local amount = Exchange.GetAmount(amountChild.Text)
 				
 				if amount > 250 then
-					exchange.Visible = true
-					Utils.GuiClick(button)
-					exchange.Visible = false
+					Utils.Priority(function()
+						exchange.Visible = true
+						Utils.GuiClick(button)
+						exchange.Visible = false
+					end)
 				end
 			end
 		end
@@ -847,7 +887,7 @@ function Exchange.StartLoop()
 	Utils.StartThread("exchange", function()
 		while State.Toggles.AutoExchange do
 			Exchange.CheckAndSell()
-			task.wait(10)
+			task.wait(5)
 		end
 	end)
 end
@@ -897,7 +937,7 @@ function AutoSpawn.Toggle(state)
 		end
 		
 		task.spawn(function()
-			while AutoSpawn.Running do task.wait(0.8)
+			while AutoSpawn.Running do Utils.CheckPriority() task.wait(0.8)
 				pcall(function()
 					local inventory = game:GetService("Players").LocalPlayer.Inventory
 					local summonOrb = inventory:FindFirstChild("Summon Orb")
@@ -970,10 +1010,9 @@ function Hogyoku.CheckAndExchange()
 	if not success or not exchangeButton then
 		return false
 	end
-	
-	local clickSuccess = Utils.GuiClick(exchangeButton)
-	
-	return clickSuccess
+	Utils.Priority(function()
+		Utils.GuiClick(exchangeButton)
+	end)
 end
 
 function Hogyoku.StartLoop()
@@ -1218,7 +1257,6 @@ function Cleanup.All()
 	Boss.RemoveVelocity()
 	AutoFarmBossFish.RemoveBodyVelocity()
 	AutoFarmBossFish.CancelFishing()
-	AutoSpawn.RestoreUI()
 	task.wait()
 	GuiService.SelectedObject = nil
 end
@@ -1241,12 +1279,5 @@ player.CharacterAdded:Connect(function()
 		Boss.Toggle(true)
 	end
 end)
-
-game:GetService("CoreGui").DescendantRemoving:Connect(function(desc)
-	if desc == UI then
-		Cleanup.All()
-	end
-end)
-
 -- ============ FINAL ============
 Utils.Notify("success", "Rogue Piece", "Script Loaded Successfully!", 5)
