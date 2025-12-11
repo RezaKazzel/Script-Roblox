@@ -547,6 +547,8 @@ function ReyUILib:CreateUI(Name, NoteText)
 		self:Notify("success", "Rey UI", "Library loaded successfully!", 3)
 	end)
 	
+	self:MonitorUIDeletion(screenGui)
+	
 	return {
 		ScreenGui = screenGui,
 		Panel = panel,
@@ -2707,6 +2709,31 @@ function ReyUILib:CloseAllDropdowns()
 			dropdownData.List.Visible = false
 		end
 	end
+end
+
+function ReyUILib:TurnOffAllToggles()
+    for toggleName, callback in pairs(self.CallbackManager.Toggles) do
+        self.UISettings[toggleName] = false
+        
+        if type(callback) == "function" then
+            pcall(function() callback(false) end)
+        end
+    end
+end
+
+
+function ReyUILib:MonitorUIDeletion(uiInstance)
+    if not uiInstance then return end
+    
+    local connection
+    connection = uiInstance.AncestryChanged:Connect(function()
+        if not uiInstance:IsDescendantOf(game) then
+            self:TurnOffAllToggles()
+            if connection then
+                connection:Disconnect()
+            end
+        end
+    end)
 end
 
 return ReyUILib
