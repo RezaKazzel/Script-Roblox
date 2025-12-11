@@ -1996,10 +1996,15 @@ function ReyUILib:UpdateUIElements()
 					
 				elseif elementData.Type == "Dropdown" then
 					if elementData.DropdownButton and elementData.DropdownButton.Parent then
+						if type(savedValue) == "table" then 
+							savedValue = "" 
+							self.UISettings[elementName] = ""
+						end
+						
 						elementData.DropdownButton.Text = savedValue or elementName
 						elementData.Selected = savedValue
 						
-						if savedValue and savedValue ~= "" then
+						if savedValue and savedValue ~= "" and type(savedValue) == "string" then
 							if elementData.Callback and type(elementData.Callback) == "function" then
 								task.spawn(function()
 									wait(0.1)
@@ -2712,28 +2717,28 @@ function ReyUILib:CloseAllDropdowns()
 end
 
 function ReyUILib:TurnOffAllToggles()
-    for toggleName, callback in pairs(self.CallbackManager.Toggles) do
-        self.UISettings[toggleName] = false
-        
-        if type(callback) == "function" then
-            pcall(function() callback(false) end)
-        end
-    end
+	for toggleName, callback in pairs(self.CallbackManager.Toggles) do
+		self.UISettings[toggleName] = false
+		
+		if type(callback) == "function" then
+			pcall(function() callback(false) end)
+		end
+	end
 end
 
 
 function ReyUILib:MonitorUIDeletion(uiInstance)
-    if not uiInstance then return end
-    
-    local connection
-    connection = uiInstance.AncestryChanged:Connect(function()
-        if not uiInstance:IsDescendantOf(game) then
-            self:TurnOffAllToggles()
-            if connection then
-                connection:Disconnect()
-            end
-        end
-    end)
+	if not uiInstance then return end
+	
+	local connection
+	connection = uiInstance.AncestryChanged:Connect(function()
+		if not uiInstance:IsDescendantOf(game) then
+			self:TurnOffAllToggles()
+			if connection then
+				connection:Disconnect()
+			end
+		end
+	end)
 end
 
 return ReyUILib
