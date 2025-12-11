@@ -686,7 +686,11 @@ function AutoFarmBossFish.StartFishing()
 	if fishing then
 		local button = fishing:FindFirstChild("Button")
 		if button then
-			Utils.GuiClick(button)
+			if autoFishingV2 then
+				Utils.GuiMultiClick(button, Fish.ClickCount)
+			else
+				Utils.GuiClick(button)
+			end
 		end
 	end
 end
@@ -1075,7 +1079,7 @@ end
 
 local menuOptions = getMenuOptions()
 
-function SelectForceMenu()
+function SelectForceMenu(selection)
 	if prevMenu then
 		local originalPrev = getOriginalName(prevMenu)
 		local prevFrame = player.PlayerGui.Button:FindFirstChild(originalPrev)
