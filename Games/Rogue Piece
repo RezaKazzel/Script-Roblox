@@ -1,3 +1,4 @@
+Rey = Rey or loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua"))()
 -- ============ SERVICES ============
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,7 +22,7 @@ local State = {
 		AutoBoss = false,
 		AutoSpawnBoss = false,
 		AutoFarmBossFish = false,
-		AutoMuzan = false,
+		AutoKanekiBlood = false,
 		AutoExchange = false
 	},
 	Boss = {
@@ -32,8 +33,10 @@ local State = {
 }
 
 -- ============ UI SETUP ============
+UI = UI or Rey:CreateUI("Rogue Piece")
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
+
 -- ============ UTILITY FUNCTIONS ============
 local Utils = {}
 
@@ -77,7 +80,40 @@ function Utils.FireRemote(...)
 	end)
 end
 
--- GANTI FUNGSI NOTIFY DENGAN YANG DARI REY LIBRARY
+function Utils.GuiClick(button)
+	local x = pcall(function()
+		GuiService.SelectedObject = button
+		task.wait()
+		if GuiService.SelectedObject.Parent == button.Parent then
+			VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+			VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+		end
+	end)
+	task.wait()
+	GuiService.SelectedObject = nil
+	return x
+end
+
+function Utils.GuiMultiClick(button, clicks)
+	clicks = tonumber(clicks) or 1
+	if clicks > 0 then
+		local x = pcall(function()
+			GuiService.SelectedObject = button
+			task.wait()
+			for i=1,clicks do
+				if GuiService.SelectedObject.Parent == button.Parent then
+					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+				end
+			end
+			task.wait()
+			GuiService.SelectedObject = nil
+		end)
+		return x
+	end
+	return false
+end
+
 function Utils.Notify(type, title, message, duration)
 	Rey:Notify(type, title, message, duration)
 end
@@ -165,6 +201,7 @@ function Boss.Attack(bossData)
 	local char = player.Character
 	if not char then return false end
 	
+	EquipSelectedTools()
 	local tool = char:FindFirstChildWhichIsA("Tool")
 	if not tool then return false end
 	
@@ -396,7 +433,7 @@ end
 
 -- ============ FISHING SYSTEM ============
 local Fish = {}
-
+Fish.ClickCount = 15
 function Fish.Setup()
 	Utils.Cleanup("autoFishing")
 	Utils.StopThread("autoFishing")
@@ -415,11 +452,11 @@ function Fish.Setup()
 			if fishing then
 				local button = fishing:FindFirstChild("Button")
 				if button then
-					GuiService.SelectedObject = button
-					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-					task.wait()
-					GuiService.SelectedObject = nil
+					if autoFishingV2 then
+						Utils.GuiMultiClick(button, Fish.ClickCount)
+					else
+						Utils.GuiClick(button)
+					end
 				end
 			end
 		end
@@ -445,6 +482,19 @@ function Fish.Toggle(state)
 		task.wait()
 		GuiService.SelectedObject = nil
 	end
+end
+
+function Fish.SetClickCount(click)
+	local num = tonumber(click)
+	if num and num >= 1 and num <= 30 then
+		Fish.ClickCount = math.floor(num)
+		
+		if State.Toggles.AutoFishing then
+			Fish.Setup()
+		end
+		return true
+	end
+	return false
 end
 
 -- ============ BOSS LIST ============
@@ -473,9 +523,9 @@ local bossOptions = getBossList()
 local selectedBoss = nil
 
 -- ============ TOOL MANAGER ============
-local selectedTools = {}
+local selectedTools = nil
 
-local function GetTools()
+function GetTools()
 	local tools = {}
 	local backpack = player:FindFirstChild("Backpack")
 	
@@ -490,14 +540,14 @@ local function GetTools()
 	return tools
 end
 
-local function EquipSelectedTools()
+function EquipSelectedTools()
 	if not player.Character then return end
 	
 	local backpack = player:FindFirstChild("Backpack")
 	if not backpack then return end
 	
-	for toolName, _ in pairs(selectedTools) do
-		local tool = backpack:FindFirstChild(toolName)
+	if selectedTools then
+		local tool = backpack:FindFirstChild(selectedTools)
 		if tool then
 			tool.Parent = player.Character
 			tool:Activate()
@@ -508,10 +558,13 @@ end
 -- ============ AUTO FARM BOSS + FISHING (WITH TOOL SUPPORT) ============
 local AutoFarmBossFish = {}
 
+AutoFarmBossFish.Mancing = false
 function AutoFarmBossFish.CheckFishing()
 	local fishing = player:FindFirstChild("Fishing")
-	if not fishing then
+	if not fishing and not AutoFarmBossFish.Mancing then
 		remote:FireServer("Server", "Misc", "Fishing", true)
+		lastState = "fishing"
+		AutoFarmBossFish.Mancing = true
 	end
 	return true
 end
@@ -520,6 +573,7 @@ function AutoFarmBossFish.CancelFishing()
 	local fishing = player:FindFirstChild("Fishing")
 	if fishing then
 		remote:FireServer("Server", "Misc", "Fishing", false)
+		AutoFarmBossFish.Mancing = false
 	end
 end
 
@@ -559,8 +613,8 @@ function AutoFarmBossFish.GetEquippedTool()
 	local char = player.Character
 	if not char then return nil, nil end
 	
-	for toolName, _ in pairs(selectedTools) do
-		local tool = char:FindFirstChild(toolName)
+	if selectedTools then
+		local tool = char:FindFirstChild(selectedTools)
 		if tool then
 			return tool, tool.ToolTip
 		end
@@ -632,11 +686,7 @@ function AutoFarmBossFish.StartFishing()
 	if fishing then
 		local button = fishing:FindFirstChild("Button")
 		if button then
-			GuiService.SelectedObject = button
-			VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-			VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-			task.wait()
-			GuiService.SelectedObject = nil
+			Utils.GuiClick(button)
 		end
 	end
 end
@@ -661,7 +711,6 @@ function AutoFarmBossFish.StartLoop()
 			else
 				if lastState ~= "fishing" then
 					AutoFarmBossFish.RemoveBodyVelocity()
-					lastState = "fishing"
 				end
 				
 				if AutoFarmBossFish.CheckFishing() then
@@ -700,69 +749,49 @@ function AutoFarmBossFish.Toggle(state)
 	end
 end
 
--- ============ MUZAN BLOOD SYSTEM ============
-local Muzan = {}
+-- ============ KANEKI'S BLOOD SYSTEM ============
+local Kaneki = {}
 
-function Muzan.Buy()
+function Kaneki.Craft()
 	local inventory = player.Inventory
 	local bossToken = inventory:FindFirstChild("Boss Token")
+	local summonOrb = inventory:FindFirstChild("Summon Orb")
+	local muzanBlood = inventory:FindFirstChild("Muzan's Blood")
 	
-	if bossToken and bossToken.Value > 750 then
-		local shop = player.PlayerGui.Button["Shop Item"]
-		if not shop then return false end
-		
-		shop.Visible = true
-		local tokenFrame = shop:FindFirstChild("Token")
-		if not tokenFrame then 
-			shop.Visible = false
-			return false 
+	if bossToken and summonOrb and muzanBlood then
+		if bossToken.Value >= 25 and summonOrb.Value >= 25 and muzanBlood.Value >= 2 then
+			local craftFrame = player.PlayerGui.Button:FindFirstChild("Craft")
+			if not craftFrame then return false end
+			
+			craftFrame.Visible = true
+			pcall(function() craftButton = craftFrame.Craft_Frame.Scroll["Kaneki's Blood"].Craft.Button end)
+			print(craftButton)
+			if craftButton then Utils.GuiClick(craftButton) end
+			craftFrame.Visible = false
+			return true
 		end
-		
-		local muzanItem = tokenFrame:FindFirstChild("Muzan's Blood")
-		if not muzanItem then 
-			shop.Visible = false
-			return false 
-		end
-		
-		local buyFrame = muzanItem:FindFirstChild("Buy")
-		if not buyFrame then 
-			shop.Visible = false
-			return false 
-		end
-		
-		local button = buyFrame:FindFirstChild("Button")
-		if not button then 
-			shop.Visible = false
-			return false 
-		end
-		
-		GuiService.SelectedObject = button
-		VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-		VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-		task.wait(0.2)
-		GuiService.SelectedObject = nil
-		shop.Visible = false
-		return true
 	end
 	return false
 end
 
-function Muzan.StartLoop()
-	Utils.StartThread("muzan", function()
-		while State.Toggles.AutoMuzan do
-			Muzan.Buy()
-			task.wait(5)
+function Kaneki.StartLoop()
+	Utils.StartThread("Kaneki", function()
+		while State.Toggles.AutoKanekiBlood do
+			Kaneki.Craft()
+			task.wait()
 		end
 	end)
 end
 
-function Muzan.Toggle(state)
-	State.Toggles.AutoMuzan = state
+function Kaneki.Toggle(state)
+	State.Toggles.AutoKanekiBlood = state
 	
 	if state then
-		Muzan.StartLoop()
+		Kaneki.StartLoop()
 	else
-		Utils.StopThread("muzan")
+		Utils.StopThread("Kaneki")
+		task.wait()
+		GuiService.SelectedObject = nil
 	end
 end
 
@@ -801,11 +830,7 @@ function Exchange.CheckAndSell()
 				
 				if amount > 250 then
 					exchange.Visible = true
-					GuiService.SelectedObject = button
-					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-					task.wait(0.2)
-					GuiService.SelectedObject = nil
+					Utils.GuiClick(button)
 					exchange.Visible = false
 				end
 			end
@@ -829,6 +854,8 @@ function Exchange.Toggle(state)
 		Exchange.StartLoop()
 	else
 		Utils.StopThread("exchange")
+		task.wait()
+		GuiService.SelectedObject = nil
 	end
 end
 
@@ -836,6 +863,7 @@ end
 local AutoSpawn = {}
 
 function AutoSpawn.Toggle(state)
+	AutoSpawn.Running = state
 	if state then
 		local bossSpawn = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"]
 		if bossSpawn then
@@ -878,11 +906,7 @@ function AutoSpawn.Toggle(state)
 					local obj = game:GetService("Players").LocalPlayer.PlayerGui.Button["Boss Spawn"].Spawn
 					local button = obj:FindFirstChild("Button")
 					if button then
-						GuiService.SelectedObject = button
-						VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-						VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-						task.wait()
-						GuiService.SelectedObject = nil
+						Utils.GuiClick(button)
 					end
 				end)
 			end
@@ -902,97 +926,82 @@ function AutoSpawn.Toggle(state)
 				end
 			end
 			bossSpawn.Visible = false
+			task.wait()
+			GuiService.SelectedObject = nil
 		end
 	end
 end
--- ============ UI COMPONENTS ============
-Rey:CreateMultipleDropdown(Exclusive, "Pilih Tools", GetTools, function(selectedList)
-	selectedTools = {}
-	for _, toolName in pairs(selectedList) do
-		selectedTools[toolName] = true
-	end
-end, true)
+-- ============ HOGYOKU FRAGMENT EXCHANGE SYSTEM ============
+local Hogyoku = {}
 
-Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto farm boss dan fishing", AutoFarmBossFish.Toggle)
-
-Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto farm bosses (bug)", function(state)
-	Boss.Toggle(state)
-end)
-
-Rey:CreateToggle(Exclusive, "God Mode", "Butuh: Observation Haki", God.Toggle)
-
-Rey:CreateToggle(Exclusive, "Fast Attack M1", "Butuh: Tool yang di-equip", Fast.Toggle)
-
-Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
-
-Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", function()
-	local fishing = player:FindFirstChild("Fishing")
-	if not fishing then
-		remote:FireServer("Server", "Misc", "Fishing", true)
-	end
-end)
-
-Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, function(boss)
-	selectedBoss = boss
+function Hogyoku.GetShardCount()
+	local success, count = pcall(function()
+		local player = game.Players.LocalPlayer
+		local inventory = player:WaitForChild("Inventory")
+		local rerollShard = inventory:WaitForChild("Reroll Shard")
+		return rerollShard.Value
+	end)
 	
-	local bossUI = player.PlayerGui.Button["Boss Spawn"]
-	if bossUI then
-		bossUI.Visible = true
-		local frame = bossUI:FindFirstChild("Frame")
-		if frame and selectedBoss then
-			local bossFrame = frame:FindFirstChild(selectedBoss)
-			if bossFrame then
-				local button = bossFrame:FindFirstChild("Button")
-				if button then
-					GuiService.SelectedObject = button
-					VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-					VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-					task.wait()
-					GuiService.SelectedObject = nil
-					bossUI.Visible = false
-				end
-			end
-		end
+	return success and count or 0
+end
+
+function Hogyoku.CheckAndExchange()
+	local shardCount = Hogyoku.GetShardCount()
+	
+	if shardCount < 255 then
+		return false
 	end
-end, false)
-
-Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", function(state)
-	AutoSpawn.Running = state
-	AutoSpawn.Toggle(state)
-end)
-
-Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
-
--- ============ EXCLUSIVE 2 ============
-Rey:CreateToggle(Exclusive2, "Disable Announced Pop-up", "-", function(state)
-	game:GetService("Players").LocalPlayer.Setting["Announce Pop-up"].Value = not state
-end)
-Rey:CreateToggle(Exclusive2, "Auto Exchange Chest", "Auto exchange chest jika >250", Exchange.Toggle)
-Rey:CreateToggle(Exclusive2, "Auto Buy Muzan Blood", "Auto buy jika Boss Token > 750", Muzan.Toggle)
-
-Rey:CreateNote(Exclusive2, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
-Rey:CreateButton(Exclusive2, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", function()
-	for i = 1, 500 do
-		if player.Character and player.Character.Parent ~= nil then
-			Utils.FireRemote("Server", "Misc", "Haki", 1)
-			Utils.FireRemote("Server", "Misc", "Haki", 2)
-		else
-			break
-		end
+	
+	local exchangeButton
+	local success = pcall(function()
+		local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+		local buttonFolder = playerGui:WaitForChild("Button")
+		local exchangeFrame = buttonFolder:WaitForChild("Exchange_Frame")
+		local materialFrame = exchangeFrame:WaitForChild("Material_Frame")
+		local rerollFrame = materialFrame:WaitForChild("Reroll Shard")
+		exchangeButton = rerollFrame:WaitForChild("Button")
+	end)
+	
+	if not success or not exchangeButton then
+		return false
 	end
-end)
+	
+	local clickSuccess = Utils.GuiClick(exchangeButton)
+	
+	return clickSuccess
+end
 
-Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
-Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", function()
-	local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
+function Hogyoku.StartLoop()
+	Utils.StartThread("hogyoku_exchange", function()
+		while State.Toggles.AutoHogyoku do
+			Hogyoku.CheckAndExchange()
+			task.wait()
+		end
+	end)
+end
+
+function Hogyoku.Toggle(state)
+	State.Toggles.AutoHogyoku = state
+	
+	if state then
+		Hogyoku.StartLoop()
+	else
+		Utils.StopThread("hogyoku_exchange")
+		task.wait()
+		GuiService.SelectedObject = nil
+	end
+end
+-- ============ Disable Mobile Check Skills ============
+function MobileCheckSkill()
+local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
 	if mobileUI then
 		local check = mobileUI:FindFirstChild("Check")
 		if check then
 			check.Disabled = true
 		end
 	end
-end)
-
+end
+-- ============ Select + Force Menu ============
 local forceMenuActive = false
 local selectedMenu = nil
 local prevMenu = nil
@@ -1065,7 +1074,8 @@ local function toggleForceMenu(state)
 end
 
 local menuOptions = getMenuOptions()
-Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, function(selection)
+
+function SelectForceMenu()
 	if prevMenu then
 		local originalPrev = getOriginalName(prevMenu)
 		local prevFrame = player.PlayerGui.Button:FindFirstChild(originalPrev)
@@ -1080,7 +1090,95 @@ Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, function(selection)
 	if forceMenuActive then
 		showSelectedMenu()
 	end
+end
+
+-- ============ Level Up Busoshoku Haki ============
+function LevelUpHaki()
+	for i = 1, 500 do
+		if player.Character and player.Character.Parent ~= nil then
+			Utils.FireRemote("Server", "Misc", "Haki", 1)
+			Utils.FireRemote("Server", "Misc", "Haki", 2)
+		else
+			break
+		end
+	end
+end
+-- ============ Select Boss Auto Spawn ============
+function SelectBossAutoSpawn(selectedBoss)
+	local bossUI = player.PlayerGui.Button["Boss Spawn"]
+	if bossUI then
+		bossUI.Visible = true
+		local frame = bossUI:FindFirstChild("Frame")
+		if frame and selectedBoss then
+			local bossFrame = frame:FindFirstChild(selectedBoss)
+			if bossFrame then
+				local button = bossFrame:FindFirstChild("Button")
+				if button then
+					Utils.GuiClick(button)
+					bossUI.Visible = false
+				end
+			end
+		end
+	end
+end
+-- ============ UI COMPONENTS ============
+Rey:CreateDropdown(Exclusive, "Pilih Tools", GetTools, function(value)
+	selectedTools = value
 end, true)
+
+Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto farm boss + fishing", AutoFarmBossFish.Toggle)
+
+Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto farm bosses (bug)", Boss.Toggle)
+
+Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle)
+
+Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle)
+
+Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
+Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
+	autoFishingV2 = state
+	if State.Toggles.AutoFishing then
+		Fish.Setup()
+	end
+end)
+
+Rey:CreateSlider(Exclusive, "Fish MultiClick", 1, 30, 15, function(value)
+	local success = Fish.SetClickCount(value)
+	if success then
+		Rey:Notify("info", "Click Count", string.format("Set to %d clicks", value), 2)
+	end
+end)
+
+Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", function()
+	local fishing = player:FindFirstChild("Fishing")
+	if not fishing then
+		remote:FireServer("Server", "Misc", "Fishing", true)
+	end
+end)
+
+Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, SelectBossAutoSpawn, false)
+
+Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", AutoSpawn.Toggle)
+
+Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
+
+-- ============ EXCLUSIVE 2 ============
+Rey:CreateToggle(Exclusive2, "Disable Announced Pop-up", "-", function(state)
+	player.Setting["Announce Pop-up"].Value = not state
+end)
+Rey:CreateToggle(Exclusive2, "Auto Exchange Chest", "Auto exchange chest jika Items >250", Exchange.Toggle)
+
+Rey:CreateToggle(Exclusive2, "Auto Buy Kaneki's Blood", "Auto buy jika bahan cukup", Kaneki.Toggle)
+
+Rey:CreateToggle(Exclusive2, "Auto Exchange Hogyoku Fragment", "Auto exchange kalo reroll >250", Hogyoku.Toggle)
+
+Rey:CreateNote(Exclusive2, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
+Rey:CreateButton(Exclusive2, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", LevelUpHaki)
+
+Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
+Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
+
+Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true)
 
 Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu)
 Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
