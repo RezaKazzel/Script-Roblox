@@ -5,12 +5,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
+local VirtualUser = game:GetService("VirtualUser")
 -- ============ VARIABLES ============
 local player = Players.LocalPlayer
 local remote = ReplicatedStorage.Remotes.Serverside
 local VIM = VirtualInputManager
-
+local VU = VirtualUser
 -- ============ STATE MANAGEMENT ============
 local State = {
 	Connections = {},
@@ -471,9 +471,73 @@ function Fast.Toggle(state)
 	end
 end
 
+-- ============ SELL FISH SYSTEM ============
+local SellFish = {}
+
+function SellFish.Setup()
+	Utils.Cleanup("autoSellFish")
+	Utils.StopThread("autoSellFish")
+	
+	local NPC = workspace:WaitForChild("Main"):WaitForChild("NPCs"):WaitForChild("Sell Fish")
+	local prompt = NPC:FindFirstChildOfClass("ProximityPrompt")
+	
+	Utils.StartThread("autoSellFish", function()
+		while State.Toggles.AutoSellFish do
+			task.wait()
+			if not NPC or not prompt then return end
+			prompt.MaxActivationDistance = 10000
+			prompt.RequiresLineOfSight = false
+			prompt.HoldDuration = 0
+			
+			local camera = workspace.CurrentCamera
+			if camera and NPC then
+				local NPCPosition = NPC:GetPivot().Position
+				local lookVector = (NPCPosition - camera.CFrame.Position).Unit
+				
+				camera.CFrame = CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + lookVector)
+			end
+			
+			task.wait()
+			VU:CaptureController()
+			VU:SetKeyDown("e")
+			VU:SetKeyUp("e")
+			
+			task.wait(3)
+		end
+	end)
+end
+
+function SellFish.Toggle(state)
+	State.Toggles.AutoSellFish = state
+	
+	if state then		
+		SellFish.Setup()
+		Utils.Cleanup("sellFishCharAdded")
+		State.Connections["sellFishCharAdded"] = player.CharacterAdded:Connect(function()
+			task.wait(1)
+			if State.Toggles.AutoSellFish then
+				SellFish.Setup()
+			end
+		end)
+	else
+		Utils.Cleanup("autoSellFish")
+		Utils.StopThread("autoSellFish")
+		Utils.Cleanup("sellFishCharAdded")
+		
+		local NPC = workspace:FindFirstChild("Main") and workspace.Main:FindFirstChild("NPCs") and workspace.Main.NPCs:FindFirstChild("Sell Fish")
+		if NPC then
+			local prompt = NPC:FindFirstChildOfClass("ProximityPrompt")
+			if prompt then
+				prompt.MaxActivationDistance = 10
+			end
+		end
+	end
+end
+
 -- ============ FISHING SYSTEM ============
 local Fish = {}
 Fish.ClickCount = 15
+
 function Fish.Setup()
 	Utils.Cleanup("autoFishing")
 	Utils.StopThread("autoFishing")
@@ -509,8 +573,8 @@ function Fish.Toggle(state)
 	
 	if state then
 		Fish.Setup()
-		Utils.Cleanup("playerCharAdded")
-		State.Connections["playerCharAdded"] = player.CharacterAdded:Connect(function()
+		Utils.Cleanup("fishCharAdded")
+		State.Connections["fishCharAdded"] = player.CharacterAdded:Connect(function()
 			task.wait(1)
 			if State.Toggles.AutoFishing then
 				Fish.Setup()
@@ -519,7 +583,7 @@ function Fish.Toggle(state)
 	else
 		Utils.Cleanup("autoFishing")
 		Utils.StopThread("autoFishing")
-		Utils.Cleanup("playerCharAdded")
+		Utils.Cleanup("fishCharAdded")
 		task.wait()
 		GuiService.SelectedObject = nil
 	end
@@ -981,7 +1045,6 @@ local Hogyoku = {}
 
 function Hogyoku.GetShardCount()
 	local success, count = pcall(function()
-		local player = game.Players.LocalPlayer
 		local inventory = player:WaitForChild("Inventory")
 		local rerollShard = inventory:WaitForChild("Reroll Shard")
 		return rerollShard.Value
@@ -1178,6 +1241,7 @@ Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle
 
 Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle)
 
+Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", AutoSellFish)
 Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
 Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
 	autoFishingV2 = state
