@@ -1,3 +1,5 @@
+Rey = Rey or loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua"))()
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
@@ -27,6 +29,7 @@ local State = {
     Noclip = false
 }
 
+UI = UI or Rey:CreateUI("Rey Rework")
 local AutoFarmTab = Rey:CreateTab(UI, "Auto Farm")
 local UtilityTab = Rey:CreateTab(UI, "Utility")
 local MiscTab = Rey:CreateTab(UI, "Misc")
@@ -82,6 +85,7 @@ end
 
 function Utils.GetNearbyEnemies(range)
     local enemies = {}
+    local Character = LocalPlayer.Character
     if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
     local rootPart = Character.HumanoidRootPart
 
@@ -175,6 +179,7 @@ function Utils.GetPlayerList()
 end
 
 function Utils.SetupBodyVelocity()
+	local Character = LocalPlayer.Character
     local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
     if torso and not torso:FindFirstChild("BodyVelocity") then
         local bv = Instance.new("BodyVelocity", torso)
@@ -184,6 +189,7 @@ function Utils.SetupBodyVelocity()
 end
 
 function Utils.RemoveBodyVelocity()
+	local Character = LocalPlayer.Character
     local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
     if torso and torso:FindFirstChild("BodyVelocity") then
         torso.BodyVelocity:Destroy()
@@ -207,6 +213,7 @@ function AutoFarm.ToggleEquip(state)
 end
 
 function AutoFarm.ToggleFarm(state)
+	local Character = LocalPlayer.Character
     local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
     Utils.Disconnect("AutoFarm")
     Utils.RemoveBodyVelocity()
@@ -221,6 +228,7 @@ function AutoFarm.ToggleFarm(state)
         Utils.SetupBodyVelocity()
         
         Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
+	        local Character = LocalPlayer.Character
             local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
             if not playerRoot then return end
 
@@ -246,6 +254,7 @@ function AutoFarm.ToggleFarm(state)
 end
 
 function AutoFarm.ToggleFarmNearby(state)
+	local Character = LocalPlayer.Character
     local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
     Utils.Disconnect("AutoFarmNearby")
     Utils.RemoveBodyVelocity()
@@ -258,6 +267,7 @@ function AutoFarm.ToggleFarmNearby(state)
         Utils.SetupBodyVelocity()
         
         Utils.AddConnection("AutoFarmNearby", RunService.Heartbeat:Connect(function(deltaTime)
+	        local Character = LocalPlayer.Character
             local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
             if not playerRoot then return end
             
@@ -326,6 +336,7 @@ function AutoGrab.Toggle(state)
         Utils.StartThread("AutoGrab", function()
             while State.AutoGrab do
                 task.wait(0.2)
+                local Character = LocalPlayer.Character
                 local playerRoot = Character and Character.HumanoidRootPart
                 if playerRoot then
                     for _, item in ipairs(workspace:GetDescendants()) do
@@ -679,6 +690,7 @@ Rey:CreateToggle(MiscTab, "Infinite Jump", "Jump infinitely", InfiniteJump.Toggl
 
 Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
     local target = Players:FindFirstChild(playerName)
+    local Character = LocalPlayer.Character
     local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
 
     if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
@@ -688,7 +700,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(
 end, true)
 
 Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList(), function(npcName)
-    local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+    local playerRoot = LocalPlayer.Character and Character:FindFirstChild("HumanoidRootPart")
     local npc = NPCCache[npcName]
 
     if npc and playerRoot then
