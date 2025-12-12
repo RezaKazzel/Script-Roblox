@@ -343,7 +343,7 @@ function God.StartLoop()
 			if player.Character and player.Character.Parent ~= nil then
 				Utils.FireRemote("Server", "Misc", "Observation", 1)
 			end
-			task.wait(1)
+			task.wait(.1)
 		end
 	end)
 end
@@ -378,7 +378,6 @@ function God.SetupObservers()
 		end
 		
 		Utils.AddConn("charAddedGod_" .. plr.Name, plr.CharacterAdded:Connect(function(char)
-			task.wait(0.5)
 			God.MuteObservation(char)
 			
 			local hrp = char:WaitForChild("HumanoidRootPart", 5)
