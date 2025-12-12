@@ -1019,6 +1019,7 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 
 		local refreshButton = Create("ImageButton", {
 			Parent = refreshFrame,
+			Name = "RefreshButton",
 			Size = UDim2.new(1, -8, 1, -8),
 			Position = UDim2.new(0, 4, 0, 4),
 			BackgroundTransparency = 1,
@@ -1285,6 +1286,7 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 
 		local refreshButton = Create("ImageButton", {
 			Parent = refreshFrame,
+			Name = "RefreshButton",
 			Size = UDim2.new(1, -8, 1, -8),
 			Position = UDim2.new(0, 4, 0, 4),
 			BackgroundTransparency = 1,
