@@ -2835,7 +2835,17 @@ function ReyUILib:ExecuteCommand(command, value)
 		end
 		
 		local selectedOption = nil
-		local options = elementData.OriginalOptions or {}
+		local options = {}
+		
+		if typeof(elementData.OriginalOptions) == "function" then
+			local success, result = pcall(elementData.OriginalOptions)
+			if success and type(result) == "table" then
+				options = result
+			end
+		elseif type(elementData.OriginalOptions) == "table" then
+			options = elementData.OriginalOptions
+		end
+		
 		local searchValue = string.lower(value)
 		
 		for _, option in ipairs(options) do
@@ -2906,7 +2916,17 @@ function ReyUILib:ExecuteCommand(command, value)
 		end
 		
 		local values = {}
-		local options = elementData.Options or {}
+		local options = {}
+		
+		if typeof(elementData.Options) == "function" then
+			local success, result = pcall(elementData.Options)
+			if success and type(result) == "table" then
+				options = result
+			end
+		elseif type(elementData.Options) == "table" then
+			options = elementData.Options
+		end
+		
 		local optionMap = {}
 		
 		for _, option in ipairs(options) do
