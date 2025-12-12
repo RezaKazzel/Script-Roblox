@@ -3100,7 +3100,7 @@ function ReyUILib:EnableChatCommands()
 		end)
 		self.ChatEnabled = true
 		local prefix = self.CommandPrefix or ";"
-		self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. prefix .. "command", 3)
+		self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. prefix .. "cmds", 3)
 		return true
 	end
 	return false
