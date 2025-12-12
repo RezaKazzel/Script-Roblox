@@ -583,7 +583,7 @@ function Fish.Toggle(state)
 		Utils.Cleanup("autoFishing")
 		Utils.StopThread("autoFishing")
 		Utils.Cleanup("fishCharAdded")
-		task.wait()
+		task.wait(0.1)
 		GuiService.SelectedObject = nil
 	end
 end
@@ -896,7 +896,7 @@ function Kaneki.Toggle(state)
 		Kaneki.StartLoop()
 	else
 		Utils.StopThread("Kaneki")
-		task.wait()
+		task.wait(0.1)
 		GuiService.SelectedObject = nil
 	end
 end
@@ -962,7 +962,7 @@ function Exchange.Toggle(state)
 		Exchange.StartLoop()
 	else
 		Utils.StopThread("exchange")
-		task.wait()
+		task.wait(0.1)
 		GuiService.SelectedObject = nil
 	end
 end
@@ -1034,13 +1034,15 @@ function AutoSpawn.Toggle(state)
 				end
 			end
 			bossSpawn.Visible = false
-			task.wait()
+			task.wait(0.1)
 			GuiService.SelectedObject = nil
 		end
 	end
 end
 -- ============ HOGYOKU FRAGMENT EXCHANGE SYSTEM ============
 local Hogyoku = {}
+
+Hogyoku.Running = false
 
 function Hogyoku.GetShardCount()
 	local success, count = pcall(function()
@@ -1053,36 +1055,51 @@ function Hogyoku.GetShardCount()
 end
 
 function Hogyoku.CheckAndExchange()
+	if not Hogyoku.Running then return false end
 	local shardCount = Hogyoku.GetShardCount()
-	
-	if shardCount < 255 then
-		return false
+	if shardCount >= 255 then
+		local exchangeButton
+		local success = pcall(function()
+			local playerGui = player.PlayerGui
+			if not playerGui then return end
+			
+			local buttonFolder = playerGui.Button
+			if not buttonFolder then return end
+			
+			local exchangeFrame = buttonFolder.Exchange_Frame
+			if not exchangeFrame then return end
+			
+			local materialFrame = exchangeFrame.Material_Frame
+			if not materialFrame then return end
+			
+			local rerollFrame = materialFrame["Reroll Shard"]
+			if not rerollFrame then return end
+			
+			exchangeButton = rerollFrame.Button
+		end)
+		
+		if exchangeButton then
+			Utils.Priority(function()
+				exchangeFrame.Visible = true
+				Utils.GuiClick(exchangeButton)
+				exchangeFrame.Visible = false
+			end)
+			return true
+		end
 	end
 	
-	local exchangeButton
-	local success = pcall(function()
-		local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-		local buttonFolder = playerGui:WaitForChild("Button")
-		local exchangeFrame = buttonFolder:WaitForChild("Exchange_Frame")
-		local materialFrame = exchangeFrame:WaitForChild("Material_Frame")
-		local rerollFrame = materialFrame:WaitForChild("Reroll Shard")
-		exchangeButton = rerollFrame:WaitForChild("Button")
-	end)
-	
-	if not success or not exchangeButton then
-		return false
-	end
-	Utils.Priority(function()
-		Utils.GuiClick(exchangeButton)
-	end)
+	return false
 end
 
 function Hogyoku.StartLoop()
 	Utils.StartThread("hogyoku_exchange", function()
-		while State.Toggles.AutoHogyoku do
+		Hogyoku.Running = true
+		while Hogyoku.Running and State.Toggles.AutoHogyoku do
 			Hogyoku.CheckAndExchange()
 			task.wait()
 		end
+		
+		Hogyoku.Running = false
 	end)
 end
 
@@ -1092,8 +1109,9 @@ function Hogyoku.Toggle(state)
 	if state then
 		Hogyoku.StartLoop()
 	else
+		Hogyoku.Running = false
 		Utils.StopThread("hogyoku_exchange")
-		task.wait()
+		task.wait(0.1)
 		GuiService.SelectedObject = nil
 	end
 end
@@ -1366,7 +1384,7 @@ function Cleanup.All()
 	Boss.RemoveVelocity()
 	AutoFarmBossFish.RemoveBodyVelocity()
 	AutoFarmBossFish.CancelFishing()
-	task.wait()
+	task.wait(0.1)
 	GuiService.SelectedObject = nil
 end
 
