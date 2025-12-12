@@ -173,7 +173,7 @@ local function LoadConfig()
 end
 
 function ReyUILib:CreateUI(Name, NoteText, ChatEnabled)
-	local ChatEnabled = ChatEnabled or true
+	local ChatEnabled = ChatEnabled or false
 	local Note = NoteText or false
 	local TweenService = game:GetService("TweenService")
 	local CoreGui = game:GetService("CoreGui")
@@ -3077,7 +3077,7 @@ function ReyUILib:ShowCommandsList()
 					commandList = commandList .. ", " .. prefix .. cmd
 				end
 			end
-			commandText = commandText .. elementName .. " - " .. commandList .. "\n"
+			commandText = commandText .. "•  " .. elementName .. " - " .. commandList .. "\n"
 		end
 		self:CreateNote(self.CommandsTab, commandText)
 	end
