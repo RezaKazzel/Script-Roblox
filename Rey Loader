@@ -12,9 +12,9 @@ local ListGame = {
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 local Note = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Update'))()
 if Note then
-	UI = UI or Rey:CreateUI("Rey UI - "..GameName, Note)
+	UI = Rey:CreateUI("Rey UI - "..GameName, Note)
 else
-	UI = UI or Rey:CreateUI("Rey UI - "..GameName)
+	UI = Rey:CreateUI("Rey UI - "..GameName)
 end
 
 if ListGame[game.GameId] ~= nil then

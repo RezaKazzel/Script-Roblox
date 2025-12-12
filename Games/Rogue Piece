@@ -426,6 +426,33 @@ end
 -- ============ FAST ATTACK SYSTEM ============
 local Fast = {}
 
+function Fast.Setup()
+	Utils.Cleanup("fastAttack")
+	Utils.StopThread("fastAttack")
+	
+	local fastConnection = nil
+	
+	fastConnection = RunService.Heartbeat:Connect(function()
+		if not State.Toggles.FastAttack then
+			if fastConnection then
+				fastConnection:Disconnect()
+				fastConnection = nil
+			end
+			return
+		end
+		
+		local char = Fast.GetCharacter()
+		if char and char.Parent ~= nil then
+			local tool, toolType = Fast.GetEquippedTool()
+			if tool and toolType then
+				Utils.FireRemote("Server", toolType, "M1s", tool.Name, 1)
+			end
+		end
+	end)
+	
+	State.Connections["fastAttack"] = fastConnection
+end
+
 function Fast.GetCharacter()
 	local main = workspace:FindFirstChild("Main")
 	if not main then return nil end
@@ -446,31 +473,24 @@ function Fast.GetEquippedTool()
 	return tool, tool.ToolTip
 end
 
-function Fast.StartLoop()
-	Utils.StartThread("fastAttack", function()
-		while State.Toggles.FastAttack do
-			local char = Fast.GetCharacter()
-			if char and char.Parent ~= nil then
-				local tool, toolType = Fast.GetEquippedTool()
-				if tool and toolType then
-					Utils.FireRemote("Server", toolType, "M1s", tool.Name, 1)
-				end
-			end
-			task.wait()
-		end
-	end)
-end
-
 function Fast.Toggle(state)
 	State.Toggles.FastAttack = state
 	
 	if state then
-		Fast.StartLoop()
+		Fast.Setup()
+		Utils.Cleanup("fastCharAdded")
+		State.Connections["fastCharAdded"] = player.CharacterAdded:Connect(function()
+			task.wait(0.5)
+			if State.Toggles.FastAttack then
+				Fast.Setup()
+			end
+		end)
 	else
+		Utils.Cleanup("fastAttack")
 		Utils.StopThread("fastAttack")
+		Utils.Cleanup("fastCharAdded")
 	end
 end
-
 -- ============ SELL FISH SYSTEM ============
 local SellFish = {}
 
@@ -1489,7 +1509,7 @@ function RelicSelector.GetAvailableRelics()
 		if not scrollingFrame then return end
 		
 		for i = 1, 3 do
-			local relicFrame = scrollingFrame:FindFirstChild("Trait" .. i)
+			local relicFrame = scrollingFrame:FindFirstChild("Relic" .. i)
 			if relicFrame then
 				local descLabel = relicFrame:FindFirstChild("Descript")
 				if descLabel then
