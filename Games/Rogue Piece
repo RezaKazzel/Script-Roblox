@@ -1107,6 +1107,76 @@ local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
 		end
 	end
 end
+-- ============ AUTO TITLE SYSTEM ============
+local AutoTitle = {}
+
+function AutoTitle.GetTitles()
+	local titles = {}
+	local playerGui = player.PlayerGui
+	if playerGui and playerGui.Button then
+		local titleFrame = playerGui.Button.Title_Frame
+		if titleFrame then
+			local innerFrame = titleFrame.Frame
+			if innerFrame then
+				for _, child in pairs(innerFrame:GetChildren()) do
+					if child:IsA("Frame") and child.Button then
+						table.insert(titles, child.Name)
+					end
+				end
+			end
+		end
+	end
+	
+	table.sort(titles)
+	return titles
+end
+
+function AutoTitle.SelectTitle(titleName)
+	local playerGui = player.PlayerGui
+	if not playerGui or not playerGui.Button then
+		return false
+	end
+	local buttonFolder = playerGui.Button
+	local titleFrame = buttonFolder.Title_Frame
+	if not titleFrame then
+		return false
+	end
+	local targetButton = nil
+	local innerFrame = titleFrame.Frame
+	if innerFrame then
+		for _, child in pairs(innerFrame:GetChildren()) do
+			if child:IsA("Frame") and child.Name == titleName and child.Button then
+				targetButton = child.Button
+				break
+			end
+		end
+	end
+	
+	if targetButton then
+		local success = pcall(function()
+			Utils.Priority(function()
+				titleFrame.Visible = true
+				Utils.GuiClick(targetButton)
+				titleFrame.Visible = false
+			end)
+		end)
+		
+		if not success then
+			titleFrame.Visible = false
+		end
+		
+		return success
+	end
+	
+	return false
+end
+
+function AutoTitle.SelectTitleCallback(selectedTitle)
+	Utils.Priority(function()
+		AutoTitle.SelectTitle(selectedTitle)
+	end)
+end
+
 -- ============ Select + Force Menu ============
 local forceMenuActive = false
 local selectedMenu = nil
@@ -1241,8 +1311,8 @@ Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle
 Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle, {"fastattack", "fastm1", "m1", "fast"})
 
 Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", SellFish.Toggle, {"autosell", "sellfish", "as"})
-Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle, {"autofish", "fishing", "af"})
-Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
+Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle, {"autofish", "autofishing", "af"})
+Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick (OP mampus)", function(state)
 	autoFishingV2 = state
 	if State.Toggles.AutoFishing then
 		Fish.Setup()
@@ -1251,7 +1321,7 @@ end, {"autofishv2", "fishingv2", "afv2"})
 Rey:CreateSlider(Exclusive, "Fish MultiClick", 1, 30, 15, function(value)
 	local success = Fish.SetClickCount(value)
 	if success then
-		Rey:Notify("info", "Click Count", string.format("Set to %d clicks", value), 2)
+		Rey:Notify("info", "Click Count", string.format("Set to %d Clicks per Fishing", value), 2)
 	end
 end, {"clickcount", "multiclick", "clicks", "cc"})
 Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", function()
@@ -1259,7 +1329,7 @@ Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", funct
 	if not fishing then
 		remote:FireServer("Server", "Misc", "Fishing", true)
 	end
-end)
+end, {"startfishing", "sf", "fish", "fishing"})
 
 Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, SelectBossAutoSpawn, false, {"boss", "selectboss", "sb"})
 Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", AutoSpawn.Toggle, {"autospawn", "spawnboss", "asb"})
@@ -1283,6 +1353,8 @@ Rey:CreateButton(Exclusive2, "Farm Level Busoshoku Haki", "Level up gradually to
 Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
 
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
+
+Rey:CreateDropdown(tab, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
 
 Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
 
@@ -1343,9 +1415,9 @@ player.CharacterAdded:Connect(function()
 end)
 
 game:GetService("CoreGui").DescendantRemoving:Connect(function(desc)
-    if desc == UI then
-        Cleanup.All()
-    end
+	if desc == UI then
+		Cleanup.All()
+	end
 end)
 -- ============ FINAL ============
 Utils.Notify("success", "Rogue Piece", "Script Loaded Successfully!", 5)
