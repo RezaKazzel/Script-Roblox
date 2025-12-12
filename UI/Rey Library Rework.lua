@@ -2834,7 +2834,10 @@ function ReyUILib:ExecuteCommand(command, value)
 		return true
 		
 	elseif cmdData.Type == "Button" then
-		if elementData.Callback then elementData.Callback() end
+		if not elementData.ActionButton then
+			return false
+		end
+		elementData.ActionButton.MouseButton1Click:Fire()
 		return true
 	
 	elseif cmdData.Type == "Dropdown" then
