@@ -1112,19 +1112,10 @@ local AutoTitle = {}
 
 function AutoTitle.GetTitles()
 	local titles = {}
-	local playerGui = player.PlayerGui
 	
-	if playerGui and playerGui.Button then
-		local titleFrame = playerGui.Button.Title_Frame
-		if titleFrame then
-			local innerFrame = titleFrame.Frame
-			if innerFrame then
-				for _, child in pairs(innerFrame:GetChildren()) do
-					if child:IsA("Frame") and child.Equip and child.Equip.Button then
-						table.insert(titles, child.Name)
-					end
-				end
-			end
+	for _, frame in pairs(player.PlayerGui.Button.Title_Frame.Frame:GetChildren()) do
+		if frame:IsA("Frame") then
+			table.insert(titles, frame.Name)
 		end
 	end
 	
@@ -1132,41 +1123,35 @@ function AutoTitle.GetTitles()
 	return titles
 end
 
-function AutoTitle.SelectTitle(titleName)
-	local playerGui = player.PlayerGui
-	if not playerGui or not playerGui.Button then return false end
+function AutoTitle.SelectTitle(name)
+	local titleFrame = player.PlayerGui.Button.Title_Frame
+	local target = titleFrame.Frame:FindFirstChild(name)
 	
-	local titleFrame = playerGui.Button.Title_Frame
-	if not titleFrame then return false end
+	if not target or not target:IsA("Frame") then return false end
 	
-	local targetButton = titleFrame.Frame[titleName].Equip.Button
-	if not targetButton then return false end
+	local button = target:FindFirstChild("Button") or (target.Equip and target.Equip.Button)
+	if not button then return false end
 	
-	local success = pcall(function()
+	return pcall(function()
 		Utils.Priority(function()
 			titleFrame.Visible = true
-			Utils.GuiClick(targetButton)
+			Utils.GuiClick(button)
 			titleFrame.Visible = false
 		end)
 	end)
-	
-	if not success then
-		titleFrame.Visible = false
-	end
-	
-	return success
 end
 
 function AutoTitle.SelectTitleCallback(selectedTitle)
 	Utils.Priority(function()
 		local success = AutoTitle.SelectTitle(selectedTitle)
 		if success then
-			ReyUILib:Notify("success", "Title Changed", "Changed to: " .. selectedTitle, 3)
+			Rey:Notify("success", "Title Changed", "Changed to: " .. selectedTitle, 3)
 		else
-			ReyUILib:Notify("error", "Title Change Failed", "Failed to select: " .. selectedTitle, 3)
+			Rey:Notify("error", "Title Change Failed", "Failed to select: " .. selectedTitle, 3)
 		end
 	end)
 end
+
 -- ============ Select + Force Menu ============
 local forceMenuActive = false
 local selectedMenu = nil
@@ -1344,7 +1329,7 @@ Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paks
 
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
 
-Rey:CreateDropdown(Exclusive2, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
+Rey:CreateDropdown(Exclusive2, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, true, "title")
 
 Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
 
