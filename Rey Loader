@@ -1,7 +1,7 @@
 --loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Test%20Webhook"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/mogged"))()
 
-Rey = loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua')))()
+Rey = Rey or loadstring(game:HttpGet(('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua')))()
 local ListGame = {
 	-- Verse Piece
 	--[6471449680]="loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Games/Verse%20Piece'))()",
@@ -12,9 +12,9 @@ local ListGame = {
 local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
 local Note = loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Update'))()
 if Note then
-	UI = Rey:CreateUI("Rey UI - "..GameName, Note)
+	UI = UI or Rey:CreateUI("Rey UI - "..GameName, Note)
 else
-	UI = Rey:CreateUI("Rey UI - "..GameName)
+	UI = UI or Rey:CreateUI("Rey UI - "..GameName)
 end
 
 if ListGame[game.GameId] ~= nil then
