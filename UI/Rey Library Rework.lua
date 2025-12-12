@@ -3283,7 +3283,7 @@ function ReyUILib:ShowCommandsList()
 	
 	if commandsText ~= "No commands available." then
 		self:CreateNote(self.CommandsTab, commandsText)
-		self:CreateNote(self.CommandsTab, "\n> Help\n\n• Use " .. prefix .. "cmds to show this list\n• Use " .. prefix .. "prefix=<new> to change prefix\n• Toggle commands can use: on, off, or toggle")
+		self:CreateNote(self.CommandsTab, "> Help\n\n• Use " .. prefix .. "cmds to show this list\n• Use " .. prefix .. "prefix=<new> to change prefix\n• Toggle commands can use: on, off, or toggle")
 	else
 		self:CreateNote(self.CommandsTab, commandsText)
 	end
