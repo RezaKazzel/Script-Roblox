@@ -1,5 +1,4 @@
-Rey = loadstring(readfile("aLIBRARY/Rey Library Workspace.lua"))()
-
+Rey = Rey or loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua"))()
 -- ============ SERVICES ============
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
