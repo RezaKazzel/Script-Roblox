@@ -102,8 +102,8 @@ local function Create(className, properties)
 end
 
 local function SaveConfig()
-	if not (writefile and isfile) then 
-		return false 
+	if not (writefile and isfile) then
+		return false
 	end
 	
 	local ConfigData = {}
@@ -156,8 +156,8 @@ local function SaveConfig()
 end
 
 local function LoadConfig()
-	if not (readfile and isfile) then 
-		return {} 
+	if not (readfile and isfile) then
+		return {}
 	end
 	
 	if isfile(ConfigPath) then
@@ -482,9 +482,9 @@ function ReyUILib:CreateUI(Name, NoteText, ChatEnabled)
 	local isOpen = false
 	
 	ReyBtn.MouseButton1Click:Connect(function()
-		if ReyBtn.Position ~= ReyPosition then 
-			ReyPosition = ReyBtn.Position 
-			return 
+		if ReyBtn.Position ~= ReyPosition then
+			ReyPosition = ReyBtn.Position
+			return
 		end
 		
 		if not isOpen then
@@ -763,7 +763,9 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback, CommandName)
 		CornerRadius = UDim.new(0, 10)
 	})
 	if CommandName and CommandName ~= "" then
-        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+
+
+local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		self:RegisterCommand("Toggle", Name, CommandName)
 	end
 	self.CallbackManager.Toggles[Name] = Callback
@@ -825,7 +827,9 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh, CommandN
 	local Callback = Callback or function() end
 	local Refresh = Refresh or false
 	if CommandName and CommandName ~= "" then
-        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+
+
+local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		self:RegisterCommand("Dropdown", Name, CommandName)
 	end
 	
@@ -1036,7 +1040,9 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh, 
 	local selectedOptions = {}
 	local selectedOrder = {}
 	if CommandName and CommandName ~= "" then
-        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+
+
+local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		self:RegisterCommand("MultiDropdown", Name, CommandName)
 	end
 	
@@ -1186,8 +1192,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh, 
 			end
 			
 			local displayText = table.concat(selectedOrder, ", ")
-			if displayText == "" then 
-				dropdownButton.Text = Name 
+			if displayText == "" then
+				dropdownButton.Text = Name
 			else
 				dropdownButton.Text = displayText
 			end
@@ -1296,7 +1302,9 @@ end
 function ReyUILib:CreateSlider(parent, Name, min, max, default, callback, CommandName)
 	callback = callback or function() end
 	if CommandName and CommandName ~= "" then
-        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+
+
+local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		self:RegisterCommand("Slider", Name, CommandName)
 	end
 	
@@ -1571,7 +1579,9 @@ function ReyUILib:CreateInput(parent, title, description, callback, CommandName)
 	local callback = callback or function(text) end
 	self.CallbackManager.Inputs[title] = callback
 	if CommandName and CommandName ~= "" then
-        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+
+
+	local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		self:RegisterCommand("Input", title, CommandName)
 	end
 	
@@ -2023,8 +2033,8 @@ function ReyUILib:UpdateUIElements()
 					
 				elseif elementData.Type == "Dropdown" then
 					if elementData.DropdownButton and elementData.DropdownButton.Parent then
-						if type(savedValue) == "table" then 
-							savedValue = "" 
+						if type(savedValue) == "table" then
+							savedValue = ""
 							self.UISettings[elementName] = ""
 						end
 						
@@ -2045,8 +2055,8 @@ function ReyUILib:UpdateUIElements()
 					if elementData.DropdownButton and elementData.DropdownButton.Parent then
 						if type(savedValue) == "table" then
 							local displayText = table.concat(savedValue, ", ")
-							if displayText == "" then 
-								elementData.DropdownButton.Text = elementName 
+							if displayText == "" then
+								elementData.DropdownButton.Text = elementName
 							else
 								elementData.DropdownButton.Text = displayText
 							end
@@ -2105,7 +2115,7 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 				end
 				element.MouseButton1Click:Connect(value)
 			elseif element:IsA("Frame") then
-				local dropdownButton = element:FindFirstChild("DropdownButton") or 
+				local dropdownButton = element:FindFirstChild("DropdownButton") or
 									  (element:FindFirstChild("Frame") and element.Frame:FindFirstChild("TextButton"))
 				if dropdownButton then
 					for _, connection in ipairs(dropdownButton.MouseButton1Click:GetConnections()) do
@@ -2115,7 +2125,7 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 				end
 			end
 		elseif property == "Description" then
-			local desc = element:FindFirstChild("Description") or 
+			local desc = element:FindFirstChild("Description") or
 						element:FindFirstChild("buttonDesc") or
 						(element:FindFirstChild("Frame") and element.Frame:FindFirstChild("TextLabel"))
 			if desc then
@@ -2933,8 +2943,8 @@ function ReyUILib:ExecuteCommand(command, value)
 		
 		if elementData.DropdownButton then
 			local displayText = table.concat(values, ", ")
-			if displayText == "" then 
-				elementData.DropdownButton.Text = cmdData.ElementName 
+			if displayText == "" then
+				elementData.DropdownButton.Text = cmdData.ElementName
 			else
 				elementData.DropdownButton.Text = displayText
 			end
@@ -3028,9 +3038,9 @@ function ReyUILib:ProcessChatCommand(message)
 end
 
 function ReyUILib:ShowCommandsList()
-	if not self.MainUI then 
+	if not self.MainUI then
 		self:Notify("error", "Error", "UI not found", 3)
-		return 
+		return
 	end
 	
 	if not self.CommandsTab then
