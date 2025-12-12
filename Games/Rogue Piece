@@ -1126,7 +1126,7 @@ local mobileUI = player.PlayerGui:FindFirstChild("Mobile")
 		end
 	end
 end
--- ============ AUTO TITLE SYSTEM ============
+-- ============ TITLE SYSTEM ============
 local AutoTitle = {}
 
 function AutoTitle.GetTitles()
@@ -1378,8 +1378,10 @@ end
 
 local function refreshTrait(selected)
 	TraitSelector.SelectTraitCallback(selected)
-	task.wait(0.1)
-	pcall(function() Rey.UIElements["Select Trait Capsule"]?.RefreshButton:Fire() end)
+	task.wait(0.5)
+	if firesignal then
+		firesignal(Rey.UIElements["Select Trait Capsule"].RefreshButton.MouseButton1Click, game.Players.LocalPlayer)
+	end
 end
 
 -- ============ UI COMPONENTS ============
