@@ -636,7 +636,7 @@ function ReyUILib:CreateTab(UI, Name)
 	return tabContent
 end
 
-function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
+function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback, CommandName)
 	local buttonFrame = Create("Frame", {
 		Name = Name,
 		Parent = Parent,
@@ -691,7 +691,12 @@ function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
 		Parent = actionButton,
 		CornerRadius = UDim.new(0, 6)
 	})
-
+	
+	if CommandName and CommandName ~= "" then
+		local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Button", Name, commands)
+	end
+	
 	actionButton.MouseButton1Click:Connect(Callback)
 
 	return buttonFrame
@@ -2828,6 +2833,10 @@ function ReyUILib:ExecuteCommand(command, value)
 		if elementData.Callback then elementData.Callback(state) end
 		return true
 		
+	elseif cmdData.Type == "Button" then
+		if elementData.Callback then elementData.Callback() end
+		return true
+	
 	elseif cmdData.Type == "Dropdown" then
 		if value == "" or value == nil then
 			self:Notify("error", "Missing Value", "Please specify a value for "..command, 3)
@@ -3058,59 +3067,89 @@ function ReyUILib:ProcessChatCommand(message)
 end
 
 function ReyUILib:ShowCommandsList()
-	if not self.MainUI then
+	if not self.MainUI then 
 		self:Notify("error", "Error", "UI not found", 3)
-		return
+		return 
 	end
 	
 	if not self.CommandsTab then
 		self.CommandsTab = self:CreateTab(self.MainUI, "Commands")
-		local commandMap = {}
-		local sortedElements = {}
+		
+		local typeMap = {
+			Toggle = {},
+			Slider = {},
+			Dropdown = {},
+			MultiDropdown = {},
+			Input = {},
+			Button = {}
+		}
+		
 		for cmdName, cmdData in pairs(self.CommandRegistry) do
 			local elementName = cmdData.ElementName
 			local elementType = cmdData.Type
-			if not commandMap[elementName] then
-				commandMap[elementName] = {
-					commands = {},
-					type = elementType
-				}
-				table.insert(sortedElements, elementName)
+			
+			if not typeMap[elementType] then
+				typeMap[elementType] = {}
 			end
-			table.insert(commandMap[elementName].commands, cmdName)
+			
+			if not typeMap[elementType][elementName] then
+				typeMap[elementType][elementName] = {}
+			end
+			
+			table.insert(typeMap[elementType][elementName], cmdName)
 		end
-		table.sort(sortedElements)
+		
 		local commandText = ""
-		for _, elementName in ipairs(sortedElements) do
-			local elementData = commandMap[elementName]
-			local commands = elementData.commands
-			local elementType = elementData.type
-			table.sort(commands)
-			local usageHint = ""
-			if elementType == "Toggle" then
-				usageHint = " [toggle]"
-			elseif elementType == "Slider" then
-				usageHint = " [number]"
-			elseif elementType == "Input" then
-				usageHint = " [input]"
-			elseif elementType == "Dropdown" then
-				usageHint = " [option]"
-			elseif elementType == "MultiDropdown" then
-				usageHint = " [option1,option2]"
-			end
-			local commandList = ""
-			for i, cmd in ipairs(commands) do
-				local prefix = self.CommandPrefix or ";"
-				if i == 1 then
-					commandList = prefix .. cmd .. usageHint
-				else
-					commandList = commandList .. ", " .. prefix .. cmd
+		local prefix = self.CommandPrefix or ";"
+		
+		for typeName, elements in pairs(typeMap) do
+			if next(elements) then
+				commandText = commandText .. "\n" .. typeName .. "\n"
+				
+				local usage = ""
+				if typeName == "Toggle" then
+					usage = prefix .. "command"
+				elseif typeName == "Slider" then
+					usage = prefix .. "command <number>"
+				elseif typeName == "Input" then
+					usage = prefix .. "command <input>"
+				elseif typeName == "Dropdown" then
+					usage = prefix .. "command <option>"
+				elseif typeName == "MultiDropdown" then
+					usage = prefix .. "command <option1,option2>"
+				elseif typeName == "Button" then
+					usage = prefix .. "command"
+				end
+				
+				commandText = commandText .. "usage: " .. usage .. "\n"
+				
+				local sortedElements = {}
+				for elementName, _ in pairs(elements) do
+					table.insert(sortedElements, elementName)
+				end
+				table.sort(sortedElements)
+				
+				for _, elementName in ipairs(sortedElements) do
+					local commands = elements[elementName]
+					table.sort(commands)
+					
+					local commandList = ""
+					for i, cmd in ipairs(commands) do
+						if i == 1 then
+							commandList = prefix .. cmd
+						else
+							commandList = commandList .. ", " .. cmd
+						end
+					end
+					
+					commandText = commandText .. "•  " .. elementName .. " - " .. commandList .. "\n"
 				end
 			end
-			commandText = commandText .. "•  " .. elementName .. " - " .. commandList .. "\n"
 		end
+		
 		self:CreateNote(self.CommandsTab, commandText)
 	end
+	
 	self:Notify("info", "Commands", "Open UI to see command list", 3)
 end
 
