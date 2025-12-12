@@ -1043,6 +1043,7 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		Type = "Dropdown",
 		Frame = containerFrame,
 		DropdownButton = dropdownButton,
+		RefreshButton = refreshButton,
 		DropdownList = dropdownList,
 		OriginalOptions = Options,
 		Selected = savedSelection,
