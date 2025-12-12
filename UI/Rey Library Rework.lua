@@ -3288,15 +3288,7 @@ function ReyUILib:ShowCommandsList()
 		self:CreateNote(self.CommandsTab, commandsText)
 	end
 	
-	for _, tab in ipairs(self.MainUI.TabContainer:GetChildren()) do
-		if tab:IsA("TextButton") and tab.Text == "Commands" then
-			tab.MouseButton1Click:Fire()
-			break
-		end
-	end
-	
 	self:Notify("info", "Commands", "Command list opened", 2)
-	
 	return true
 end
 
