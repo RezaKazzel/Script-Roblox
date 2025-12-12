@@ -1354,7 +1354,7 @@ Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paks
 
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
 
-Rey:CreateDropdown(tab, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
+Rey:CreateDropdown(Exclusive2, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
 
 Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
 
