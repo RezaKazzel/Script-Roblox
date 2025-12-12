@@ -698,7 +698,18 @@ function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback, 
 	end
 	
 	actionButton.MouseButton1Click:Connect(Callback)
-
+	
+	self.UIElements[Name] = {
+		Type = "Button",
+		Frame = buttonFrame,
+		Callback = Callback
+	}
+	
+	if CommandName and CommandName ~= "" then
+		local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Button", Name, commands)
+	end
+	
 	return buttonFrame
 end
 
@@ -2834,11 +2845,14 @@ function ReyUILib:ExecuteCommand(command, value)
 		return true
 		
 	elseif cmdData.Type == "Button" then
-		if not elementData.ActionButton then
-			return false
+		local elementData = self.UIElements[cmdData.ElementName]
+		if not elementData then return false end
+		
+		if elementData.Callback and type(elementData.Callback) == "function" then
+			pcall(elementData.Callback)
+			return true
 		end
-		elementData.ActionButton.MouseButton1Click:Fire()
-		return true
+		return false
 	
 	elseif cmdData.Type == "Dropdown" then
 		if value == "" or value == nil then
