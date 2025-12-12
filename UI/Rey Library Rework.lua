@@ -1000,7 +1000,7 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 		
 		dropdownList.Visible = not dropdownList.Visible
 	end)
-
+	
 	if Refresh then
 		local refreshFrame = Create("Frame", {
 			Parent = containerFrame,
@@ -1017,7 +1017,7 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 			CornerRadius = UDim.new(0, 8)
 		})
 
-		local refreshButton = Create("ImageButton", {
+		refreshButton = Create("ImageButton", {
 			Parent = refreshFrame,
 			Name = "RefreshButton",
 			Size = UDim2.new(1, -8, 1, -8),
@@ -1035,20 +1035,28 @@ local commands = type(CommandName) == "table" and CommandName or {CommandName}
 			loadOptions()
 			debounce = false
 		end)
+		self.UIElements[Name] = {
+			Type = "Dropdown",
+			Frame = containerFrame,
+			DropdownButton = dropdownButton,
+			DropdownList = dropdownList,
+			OriginalOptions = Options,
+			Selected = savedSelection,
+			Callback = Callback,
+			RefreshButton = refreshButton
+		}
+	else
+		self.UIElements[Name] = {
+			Type = "Dropdown",
+			Frame = containerFrame,
+			DropdownButton = dropdownButton,
+			DropdownList = dropdownList,
+			OriginalOptions = Options,
+			Selected = savedSelection,
+			Callback = Callback
+		}
 	end
-
 	updateCanvasSize()
-	
-	self.UIElements[Name] = {
-		Type = "Dropdown",
-		Frame = containerFrame,
-		DropdownButton = dropdownButton,
-		RefreshButton = refreshButton,
-		DropdownList = dropdownList,
-		OriginalOptions = Options,
-		Selected = savedSelection,
-		Callback = Callback
-	}
 	return containerFrame
 end
 
