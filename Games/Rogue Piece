@@ -36,7 +36,7 @@ local State = {
 UI = UI or Rey:CreateUI("Rogue Piece")
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
-
+Rey:EnableChatCommands()
 -- ============ UTILITY FUNCTIONS ============
 local Utils = {}
 
@@ -1230,32 +1230,30 @@ end
 -- ============ UI COMPONENTS ============
 Rey:CreateDropdown(Exclusive, "Pilih Tools", GetTools, function(value)
 	selectedTools = value
-end, true)
+end, true, {"tools", "weapon", "tool"})
 
-Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto farm boss + fishing", AutoFarmBossFish.Toggle)
+Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto farm boss + fishing", AutoFarmBossFish.Toggle, {"autofarm", "farmbossfish", "afbf"})
 
-Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto farm bosses (bug)", Boss.Toggle)
+Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto farm bosses (bug)", Boss.Toggle, {"autoboss", "bossfarm", "ab"})
 
-Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle)
+Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle, {"god", "godmode", "gm"})
 
-Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle)
+Rey:CreateToggle(Exclusive, "Fast Attack M1", "Required: Tool yang di-equip", Fast.Toggle, {"fastattack", "fastm1", "m1", "fast"})
 
-Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", SellFish.Toggle)
-Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle)
+Rey:CreateToggle(Exclusive, "Auto Sell Fish", "kinda bug, gabisa fire pp jadi method ini(jelek euy)", SellFish.Toggle, {"autosell", "sellfish", "as"})
+Rey:CreateToggle(Exclusive, "Auto Fishing", "Auto fishing system baru", Fish.Toggle, {"autofish", "fishing", "af"})
 Rey:CreateToggle(Exclusive, "Auto Fishing V2", "Auto fishing MultiClick", function(state)
 	autoFishingV2 = state
 	if State.Toggles.AutoFishing then
 		Fish.Setup()
 	end
-end)
-
+end, {"autofishv2", "fishingv2", "afv2"})
 Rey:CreateSlider(Exclusive, "Fish MultiClick", 1, 30, 15, function(value)
 	local success = Fish.SetClickCount(value)
 	if success then
 		Rey:Notify("info", "Click Count", string.format("Set to %d clicks", value), 2)
 	end
-end)
-
+end, {"clickcount", "multiclick", "clicks", "cc"})
 Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", function()
 	local fishing = player:FindFirstChild("Fishing")
 	if not fishing then
@@ -1263,31 +1261,32 @@ Rey:CreateButton(Exclusive, "Start Fishing", "Mancing dimanapun", "Start", funct
 	end
 end)
 
-Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, SelectBossAutoSpawn, false)
-
-Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", AutoSpawn.Toggle)
-
+Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, SelectBossAutoSpawn, false, {"boss", "selectboss", "sb"})
+Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", AutoSpawn.Toggle, {"autospawn", "spawnboss", "asb"})
 Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
 
 -- ============ EXCLUSIVE 2 ============
 Rey:CreateToggle(Exclusive2, "Disable Announced Pop-up", "-", function(state)
 	player.Setting["Announce Pop-up"].Value = not state
-end)
-Rey:CreateToggle(Exclusive2, "Auto Exchange Chest", "Auto exchange chest jika Items >250", Exchange.Toggle)
+end, {"disablepopup", "nopopup", "dp"})
 
-Rey:CreateToggle(Exclusive2, "Auto Buy Kaneki's Blood", "Auto buy jika bahan cukup", Kaneki.Toggle)
+Rey:CreateToggle(Exclusive2, "Auto Exchange Chest", "Auto exchange chest jika Items >250", Exchange.Toggle, {"autochest", "exchangechest", "ac"})
 
-Rey:CreateToggle(Exclusive2, "Auto Exchange Hogyoku Fragment", "Auto exchange kalo reroll >250", Hogyoku.Toggle)
+Rey:CreateToggle(Exclusive2, "Auto Buy Kaneki's Blood", "Auto buy jika bahan cukup", Kaneki.Toggle, {"kaneki", "buykaneki", "kb"})
+
+Rey:CreateToggle(Exclusive2, "Auto Exchange Hogyoku Fragment", "Auto exchange kalo reroll >250", Hogyoku.Toggle, {"hogyoku", "exchangehogyoku", "eh"})
 
 Rey:CreateNote(Exclusive2, "⚠️ Warning: Don't activate features unnecessarily to avoid lag")
+
 Rey:CreateButton(Exclusive2, "Farm Level Busoshoku Haki", "Level up gradually to avoid lag", "Level Up", LevelUpHaki)
 
 Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paksa\nBisa Fix Yuta Lag Issue, respawn klo mau matiin fitur")
+
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
 
-Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true)
+Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
 
-Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu)
+Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu, {"forcemenu", "openmenu", "fm"})
 Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
 
 -- ============ CLEANUP ============
