@@ -1113,13 +1113,14 @@ local AutoTitle = {}
 function AutoTitle.GetTitles()
 	local titles = {}
 	local playerGui = player.PlayerGui
+	
 	if playerGui and playerGui.Button then
 		local titleFrame = playerGui.Button.Title_Frame
 		if titleFrame then
 			local innerFrame = titleFrame.Frame
 			if innerFrame then
 				for _, child in pairs(innerFrame:GetChildren()) do
-					if child:IsA("Frame") and child.Button then
+					if child:IsA("Frame") and child.Equip and child.Equip.Button then
 						table.insert(titles, child.Name)
 					end
 				end
@@ -1133,50 +1134,39 @@ end
 
 function AutoTitle.SelectTitle(titleName)
 	local playerGui = player.PlayerGui
-	if not playerGui or not playerGui.Button then
-		return false
-	end
-	local buttonFolder = playerGui.Button
-	local titleFrame = buttonFolder.Title_Frame
-	if not titleFrame then
-		return false
-	end
-	local targetButton = nil
-	local innerFrame = titleFrame.Frame
-	if innerFrame then
-		for _, child in pairs(innerFrame:GetChildren()) do
-			if child:IsA("Frame") and child.Name == titleName and child.Button then
-				targetButton = child.Button
-				break
-			end
-		end
-	end
+	if not playerGui or not playerGui.Button then return false end
 	
-	if targetButton then
-		local success = pcall(function()
-			Utils.Priority(function()
-				titleFrame.Visible = true
-				Utils.GuiClick(targetButton)
-				titleFrame.Visible = false
-			end)
-		end)
-		
-		if not success then
+	local titleFrame = playerGui.Button.Title_Frame
+	if not titleFrame then return false end
+	
+	local targetButton = titleFrame.Frame[titleName].Equip.Button
+	if not targetButton then return false end
+	
+	local success = pcall(function()
+		Utils.Priority(function()
+			titleFrame.Visible = true
+			Utils.GuiClick(targetButton)
 			titleFrame.Visible = false
-		end
-		
-		return success
+		end)
+	end)
+	
+	if not success then
+		titleFrame.Visible = false
 	end
 	
-	return false
+	return success
 end
 
 function AutoTitle.SelectTitleCallback(selectedTitle)
 	Utils.Priority(function()
-		AutoTitle.SelectTitle(selectedTitle)
+		local success = AutoTitle.SelectTitle(selectedTitle)
+		if success then
+			ReyUILib:Notify("success", "Title Changed", "Changed to: " .. selectedTitle, 3)
+		else
+			ReyUILib:Notify("error", "Title Change Failed", "Failed to select: " .. selectedTitle, 3)
+		end
 	end)
 end
-
 -- ============ Select + Force Menu ============
 local forceMenuActive = false
 local selectedMenu = nil
