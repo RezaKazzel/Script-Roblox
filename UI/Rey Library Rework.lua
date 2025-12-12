@@ -613,9 +613,13 @@ function ReyUILib:CreateTab(UI, Name)
 		VerticalAlignment = Enum.VerticalAlignment.Top,
 		SortOrder = Enum.SortOrder.LayoutOrder
 	})
-
-	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+	
+	pcall(function()
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			task.spawn(function()
+				tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+			end)
+		end)
 	end)
 
 	tabButton.MouseButton1Click:Connect(function()
@@ -1598,6 +1602,13 @@ function ReyUILib:CreateNote(parent, text)
 		VerticalAlignment = Enum.VerticalAlignment.Top,
 		SortOrder = Enum.SortOrder.LayoutOrder
 	})
+	pcall(function()
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			task.spawn(function()
+				noteFrame.Size = UDim2.new(1, -10, 0, layout.AbsoluteContentSize.Y)
+			end)
+		end)
+	end)
 
 	return noteFrame
 end
@@ -3094,6 +3105,49 @@ function ReyUILib:ProcessChatCommand(message)
 	return false
 end
 
+function ReyUILib:CreateCommand(commandName, callback, description, aliases, usage)
+	if not commandName or type(commandName) ~= "string" or commandName == "" then
+		error("Command name must be a non-empty string")
+	end
+	
+	if not callback or type(callback) ~= "function" then
+		error("Callback must be a function")
+	end
+	
+	if not self.CommandRegistry then
+		self.CommandRegistry = {}
+	end
+	
+	if not self.CommandList then
+		self.CommandList = {}
+	end
+	
+	local commandEntry = {
+		Name = commandName,
+		Callback = callback,
+		Description = description or "No description",
+		Aliases = aliases or {},
+		Usage = usage or "/" .. commandName,
+		Category = "Custom"
+	}
+	
+	self.CommandList[commandName] = commandEntry
+	
+	local allCommands = {}
+	table.insert(allCommands, commandName)
+	for _, alias in ipairs(commandEntry.Aliases) do
+		table.insert(allCommands, alias)
+	end
+	
+	for _, cmd in ipairs(allCommands) do
+		self.CommandRegistry[cmd] = {
+			Type = "Custom",
+			ElementName = commandName,
+			FullCommand = commandEntry
+		}
+	end
+end
+
 function ReyUILib:ShowCommandsList()
 	if not self.MainUI then 
 		self:Notify("error", "Error", "UI not found", 3)
@@ -3102,83 +3156,120 @@ function ReyUILib:ShowCommandsList()
 	
 	if not self.CommandsTab then
 		self.CommandsTab = self:CreateTab(self.MainUI, "Commands")
-		
-		local typeMap = {
-			Toggle = {},
-			Slider = {},
-			Dropdown = {},
-			MultiDropdown = {},
-			Input = {},
-			Button = {}
-		}
-		
-		for cmdName, cmdData in pairs(self.CommandRegistry) do
-			local elementName = cmdData.ElementName
-			local elementType = cmdData.Type
-			
-			if not typeMap[elementType] then
-				typeMap[elementType] = {}
-			end
-			
-			if not typeMap[elementType][elementName] then
-				typeMap[elementType][elementName] = {}
-			end
-			
-			table.insert(typeMap[elementType][elementName], cmdName)
-		end
-		
-		local commandText = ""
-		local prefix = self.CommandPrefix or ";"
-		
-		for typeName, elements in pairs(typeMap) do
-			if next(elements) then
-				commandText = commandText .. "\n" .. typeName .. "\n"
-				
-				local usage = ""
-				if typeName == "Toggle" then
-					usage = prefix .. "command"
-				elseif typeName == "Slider" then
-					usage = prefix .. "command <number>"
-				elseif typeName == "Input" then
-					usage = prefix .. "command <input>"
-				elseif typeName == "Dropdown" then
-					usage = prefix .. "command <option>"
-				elseif typeName == "MultiDropdown" then
-					usage = prefix .. "command <option1,option2>"
-				elseif typeName == "Button" then
-					usage = prefix .. "command"
-				end
-				
-				commandText = commandText .. "usage: " .. usage .. "\n"
-				
-				local sortedElements = {}
-				for elementName, _ in pairs(elements) do
-					table.insert(sortedElements, elementName)
-				end
-				table.sort(sortedElements)
-				
-				for _, elementName in ipairs(sortedElements) do
-					local commands = elements[elementName]
-					table.sort(commands)
-					
-					local commandList = ""
-					for i, cmd in ipairs(commands) do
-						if i == 1 then
-							commandList = prefix .. cmd
-						else
-							commandList = commandList .. ", " .. cmd
-						end
-					end
-					
-					commandText = commandText .. "•  " .. elementName .. " - " .. commandList .. "\n"
-				end
-			end
-		end
-		
-		self:CreateNote(self.CommandsTab, commandText)
 	end
 	
-	self:Notify("info", "Commands", "Open UI to see command list", 3)
+	for _, child in ipairs(self.CommandsTab:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	
+	local commandsText = ""
+	local prefix = self.CommandPrefix or ";"
+	
+	local categorizedCommands = {}
+	
+	for _, cmdData in pairs(self.CommandList) do
+		if not categorizedCommands[cmdData.Category] then
+			categorizedCommands[cmdData.Category] = {}
+		end
+		table.insert(categorizedCommands[cmdData.Category], cmdData)
+	end
+	
+	for category, commands in pairs(categorizedCommands) do
+		table.sort(commands, function(a, b)
+			return a.Name:lower() < b.Name:lower()
+		end)
+		
+		commandsText = commandsText .. "> " .. category .. "\n"
+		
+		for _, cmdData in ipairs(commands) do
+			local aliasText = ""
+			if #cmdData.Aliases > 0 then
+				aliasText = " | Aliases: "
+				for i, alias in ipairs(cmdData.Aliases) do
+					aliasText = aliasText .. prefix .. alias
+					if i < #cmdData.Aliases then
+						aliasText = aliasText .. ", "
+					end
+				end
+			end
+			
+			local commandLine = "  " .. prefix .. cmdData.Name .. aliasText .. "\n"
+			if cmdData.Usage then
+				commandLine = commandLine .. "  Usage: " .. cmdData.Usage .. "\n"
+			end
+			if cmdData.Description and cmdData.Description ~= "No description" then
+				commandLine = commandLine .. "  " .. cmdData.Description .. "\n"
+			end
+			commandLine = commandLine .. "\n"
+			
+			commandsText = commandsText .. commandLine
+		end
+	end
+	
+	local customCommands = {}
+	for cmdName, cmdData in pairs(self.CommandRegistry) do
+		if cmdData.Type ~= "Custom" then
+			local elementName = cmdData.ElementName
+			if not customCommands[elementName] then
+				customCommands[elementName] = {
+					Type = cmdData.Type,
+					Commands = {}
+				}
+			end
+			table.insert(customCommands[elementName].Commands, cmdName)
+		end
+	end
+	
+	if next(customCommands) then
+		commandsText = commandsText .. "> UI Commands\n"
+		
+		local sortedElements = {}
+		for elementName, _ in pairs(customCommands) do
+			table.insert(sortedElements, elementName)
+		end
+		table.sort(sortedElements)
+		
+		for _, elementName in ipairs(sortedElements) do
+			local cmdType = customCommands[elementName].Type
+			local commands = customCommands[elementName].Commands
+			table.sort(commands)
+			
+			local commandList = ""
+			for i, cmd in ipairs(commands) do
+				if i == 1 then
+					commandList = prefix .. cmd
+				else
+					commandList = commandList .. ", " .. cmd
+				end
+			end
+			
+			local typeText = cmdType
+			if cmdType == "Toggle" then
+				commandList = commandList .. " [on/off/toggle]"
+			elseif cmdType == "Slider" then
+				commandList = commandList .. " <value>"
+			elseif cmdType == "Input" then
+				commandList = commandList .. " <text>"
+			elseif cmdType == "Dropdown" then
+				commandList = commandList .. " <option>"
+			elseif cmdType == "MultiDropdown" then
+				commandList = commandList .. " <option1,option2>"
+			end
+			
+			commandsText = commandsText .. "• " .. elementName .. ":\n  " .. commandList .. "\n\n"
+		end
+	end
+	
+	self:CreateNote(self.CommandsTab, commandsText)
+	self:Notify("info", "Commands", "Command list updated", 2)
+end
+
+function ReyUILib:UpdateCommandList()
+	if self.CommandsTab then
+		self:ShowCommandsList()
+	end
 end
 
 function ReyUILib:EnableChatCommands()
