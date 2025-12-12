@@ -37,7 +37,6 @@ pcall(function()
 	end
 	
 	Commands.rey = function(args)
-		Rey = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Library%20Rework.lua"))()
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader"))()
 	end	
 	
