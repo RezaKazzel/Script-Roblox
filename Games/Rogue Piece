@@ -1384,6 +1384,190 @@ local function refreshTrait(selected)
 	end
 end
 
+-- ============ Race Select ============
+local RaceSelector = {}
+function RaceSelector.GetAvailableRaces()
+	local races = {}
+	
+	pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return end
+		
+		local scrollingFrame = capsuleFrame.Scroling
+		if not scrollingFrame then return end
+		
+		for i = 1, 3 do
+			local raceFrame = scrollingFrame:FindFirstChild("Race" .. i)
+			if raceFrame then
+				local descLabel = raceFrame:FindFirstChild("Descript")
+				if descLabel then
+					local raceText = descLabel.Text
+					raceText = raceText:gsub("Race:%s*", ""):gsub("Race%s*:%s*", ""):gsub("^%s*(.-)%s*$", "%1")
+					
+					if raceText ~= "" then
+						table.insert(races, {
+							Name = raceText,
+							Button = raceFrame.Equip and raceFrame.Equip.Button
+						})
+					end
+				end
+			end
+		end
+	end)
+	
+	return races
+end
+
+function RaceSelector.GetRaceNames()
+	local races = RaceSelector.GetAvailableRaces()
+	local raceNames = {}
+	
+	for _, race in ipairs(races) do
+		table.insert(raceNames, race.Name)
+	end
+	
+	table.sort(raceNames)
+	return raceNames
+end
+
+function RaceSelector.SelectRace(raceName)
+	if not raceName or raceName == "" then return false end
+	
+	return pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return false end
+		
+		local races = RaceSelector.GetAvailableRaces()
+		local targetButton = nil
+		
+		for _, race in ipairs(races) do
+			if race.Name == raceName then
+				targetButton = race.Button
+				break
+			end
+		end
+		
+		if not targetButton then return false end
+		
+		Utils.Priority(function()
+			capsuleFrame.Visible = true
+			Utils.GuiClick(targetButton)
+			capsuleFrame.Visible = false
+		end)
+	end)
+end
+
+function RaceSelector.SelectRaceCallback(selectedRace)
+	Utils.Priority(function()
+		local success = RaceSelector.SelectRace(selectedRace)
+		if success then
+			Rey:Notify("success", "Race Selected", "Selected: " .. selectedRace, 3)
+		else
+			Rey:Notify("error", "Selection Failed", "Failed to select: " .. selectedRace, 3)
+		end
+	end)
+end
+
+local function refreshRace(selected)
+	RaceSelector.SelectRaceCallback(selected)
+	task.wait(0.5)
+	if firesignal then
+		firesignal(Rey.UIElements["Select Race Capsule"].RefreshButton.MouseButton1Click, game.Players.LocalPlayer)
+	end
+end
+
+-- ============ Relic Select ============
+local RelicSelector = {}
+function RelicSelector.GetAvailableRelics()
+	local relics = {}
+	
+	pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return end
+		
+		local scrollingFrame = capsuleFrame.Scroling
+		if not scrollingFrame then return end
+		
+		for i = 1, 3 do
+			local relicFrame = scrollingFrame:FindFirstChild("Trait" .. i)
+			if relicFrame then
+				local descLabel = relicFrame:FindFirstChild("Descript")
+				if descLabel then
+					local relicText = descLabel.Text
+					relicText = relicText:gsub("Relic:%s*", ""):gsub("Relic%s*:%s*", ""):gsub("^%s*(.-)%s*$", "%1")
+					
+					if relicText ~= "" and relicText ~= "None" then
+						table.insert(relics, {
+							Name = relicText,
+							Button = relicFrame.Equip and relicFrame.Equip.Button
+						})
+					end
+				end
+			end
+		end
+	end)
+	
+	return relics
+end
+
+function RelicSelector.GetRelicNames()
+	local relics = RelicSelector.GetAvailableRelics()
+	local relicNames = {}
+	
+	for _, relic in ipairs(relics) do
+		table.insert(relicNames, relic.Name)
+	end
+	
+	table.sort(relicNames)
+	return relicNames
+end
+
+function RelicSelector.SelectRelic(relicName)
+	if not relicName or relicName == "" then return false end
+	
+	return pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return false end
+		
+		local relics = RelicSelector.GetAvailableRelics()
+		local targetButton = nil
+		
+		for _, relic in ipairs(relics) do
+			if relic.Name == relicName then
+				targetButton = relic.Button
+				break
+			end
+		end
+		
+		if not targetButton then return false end
+		
+		Utils.Priority(function()
+			capsuleFrame.Visible = true
+			Utils.GuiClick(targetButton)
+			capsuleFrame.Visible = false
+		end)
+	end)
+end
+
+function RelicSelector.SelectRelicCallback(selectedRelic)
+	Utils.Priority(function()
+		local success = RelicSelector.SelectRelic(selectedRelic)
+		if success then
+			Rey:Notify("success", "Relic Selected", "Selected: " .. selectedRelic, 3)
+		else
+			Rey:Notify("error", "Selection Failed", "Failed to select: " .. selectedRelic, 3)
+		end
+	end)
+end
+
+local function refreshRelic(selected)
+	RelicSelector.SelectRelicCallback(selected)
+	task.wait(0.5)
+	if firesignal then
+		firesignal(Rey.UIElements["Select Relic Capsule"].RefreshButton.MouseButton1Click, game.Players.LocalPlayer)
+	end
+end
+
 -- ============ UI COMPONENTS ============
 Rey:CreateDropdown(Exclusive, "Pilih Tools", GetTools, function(value)
 	selectedTools = value
@@ -1450,6 +1634,8 @@ Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
 
 Rey:CreateDropdown(Exclusive3, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
 Rey:CreateDropdown(Exclusive3, "Select Trait Capsule", TraitSelector.GetTraitNames, refreshTrait, true, "trait")
+Rey:CreateDropdown(Exclusive3, "Select Race Capsule", RaceSelector.GetRaceNames, refreshRace, true, "race")
+Rey:CreateDropdown(Exclusive3, "Select Relic Capsule", RelicSelector.GetRelicNames, refreshRelic, true, "relic")
 
 -- ============ CLEANUP ============
 local Cleanup = {}
