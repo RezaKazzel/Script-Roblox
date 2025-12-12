@@ -23,6 +23,8 @@ ReyUILib.ExternalData = ExternalData
 ReyUILib.UISettings = {}
 ReyUILib.UIElements = {}
 ReyUILib.alldropdown = {}
+ReyUILib.CommandRegistry = {}
+ReyUILib.MainUI = nil
 
 local ConfigPath = "ReyHub_Config.json"
 
@@ -170,7 +172,8 @@ local function LoadConfig()
 	return {}
 end
 
-function ReyUILib:CreateUI(Name, NoteText)
+function ReyUILib:CreateUI(Name, NoteText, ChatEnabled)
+	local ChatEnabled = ChatEnabled or true
 	local Note = NoteText or false
 	local TweenService = game:GetService("TweenService")
 	local CoreGui = game:GetService("CoreGui")
@@ -548,8 +551,11 @@ function ReyUILib:CreateUI(Name, NoteText)
 	end)
 	
 	self:MonitorUIDeletion(screenGui)
+	if ChatEnabled then
+		self:EnableChatCommands()
+	end
 	
-	return {
+	local UI = {
 		ScreenGui = screenGui,
 		Panel = panel,
 		LeftFrame = leftFrame,
@@ -559,6 +565,8 @@ function ReyUILib:CreateUI(Name, NoteText)
 		SFX = SFX,
 		SettingsTab = settingsTabContent
 	}
+	self.MainUI = UI
+	return UI
 end
 
 function ReyUILib:CreateTab(UI, Name)
@@ -689,7 +697,7 @@ function ReyUILib:CreateButton(Parent, Name, Description, ButtonText, Callback)
 	return buttonFrame
 end
 
-function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
+function ReyUILib:CreateToggle(Parent, Name, Description, Callback, CommandName)
 	local buttonFrame = Create("Frame", {
 		Name = Name,
 		Parent = Parent,
@@ -754,7 +762,10 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 		Parent = toggleCircle,
 		CornerRadius = UDim.new(0, 10)
 	})
-	
+	if CommandName and CommandName ~= "" then
+        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Toggle", Name, CommandName)
+	end
 	self.CallbackManager.Toggles[Name] = Callback
 	
 	local savedState = self.UISettings[Name]
@@ -810,9 +821,13 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback)
 	return buttonFrame
 end
 
-function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
+function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh, CommandName)
 	local Callback = Callback or function() end
 	local Refresh = Refresh or false
+	if CommandName and CommandName ~= "" then
+        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Dropdown", Name, CommandName)
+	end
 	
 	self.alldropdown[Name] = {
 		List = nil,
@@ -1015,11 +1030,15 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh)
 	return containerFrame
 end
 
-function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
+function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh, CommandName)
 	local Callback = Callback or function() end
 	local Refresh = Refresh or false
 	local selectedOptions = {}
 	local selectedOrder = {}
+	if CommandName and CommandName ~= "" then
+        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("MultiDropdown", Name, CommandName)
+	end
 	
 	self.alldropdown[Name] = {
 		List = nil,
@@ -1274,8 +1293,12 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh)
 	return containerFrame
 end
 
-function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
+function ReyUILib:CreateSlider(parent, Name, min, max, default, callback, CommandName)
 	callback = callback or function() end
+	if CommandName and CommandName ~= "" then
+        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Slider", Name, CommandName)
+	end
 	
 	self.CallbackManager.Sliders[Name] = callback
 	local savedValue = self.UISettings[Name]
@@ -1330,7 +1353,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 		Color = Color3.fromRGB(30, 30, 30)
 	})
 
-	local sliderFill = Create("Frame", {
+	local SliderFill = Create("Frame", {
 		Name = "SliderFill",
 		Parent = sliderBackground,
 		Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
@@ -1340,7 +1363,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 	})
 
 	Create("UICorner", {
-		Parent = sliderFill,
+		Parent = SliderFill,
 		CornerRadius = UDim.new(0, 10)
 	})
 
@@ -1397,9 +1420,8 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 		Type = "Slider",
 		Frame = containerFrame,
 		TitleLabel = titleLabel,
-		ValueLabel = valueLabel,
 		InputBox = inputBox,
-		SliderFill = sliderFill,
+		SliderFill = SliderFill,
 		SliderKnob = sliderKnob,
 		SliderBackground = sliderBackground,
 		Min = min,
@@ -1416,7 +1438,7 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback)
 			currentValue = value
 			local sliderPos = (value - min) / (max - min)
 			
-			sliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
+			SliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
 			sliderKnob.Position = UDim2.new(sliderPos, -13, -0.25, 0)
 			titleLabel.Text = Name.." - "..tostring(value)
 			inputBox.Text = tostring(value)
@@ -1545,9 +1567,13 @@ function ReyUILib:CreateNote(parent, text)
 	return noteFrame
 end
 
-function ReyUILib:CreateInput(parent, title, description, callback)
+function ReyUILib:CreateInput(parent, title, description, callback, CommandName)
 	local callback = callback or function(text) end
 	self.CallbackManager.Inputs[title] = callback
+	if CommandName and CommandName ~= "" then
+        local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Input", title, CommandName)
+	end
 	
 	local inputFrame = Create("Frame", {
 		Name = title,
@@ -1671,6 +1697,7 @@ function ReyUILib:CreateInput(parent, title, description, callback)
 	local savedValue = self.UISettings[title]
 	if savedValue then
 		valueLabel.Text = "Value set to: " .. savedValue
+		textBox.Text = savedValue
 	end
 
 	self.UIElements[title] = {
@@ -1971,11 +1998,11 @@ function ReyUILib:UpdateUIElements()
 					end
 					
 				elseif elementData.Type == "Slider" then
-					if elementData.FillFrame and elementData.FillFrame.Parent then
+					if elementData.SliderFill and elementData.SliderFill.Parent then
 						local value = savedValue
 						local sliderPos = (value - elementData.Min) / (elementData.Max - elementData.Min)
 						
-						elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+						elementData.SliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
 						if elementData.SliderButton then
 							elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
 						end
@@ -2095,8 +2122,8 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 				desc.Text = value
 			end
 		elseif property == "Options" then
-			if alldropdown[elementName] and alldropdown[elementName].List then
-				local dropdownList = alldropdown[elementName].List
+			if self.alldropdown[elementName] and self.alldropdown[elementName].List then
+				local dropdownList = self.alldropdown[elementName].List
 				local dropdownFrame = dropdownList.Parent
 				
 				for _, child in ipairs(dropdownList:GetChildren()) do
@@ -2135,7 +2162,7 @@ function ReyUILib:UpdateElement(tab, elementName, properties)
 							if self.CallbackManager.Dropdowns[elementName] then
 								self.CallbackManager.Dropdowns[elementName](optionText)
 							elseif self.CallbackManager.MultiDropdowns[elementName] then
-								local dropdownData = alldropdown[elementName]
+								local dropdownData = self.alldropdown[elementName]
 								if dropdownData.SelectedOptions and dropdownData.SelectedOrder then
 									if dropdownData.SelectedOptions[optionText] then
 										dropdownData.SelectedOptions[optionText] = nil
@@ -2226,10 +2253,10 @@ function ReyUILib:ResetConfig()
 				elementData.State = false
 				
 			elseif elementData.Type == "Slider" then
-				if elementData.FillFrame and elementData.SliderButton then
+				if elementData.SliderFill and elementData.SliderButton then
 					local defaultValue = elementData.Value or elementData.Min
 					local sliderPos = (defaultValue - elementData.Min) / (elementData.Max - elementData.Min)
-					elementData.FillFrame.Size = UDim2.new(sliderPos, 0, 1, 0)
+					elementData.SliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
 					elementData.SliderButton.Position = UDim2.new(sliderPos, -15, 0, 0)
 					if elementData.Label then
 						elementData.Label.Text = elementName .. " - " .. defaultValue
@@ -2701,15 +2728,15 @@ function ReyUILib:UpdateDropdownValue(dropdownName, value)
 end
 
 function ReyUILib:ClearAllDropdowns()
-	alldropdown = {}
+	self.alldropdown = {}
 end
 
 function ReyUILib:GetActiveDropdowns()
-	return alldropdown
+	return self.alldropdown
 end
 
 function ReyUILib:CloseAllDropdowns()
-	for dropdownName, dropdownData in pairs(alldropdown) do
+	for dropdownName, dropdownData in pairs(self.alldropdown) do
 		if dropdownData.List and dropdownData.List.Visible then
 			dropdownData.List.Visible = false
 		end
@@ -2726,7 +2753,6 @@ function ReyUILib:TurnOffAllToggles()
 	end
 end
 
-
 function ReyUILib:MonitorUIDeletion(uiInstance)
 	if not uiInstance then return end
 	
@@ -2734,11 +2760,364 @@ function ReyUILib:MonitorUIDeletion(uiInstance)
 	connection = uiInstance.AncestryChanged:Connect(function()
 		if not uiInstance:IsDescendantOf(game) then
 			self:TurnOffAllToggles()
+			self.ChatEnabled = false
+			
+			if self.ChatConnection then
+				self.ChatConnection:Disconnect()
+				self.ChatConnection = nil
+			end
+			
 			if connection then
 				connection:Disconnect()
 			end
 		end
 	end)
+end
+
+function ReyUILib:RegisterCommand(elementType, elementName, commandNames)
+	if not self.CommandRegistry then self.CommandRegistry = {} end
+	local commands = type(commandNames) == "table" and commandNames or {commandNames}
+	
+	for _, cmdName in ipairs(commands) do
+		self.CommandRegistry[cmdName] = {
+			Type = elementType,
+			ElementName = elementName
+		}
+	end
+end
+
+function ReyUILib:ExecuteCommand(command, value)
+	if not self.CommandRegistry then return false end
+	local cmdData = self.CommandRegistry[command]
+	if not cmdData then return false end
+	local elementData = self.UIElements[cmdData.ElementName]
+	if not elementData then return false end
+	
+	if cmdData.Type == "Toggle" then
+		if value == "" then value = "toggle" end
+		local state
+		if value == "toggle" then
+			local current = self.UISettings[cmdData.ElementName]
+			if current == nil then current = elementData.State or false end
+			state = not current
+		else
+			state = (value == "true" or value == "on" or value == "1")
+		end
+		self.UISettings[cmdData.ElementName] = state
+		
+		if elementData.Circle then
+			if state then
+				elementData.Circle.Position = UDim2.new(1, -22, 0, 2)
+				elementData.Circle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+			else
+				elementData.Circle.Position = UDim2.new(0, 2, 0, 2)
+				elementData.Circle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+			end
+		end
+		
+		if elementData.Callback then elementData.Callback(state) end
+		return true
+		
+	elseif cmdData.Type == "Dropdown" then
+		if value == "" or value == nil then
+			self:Notify("error", "Missing Value", "Please specify a value for "..command, 3)
+			return false
+		end
+		
+		local selectedOption = nil
+		local options = elementData.OriginalOptions or {}
+		local searchValue = string.lower(value)
+		
+		for _, option in ipairs(options) do
+			local optionText = tostring(option.Name or option)
+			if string.lower(optionText) == searchValue then
+				selectedOption = optionText
+				break
+			end
+		end
+		
+		if not selectedOption then
+			for _, option in ipairs(options) do
+				local optionText = tostring(option.Name or option)
+				if string.find(string.lower(optionText), searchValue) then
+					selectedOption = optionText
+					break
+				end
+			end
+		end
+		
+		if not selectedOption then
+			self:Notify("error", "Invalid Option", "Option '"..value.."' not found", 3)
+			return false
+		end
+		
+		self.UISettings[cmdData.ElementName] = selectedOption
+		if elementData.DropdownButton then elementData.DropdownButton.Text = selectedOption end
+		if elementData.Callback then elementData.Callback(selectedOption) end
+		return true
+		
+	elseif cmdData.Type == "Slider" then
+		if value == "" or value == nil then
+			self:Notify("error", "Missing Value", "Please specify a number for "..command, 3)
+			return false
+		end
+		
+		local numValue = tonumber(value)
+		if not numValue then
+			self:Notify("error", "Invalid Number", "Value must be a number", 3)
+			return false
+		end
+		
+		numValue = math.clamp(numValue, elementData.Min, elementData.Max)
+		self.UISettings[cmdData.ElementName] = numValue
+		
+		if elementData.SliderFill then
+			local sliderPos = (numValue - elementData.Min) / (elementData.Max - elementData.Min)
+			elementData.SliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
+		end
+		if elementData.SliderKnob then
+			local sliderPos = (numValue - elementData.Min) / (elementData.Max - elementData.Min)
+			elementData.SliderKnob.Position = UDim2.new(sliderPos, -13, -0.25, 0)
+		end
+		if elementData.TitleLabel then
+			elementData.TitleLabel.Text = cmdData.ElementName .. " - " .. tostring(numValue)
+		end
+		if elementData.InputBox then
+			elementData.InputBox.Text = tostring(numValue)
+		end
+		
+		if elementData.Callback then elementData.Callback(numValue) end
+		return true
+		
+	elseif cmdData.Type == "MultiDropdown" then
+		if value == "" or value == nil then
+			self:Notify("error", "Missing Values", "Please specify values for "..command, 3)
+			return false
+		end
+		
+		local values = {}
+		local options = elementData.Options or {}
+		local optionMap = {}
+		
+		for _, option in ipairs(options) do
+			local optionText = tostring(option.Name or option)
+			optionMap[string.lower(optionText)] = optionText
+		end
+		
+		for val in string.gmatch(value, "([^,]+)") do
+			val = val:match("^%s*(.-)%s*$")
+			local searchVal = string.lower(val)
+			local foundOption = nil
+			
+			if optionMap[searchVal] then
+				foundOption = optionMap[searchVal]
+			else
+				for optLower, optOriginal in pairs(optionMap) do
+					if string.find(optLower, searchVal) then
+						foundOption = optOriginal
+						break
+					end
+				end
+			end
+			
+			if foundOption then
+				table.insert(values, foundOption)
+			else
+				self:Notify("warning", "Invalid Option", "Option '"..val.."' not found", 2)
+			end
+		end
+		
+		if #values == 0 then return false end
+		
+		self.UISettings[cmdData.ElementName] = values
+		
+		if elementData.DropdownButton then
+			local displayText = table.concat(values, ", ")
+			if displayText == "" then 
+				elementData.DropdownButton.Text = cmdData.ElementName 
+			else
+				elementData.DropdownButton.Text = displayText
+			end
+		end
+		
+		if elementData.Callback then elementData.Callback(values) end
+		return true
+	
+	elseif cmdData.Type == "Input" then
+		if value == "" or value == nil then
+			self:Notify("error", "Missing Value", "Please specify text for "..command, 3)
+			return false
+		end
+		
+		self.UISettings[cmdData.ElementName] = value
+		if elementData.ValueLabel then
+			elementData.ValueLabel.Text = "Value set to: " .. value
+		end
+		if elementData.TextBox then
+			elementData.TextBox.Text = value
+		end
+		if elementData.Callback then
+			elementData.Callback(value)
+		end
+		return true
+	
+	end
+	
+	return false
+end
+
+function ReyUILib:ParseChatCommand(message)
+	local prefix = self.CommandPrefix or ";"
+	if not string.match(message, "^" .. prefix) then
+		return nil, nil
+	end
+	message = string.sub(message, #prefix + 1)
+	local command, value = string.match(message, "^([%w%-]+)%s*=%s*\"?([^\"]+)\"?$")
+	if not command then
+		command, value = string.match(message, "^([%w%-]+)%s+(.+)$")
+	end
+	if not command then
+		command = string.match(message, "^([%w%-]+)$")
+		value = ""
+	end
+	return command, value
+end
+
+local aliases = {
+	commands = true,
+	cmds = true,
+	help = true,
+	helps = true
+}
+function ReyUILib:ProcessChatCommand(message)
+	local command, value = self:ParseChatCommand(message)
+	
+	if command then
+		if aliases[command] then
+			self:ShowCommandsList()
+			return true
+		end
+		
+		if command == "prefix" then
+			if value and value ~= "" and value ~= "toggle" then
+				self:ChangePrefix(value)
+				return true
+			else
+				local currentPrefix = self.CommandPrefix or ";"
+				self:Notify("info", "Current Prefix", "Prefix: " .. currentPrefix .. "\nUse: " .. currentPrefix .. "prefix=!", 3)
+				return true
+			end
+		end
+		
+		command = string.lower(command)
+		local foundCommand = nil
+		
+		for cmdName, cmdData in pairs(self.CommandRegistry) do
+			if string.lower(cmdName) == command then
+				foundCommand = cmdName
+				break
+			end
+		end
+		
+		if foundCommand and self.CommandRegistry[foundCommand] then
+			local success = self:ExecuteCommand(foundCommand, value)
+			return success
+		end
+	end
+	return false
+end
+
+function ReyUILib:ShowCommandsList()
+	if not self.MainUI then 
+		self:Notify("error", "Error", "UI not found", 3)
+		return 
+	end
+	
+	if not self.CommandsTab then
+		self.CommandsTab = self:CreateTab(self.MainUI, "Commands")
+		local commandMap = {}
+		local sortedElements = {}
+		for cmdName, cmdData in pairs(self.CommandRegistry) do
+			local elementName = cmdData.ElementName
+			local elementType = cmdData.Type
+			if not commandMap[elementName] then
+				commandMap[elementName] = {
+					commands = {},
+					type = elementType
+				}
+				table.insert(sortedElements, elementName)
+			end
+			table.insert(commandMap[elementName].commands, cmdName)
+		end
+		table.sort(sortedElements)
+		local commandText = ""
+		for _, elementName in ipairs(sortedElements) do
+			local elementData = commandMap[elementName]
+			local commands = elementData.commands
+			local elementType = elementData.type
+			table.sort(commands)
+			local usageHint = ""
+			if elementType == "Toggle" then
+				usageHint = " [toggle]"
+			elseif elementType == "Slider" then
+				usageHint = " [number]"
+			elseif elementType == "Input" then
+				usageHint = " [input]"
+			elseif elementType == "Dropdown" then
+				usageHint = " [option]"
+			elseif elementType == "MultiDropdown" then
+				usageHint = " [option1,option2]"
+			end
+			local commandList = ""
+			for i, cmd in ipairs(commands) do
+				local prefix = self.CommandPrefix or ";"
+				if i == 1 then
+					commandList = prefix .. cmd .. usageHint
+				else
+					commandList = commandList .. ", " .. prefix .. cmd
+				end
+			end
+			commandText = commandText .. elementName .. " - " .. commandList .. "\n"
+		end
+		self:CreateNote(self.CommandsTab, commandText)
+	end
+	self:Notify("info", "Commands", "Open UI to see command list", 3)
+end
+
+function ReyUILib:EnableChatCommands()
+	if self.ChatEnabled then return true end
+	local Players = game:GetService("Players")
+	local LocalPlayer = Players.LocalPlayer
+	if LocalPlayer then
+		local savedPrefix = self.UISettings["CommandPrefix"]
+		if savedPrefix then
+			self.CommandPrefix = savedPrefix
+		else
+			self.CommandPrefix = ";"
+		end
+		self.ChatConnection = LocalPlayer.Chatted:Connect(function(message)
+			self:ProcessChatCommand(message)
+		end)
+		self.ChatEnabled = true
+		local prefix = self.CommandPrefix or ";"
+		self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. prefix .. "command", 3)
+		return true
+	end
+	return false
+end
+
+function ReyUILib:ChangePrefix(newPrefix)
+	if not newPrefix or newPrefix == "" or #newPrefix > 3 then
+		self:Notify("error", "Invalid Prefix", "Prefix must be 1-3 characters", 3)
+		return false
+	end
+	
+	self.CommandPrefix = newPrefix
+	self:Notify("success", "Prefix Changed", "Command prefix changed to: " .. newPrefix, 3)
+	self.UISettings["CommandPrefix"] = newPrefix
+	self:SaveConfig()
+	
+	return true
 end
 
 return ReyUILib
