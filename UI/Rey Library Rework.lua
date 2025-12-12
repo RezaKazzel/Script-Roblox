@@ -3185,6 +3185,7 @@ function ReyUILib:EnableChatCommands()
 	if self.ChatEnabled then return true end
 	local Players = game:GetService("Players")
 	local LocalPlayer = Players.LocalPlayer
+	
 	if LocalPlayer then
 		local savedPrefix = self.UISettings["CommandPrefix"]
 		if savedPrefix then
