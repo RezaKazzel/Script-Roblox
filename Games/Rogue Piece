@@ -36,6 +36,7 @@ local State = {
 UI = UI or Rey:CreateUI("Rogue Piece")
 local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
+local Exclusive3 = Rey:CreateTab(UI, "Exclusive+ 3")
 Rey:EnableChatCommands()
 -- ============ UTILITY FUNCTIONS ============
 local Utils = {}
@@ -1290,6 +1291,97 @@ function SelectBossAutoSpawn(selectedBoss)
 		end
 	end
 end
+
+-- ============ Trait Select ============
+local TraitSelector = {}
+function TraitSelector.GetAvailableTraits()
+	local traits = {}
+	
+	pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return end
+		
+		local scrollingFrame = capsuleFrame.Scroling
+		if not scrollingFrame then return end
+		
+		for i = 1, 3 do
+			local traitFrame = scrollingFrame:FindFirstChild("Trait" .. i)
+			if traitFrame then
+				local descLabel = traitFrame:FindFirstChild("Descript")
+				if descLabel then
+					local traitText = descLabel.Text
+					traitText = traitText:gsub("Trait:%s*", ""):gsub("Trait%s*:%s*", ""):gsub("^%s*(.-)%s*$", "%1")
+					
+					if traitText ~= "" then
+						table.insert(traits, {
+							Name = traitText,
+							Button = traitFrame.Equip and traitFrame.Equip.Button
+						})
+					end
+				end
+			end
+		end
+	end)
+	
+	return traits
+end
+
+function TraitSelector.GetTraitNames()
+	local traits = TraitSelector.GetAvailableTraits()
+	local traitNames = {}
+	
+	for _, trait in ipairs(traits) do
+		table.insert(traitNames, trait.Name)
+	end
+	
+	table.sort(traitNames)
+	return traitNames
+end
+
+function TraitSelector.SelectTrait(traitName)
+	if not traitName or traitName == "" then return false end
+	
+	return pcall(function()
+		local capsuleFrame = player.PlayerGui.Button.Capsule
+		if not capsuleFrame then return false end
+		
+		local traits = TraitSelector.GetAvailableTraits()
+		local targetButton = nil
+		
+		for _, trait in ipairs(traits) do
+			if trait.Name == traitName then
+				targetButton = trait.Button
+				break
+			end
+		end
+		
+		if not targetButton then return false end
+		
+		Utils.Priority(function()
+			capsuleFrame.Visible = true
+			Utils.GuiClick(targetButton)
+			capsuleFrame.Visible = false
+		end)
+	end)
+end
+
+function TraitSelector.SelectTraitCallback(selectedTrait)
+	Utils.Priority(function()
+		local success = TraitSelector.SelectTrait(selectedTrait)
+		if success then
+			Rey:Notify("success", "Trait Selected", "Selected: " .. selectedTrait, 3)
+		else
+			Rey:Notify("error", "Selection Failed", "Failed to select: " .. selectedTrait, 3)
+		end
+	end)
+end
+
+local function refreshTrait(selected)
+	TraitSelector.SelectTraitCallback(selected)
+	task.wait(0.1)
+	pcall(function() Rey.UIElements["Select Trait Capsule"]?.RefreshButton:Fire() end)
+end
+
 -- ============ UI COMPONENTS ============
 Rey:CreateDropdown(Exclusive, "Pilih Tools", GetTools, function(value)
 	selectedTools = value
@@ -1347,12 +1439,15 @@ Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paks
 
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
 
-Rey:CreateDropdown(Exclusive2, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, true, "title")
-
 Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
 
 Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu, {"forcemenu", "openmenu", "fm"})
 Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
+
+-- ============ EXCLUSIVE 3 ============
+
+Rey:CreateDropdown(Exclusive3, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
+Rey:CreateDropdown(Exclusive3, "Select Trait Capsule", TraitSelector.GetTraitNames, refreshTrait, true, "trait")
 
 -- ============ CLEANUP ============
 local Cleanup = {}
