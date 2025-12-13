@@ -24,6 +24,7 @@ ReyUILib.UISettings = {}
 ReyUILib.UIElements = {}
 ReyUILib.alldropdown = {}
 ReyUILib.CommandRegistry = {}
+ReyUILib.RestrictedCommands = {}
 ReyUILib.MainUI = nil
 
 local ConfigPath = "ReyHub_Config.json"
@@ -3284,23 +3285,22 @@ function ReyUILib:UpdateCommandList()
 	end
 end
 
-self.RestrictedCommands = self.RestrictedCommands or {}
 function Rey:RestrictedCommand(...)
-    local cmds = {...}
-    for _, commandName in ipairs(cmds) do
-        local cmd = self.CommandRegistry[commandName]
-        if cmd then
-            local allNames = {commandName}
-            if cmd.FullCommand and cmd.FullCommand.Aliases then
-                for _, a in ipairs(cmd.FullCommand.Aliases) do
-                    table.insert(allNames, a)
-                end
-            end
-            for _, name in ipairs(allNames) do
-                self.RestrictedCommands[string.lower(name)] = true
-            end
-        end
-    end
+	local cmds = {...}
+	for _, commandName in ipairs(cmds) do
+		local cmd = self.CommandRegistry[commandName]
+		if cmd then
+			local allNames = {commandName}
+			if cmd.FullCommand and cmd.FullCommand.Aliases then
+				for _, a in ipairs(cmd.FullCommand.Aliases) do
+					table.insert(allNames, a)
+				end
+			end
+			for _, name in ipairs(allNames) do
+				self.RestrictedCommands[string.lower(name)] = true
+			end
+		end
+	end
 end
 
 self.PrefixEja = self.PrefixEja or "!"
