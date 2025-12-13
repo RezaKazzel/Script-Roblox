@@ -990,7 +990,7 @@ end
 
 -- ============ AUTO SPAWN BOSS SYSTEM ============
 local AutoSpawn = {}
-
+AutoSpawn.Delay = 1
 function AutoSpawn.Toggle(state)
 	AutoSpawn.Running = state
 	if state then
@@ -1021,7 +1021,7 @@ function AutoSpawn.Toggle(state)
 		end
 		
 		task.spawn(function()
-			while AutoSpawn.Running do Utils.CheckPriority() task.wait(0.8)
+			while AutoSpawn.Running do Utils.CheckPriority() task.wait(AutoSpawn.Delay)
 				pcall(function()
 					local inventory = game:GetService("Players").LocalPlayer.Inventory
 					local summonOrb = inventory:FindFirstChild("Summon Orb")
@@ -1087,7 +1087,7 @@ function Hogyoku.CheckAndExchange()
 			local buttonFolder = playerGui.Button
 			if not buttonFolder then return end
 			
-			local exchangeFrame = buttonFolder.Exchange_Frame
+			exchangeFrame = buttonFolder.Exchange_Frame
 			if not exchangeFrame then return end
 			
 			local materialFrame = exchangeFrame.Material_Frame
@@ -1099,7 +1099,7 @@ function Hogyoku.CheckAndExchange()
 			exchangeButton = rerollFrame.Button
 		end)
 		
-		if exchangeButton then
+		if exchangeFrame and exchangeButton then
 			Utils.Priority(function()
 				exchangeFrame.Visible = true
 				Utils.GuiClick(exchangeButton)
@@ -1624,6 +1624,10 @@ end, {"startfishing", "sf", "fish", "fishing"})
 
 Rey:CreateDropdown(Exclusive, "Pilih Boss", bossOptions, SelectBossAutoSpawn, false, {"boss", "selectboss", "sb"})
 Rey:CreateToggle(Exclusive, "Auto Spawn Boss", "Select Boss nya dulu", AutoSpawn.Toggle, {"autospawn", "spawnboss", "asb"})
+Rey:CreateSlider(Exclusive, "Delay Spawn (Seconds)", 0, 3, 1, function(value)
+	AutoSpawn.Delay = value
+	Rey:Notify("info", "Delay Spawn", string.format("Set to %d Seconds", value), 2)
+end, {"ds", "delayspawn"})
 Rey:CreateNote(Exclusive, "-\n-\n-\n-\n-")
 
 -- ============ EXCLUSIVE 2 ============
@@ -1645,17 +1649,15 @@ Rey:CreateNote(Exclusive2, "⚠️ Warning: Semua Skill bakal di deactivate paks
 
 Rey:CreateButton(Exclusive2, "Disable Mobile Check Skill", "Baca note diatas", "DISABLE", MobileCheckSkill)
 
-Rey:CreateDropdown(Exclusive2, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
-
-Rey:CreateToggle(Exclusive2, "Force Menu", "Force open selected menu", toggleForceMenu, {"forcemenu", "openmenu", "fm"})
-Rey:CreateNote(Exclusive2, "-\n-\n-\n-\n-")
-
 -- ============ EXCLUSIVE 3 ============
 
 Rey:CreateDropdown(Exclusive3, "Change Title", AutoTitle.GetTitles, AutoTitle.SelectTitleCallback, false, "title")
 Rey:CreateDropdown(Exclusive3, "Select Trait Capsule", TraitSelector.GetTraitNames, refreshTrait, true, "trait")
 Rey:CreateDropdown(Exclusive3, "Select Race Capsule", RaceSelector.GetRaceNames, refreshRace, true, "race")
 Rey:CreateDropdown(Exclusive3, "Select Relic Capsule", RelicSelector.GetRelicNames, refreshRelic, true, "relic")
+Rey:CreateDropdown(Exclusive3, "Select Menu", menuOptions, SelectForceMenu, true, {"menu", "selectmenu", "sm"})
+Rey:CreateToggle(Exclusive3, "Force Menu", "Force open selected menu", toggleForceMenu, {"forcemenu", "openmenu", "fm"})
+Rey:CreateNote(Exclusive3, "-\n-\n-\n-\n-")
 
 -- ============ CLEANUP ============
 local Cleanup = {}
