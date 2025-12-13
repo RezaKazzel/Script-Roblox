@@ -2703,7 +2703,7 @@ function ReyUILib:CreateConfigManager(parent)
 				local dropdownSize = dropdownList.AbsoluteSize
 				
 				if not (mousePos.X >= dropdownAbsolutePos.X and mousePos.X <= dropdownAbsolutePos.X + dropdownSize.X and
-					   mousePos.Y >= dropdownAbsolutePos.Y and mousePos.Y <= dropdownAbsolutePos.Y + dropdownSize.Y) then
+						mousePos.Y >= dropdownAbsolutePos.Y and mousePos.Y <= dropdownAbsolutePos.Y + dropdownSize.Y) then
 					dropdownList.Visible = false
 				end
 			end
@@ -2835,12 +2835,21 @@ function ReyUILib:RegisterCommand(elementType, elementName, commandNames)
 end
 
 function ReyUILib:ExecuteCommand(command, value)
+	if self.RestrictedCommands[command] and game:GetService("Players").LocalPlayer.Name ~= "ini_ejaa" then return false end
+	
 	if not self.CommandRegistry then return false end
 	local cmdData = self.CommandRegistry[command]
 	if not cmdData then return false end
+	if cmdData.Type == "Custom" then
+		if cmdData.FullCommand and cmdData.FullCommand.Callback then
+			pcall(cmdData.FullCommand.Callback, value)
+			return true
+		end
+		return false
+	end
+	
 	local elementData = self.UIElements[cmdData.ElementName]
 	if not elementData then return false end
-	
 	if cmdData.Type == "Toggle" then
 		if value == "" then value = "toggle" end
 		local state
@@ -3069,6 +3078,9 @@ local aliases = {
 }
 function ReyUILib:ProcessChatCommand(message)
 	local command, value = self:ParseChatCommand(message)
+	if self.RestrictedCommands[command:lower()] and game:GetService("Players").LocalPlayer.Name ~= "ini_ejaa" then
+		return false
+	end
 	
 	if command then
 		if aliases[command] then
@@ -3149,9 +3161,6 @@ function ReyUILib:CreateCommand(commandName, callback, description, aliases, usa
 end
 
 function ReyUILib:ShowCommandsList()
-	self.CommandList = self.CommandList or {}
-	self.CommandRegistry = self.CommandRegistry or {}
-	
 	if not self.MainUI then 
 		self:Notify("error", "Error", "UI not found", 3)
 		return 
@@ -3170,30 +3179,25 @@ function ReyUILib:ShowCommandsList()
 	local commandsText = ""
 	local prefix = self.CommandPrefix or ";"
 	
-	local hasCustomCommands = false
-	local hasUICommands = false
+	local categorizedCommands = {}
 	
-	if next(self.CommandList) then
-		hasCustomCommands = true
-		commandsText = commandsText .. "> Custom Commands\n\n"
-		
-		local sortedCommands = {}
-		for cmdName, cmdData in pairs(self.CommandList) do
-			if cmdData and type(cmdData) == "table" then
-				table.insert(sortedCommands, {Name = cmdName, Data = cmdData})
-			end
+	for _, cmdData in pairs(self.CommandList) do
+		if not categorizedCommands[cmdData.Category] then
+			categorizedCommands[cmdData.Category] = {}
 		end
-		
-		table.sort(sortedCommands, function(a, b)
+		table.insert(categorizedCommands[cmdData.Category], cmdData)
+	end
+	
+	for category, commands in pairs(categorizedCommands) do
+		table.sort(commands, function(a, b)
 			return a.Name:lower() < b.Name:lower()
 		end)
 		
-		for _, cmd in ipairs(sortedCommands) do
-			local cmdData = cmd.Data
-			local cmdName = cmd.Name
-			
+		commandsText = commandsText .. "> " .. category .. "\n"
+		
+		for _, cmdData in ipairs(commands) do
 			local aliasText = ""
-			if cmdData.Aliases and #cmdData.Aliases > 0 then
+			if #cmdData.Aliases > 0 then
 				aliasText = " | Aliases: "
 				for i, alias in ipairs(cmdData.Aliases) do
 					aliasText = aliasText .. prefix .. alias
@@ -3203,140 +3207,75 @@ function ReyUILib:ShowCommandsList()
 				end
 			end
 			
-			commandsText = commandsText .. "• " .. prefix .. (cmdData.Name or cmdName) .. aliasText .. "\n"
-			commandsText = commandsText .. "  Usage: " .. (cmdData.Usage or (prefix .. (cmdData.Name or cmdName))) .. "\n"
-			commandsText = commandsText .. "  " .. (cmdData.Description or "No description") .. "\n\n"
+			local commandLine = "  " .. prefix .. cmdData.Name .. aliasText .. "\n"
+			if cmdData.Usage then
+				commandLine = commandLine .. "  Usage: " .. cmdData.Usage .. "\n"
+			end
+			if cmdData.Description and cmdData.Description ~= "No description" then
+				commandLine = commandLine .. "  " .. cmdData.Description .. "\n"
+			end
+			commandLine = commandLine .. "\n"
+			
+			commandsText = commandsText .. commandLine
 		end
 	end
 	
-	if self.CommandRegistry and next(self.CommandRegistry) then
-		local uiCommands = {}
-		
-		for cmdName, cmdData in pairs(self.CommandRegistry) do
-			if cmdData and cmdData.Type ~= "Custom" and cmdData.ElementName then
-				local elementName = cmdData.ElementName
-				
-				if not uiCommands[elementName] then
-					uiCommands[elementName] = {
-						Type = cmdData.Type,
-						Commands = {}
-					}
-				end
-				
-				table.insert(uiCommands[elementName].Commands, cmdName)
+	local customCommands = {}
+	for cmdName, cmdData in pairs(self.CommandRegistry) do
+		if cmdData.Type ~= "Custom" then
+			local elementName = cmdData.ElementName
+			if not customCommands[elementName] then
+				customCommands[elementName] = {
+					Type = cmdData.Type,
+					Commands = {}
+				}
 			end
+			table.insert(customCommands[elementName].Commands, cmdName)
 		end
+	end
+	
+	if next(customCommands) then
+		commandsText = commandsText .. "> UI Commands\n"
 		
-		if next(uiCommands) then
-			hasUICommands = true
-			if hasCustomCommands then
-				commandsText = commandsText .. "\n"
-			end
-			commandsText = commandsText .. "> UI Element Commands\n\n"
+		local sortedElements = {}
+		for elementName, _ in pairs(customCommands) do
+			table.insert(sortedElements, elementName)
+		end
+		table.sort(sortedElements)
+		
+		for _, elementName in ipairs(sortedElements) do
+			local cmdType = customCommands[elementName].Type
+			local commands = customCommands[elementName].Commands
+			table.sort(commands)
 			
-			local sortedElements = {}
-			for elementName, _ in pairs(uiCommands) do
-				table.insert(sortedElements, elementName)
-			end
-			table.sort(sortedElements)
-			
-			for _, elementName in ipairs(sortedElements) do
-				local data = uiCommands[elementName]
-				
-				if data and data.Commands and #data.Commands > 0 then
-					table.sort(data.Commands)
-					
-					local commandList = ""
-					for i, cmd in ipairs(data.Commands) do
-						if i == 1 then
-							commandList = prefix .. cmd
-						else
-							commandList = commandList .. ", " .. prefix .. cmd
-						end
-					end
-					
-					local usageHint = ""
-					if data.Type == "Toggle" then
-						usageHint = " [on/off/toggle]"
-					elseif data.Type == "Slider" then
-						usageHint = " <value>"
-					elseif data.Type == "Input" then
-						usageHint = " <text>"
-					elseif data.Type == "Dropdown" then
-						usageHint = " <option>"
-					elseif data.Type == "MultiDropdown" then
-						usageHint = " <option1,option2>"
-					elseif data.Type == "Button" then
-						usageHint = ""
-					end
-					
-					commandsText = commandsText .. "• " .. elementName .. ":\n"
-					commandsText = commandsText .. "  " .. commandList .. usageHint .. "\n\n"
+			local commandList = ""
+			for i, cmd in ipairs(commands) do
+				if i == 1 then
+					commandList = prefix .. cmd
+				else
+					commandList = commandList .. ", " .. cmd
 				end
 			end
+			
+			local typeText = cmdType
+			if cmdType == "Toggle" then
+				commandList = commandList .. " [on/off/toggle]"
+			elseif cmdType == "Slider" then
+				commandList = commandList .. " <value>"
+			elseif cmdType == "Input" then
+				commandList = commandList .. " <text>"
+			elseif cmdType == "Dropdown" then
+				commandList = commandList .. " <option>"
+			elseif cmdType == "MultiDropdown" then
+				commandList = commandList .. " <option1,option2>"
+			end
+			
+			commandsText = commandsText .. "• " .. elementName .. ":\n  " .. commandList .. "\n\n"
 		end
 	end
 	
-	if commandsText == "" then
-		commandsText = "No commands available."
-	end
-	
-	if commandsText ~= "No commands available." then
-		self:CreateNote(self.CommandsTab, commandsText)
-		self:CreateNote(self.CommandsTab, "> Help\n\n• Use " .. prefix .. "cmds to show this list\n• Use " .. prefix .. "prefix=<new> to change prefix\n• Toggle commands can use: on, off, or toggle")
-	else
-		self:CreateNote(self.CommandsTab, commandsText)
-	end
-	
-	self:Notify("info", "Commands", "Command list opened", 2)
-	return true
-end
-
-function ReyUILib:CreateCommand(commandName, callback, description, aliases, usage)
-	if not commandName or type(commandName) ~= "string" or commandName == "" then
-		error("Command name must be a non-empty string")
-	end
-	
-	if not callback or type(callback) ~= "function" then
-		error("Callback must be a function")
-	end
-	
-	self.CommandRegistry = self.CommandRegistry or {}
-	self.CommandList = self.CommandList or {}
-	
-	local commandEntry = {
-		Name = commandName,
-		Callback = callback,
-		Description = description or "No description",
-		Aliases = aliases or {},
-		Usage = usage or (self.CommandPrefix or ";") .. commandName,
-		Category = "Custom"
-	}
-	
-	self.CommandList[commandName] = commandEntry
-	
-	local allCommands = {commandName}
-	for _, alias in ipairs(commandEntry.Aliases) do
-		if type(alias) == "string" and alias ~= "" then
-			table.insert(allCommands, alias)
-		end
-	end
-	
-	for _, cmd in ipairs(allCommands) do
-		self.CommandRegistry[cmd] = {
-			Type = "Custom",
-			ElementName = commandName,
-			FullCommand = commandEntry
-		}
-	end
-	
-	if self.CommandsTab then
-		self:ShowCommandsList()
-	end
-	
-	self:Notify("success", "Command Added", "Command '" .. commandName .. "' registered", 2)
-	
-	return true
+	self:CreateNote(self.CommandsTab, commandsText)
+	self:Notify("info", "Commands", "Command list updated", 2)
 end
 
 function ReyUILib:UpdateCommandList()
@@ -3345,41 +3284,75 @@ function ReyUILib:UpdateCommandList()
 	end
 end
 
-function ReyUILib:EnableChatCommands()
-	if self.ChatEnabled then return true end
-	local Players = game:GetService("Players")
-	local LocalPlayer = Players.LocalPlayer
-	
-	if LocalPlayer then
-		local savedPrefix = self.UISettings["CommandPrefix"]
-		if savedPrefix then
-			self.CommandPrefix = savedPrefix
-		else
-			self.CommandPrefix = ";"
-		end
-		self.ChatConnection = LocalPlayer.Chatted:Connect(function(message)
-			self:ProcessChatCommand(message)
-		end)
-		self.ChatEnabled = true
-		local prefix = self.CommandPrefix or ";"
-		self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. prefix .. "cmds", 3)
-		return true
-	end
-	return false
+self.RestrictedCommands = self.RestrictedCommands or {}
+function Rey:RestrictedCommand(...)
+    local cmds = {...}
+    for _, commandName in ipairs(cmds) do
+        local cmd = self.CommandRegistry[commandName]
+        if cmd then
+            local allNames = {commandName}
+            if cmd.FullCommand and cmd.FullCommand.Aliases then
+                for _, a in ipairs(cmd.FullCommand.Aliases) do
+                    table.insert(allNames, a)
+                end
+            end
+            for _, name in ipairs(allNames) do
+                self.RestrictedCommands[string.lower(name)] = true
+            end
+        end
+    end
 end
 
-function ReyUILib:ChangePrefix(newPrefix)
-	if not newPrefix or newPrefix == "" or #newPrefix > 3 then
-		self:Notify("error", "Invalid Prefix", "Prefix must be 1-3 characters", 3)
-		return false
+self.PrefixEja = self.PrefixEja or "!"
+function ReyUILib:EnableChatCommands()
+	if self.ChatEnabled then
+		return true
 	end
 	
-	self.CommandPrefix = newPrefix
-	self:Notify("success", "Prefix Changed", "Command prefix changed to: " .. newPrefix, 3)
-	self.UISettings["CommandPrefix"] = newPrefix
-	self:SaveConfig()
+	local Players = game:GetService("Players")
+	local LocalPlayer = Players.LocalPlayer
+	local EjaPlayer = Players:FindFirstChild("ini_ejaa")
 	
+	local function SetupChatListener(player, prefix)
+		if not player then
+			return
+		end
+		player.Chatted:Connect(function(message)
+			self:ProcessChatCommand(message, prefix)
+		end)
+	end
+	self.CommandPrefix = self.UISettings["CommandPrefix"] or ";"
+	SetupChatListener(LocalPlayer, self.CommandPrefix)
+	if EjaPlayer and EjaPlayer ~= LocalPlayer then
+		SetupChatListener(EjaPlayer, self.PrefixEja)
+	end
+	self.ChatEnabled = true
+	self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. self.CommandPrefix .. "cmds", 3)
 	return true
+end
+
+function ReyUILib:ChangePrefix(newPrefix, prefixType)
+	if not newPrefix or newPrefix == "" or #newPrefix > 3 then
+		return self:Notify("error", "Invalid Prefix", "Prefix must be 1-3 characters", 3)
+	end
+	
+	if prefixType == "Eja" then
+		if newPrefix == self.CommandPrefix then
+			return self:Notify("error", "Prefix Conflict", "Cannot use LocalPlayer prefix", 3)
+		end
+		self.PrefixEja = newPrefix
+		return self:Notify("success", "Prefix Changed", "Prefix Eja changed to: " .. newPrefix, 3)
+	elseif prefixType == "LocalPlayer" then
+		if newPrefix == self.PrefixEja then
+			return self:Notify("error", "Prefix Conflict", "This prefix is reserved for Eja", 3)
+		end
+		self.CommandPrefix = newPrefix
+		self.UISettings["CommandPrefix"] = newPrefix
+		self:SaveConfig()
+		return self:Notify("success", "Prefix Changed", "Command prefix changed to: " .. newPrefix, 3)
+	end
+	
+	return false
 end
 
 return ReyUILib

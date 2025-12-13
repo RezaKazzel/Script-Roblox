@@ -38,6 +38,8 @@ local Exclusive = Rey:CreateTab(UI, "Exclusive+")
 local Exclusive2 = Rey:CreateTab(UI, "Exclusive+ 2")
 local Exclusive3 = Rey:CreateTab(UI, "Exclusive+ 3")
 Rey:EnableChatCommands()
+GuiService.AutoSelectGuiEnabled = false
+GuiService.GuiNavigationEnabled = false
 -- ============ UTILITY FUNCTIONS ============
 local Utils = {}
 
@@ -1593,9 +1595,9 @@ Rey:CreateDropdown(Exclusive, "Pilih Tools", GetTools, function(value)
 	selectedTools = value
 end, true, {"tools", "weapon", "tool"})
 
-Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto farm boss + fishing", AutoFarmBossFish.Toggle, {"autofarm", "farmbossfish", "afbf"})
+Rey:CreateToggle(Exclusive, "Auto Boss + Fishing", "Auto Farm Boss + Fishing", AutoFarmBossFish.Toggle, {"autofarm", "farmbossfish", "afbf"})
 
-Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto farm bosses (bug)", Boss.Toggle, {"autoboss", "bossfarm", "ab"})
+Rey:CreateToggle(Exclusive, "Auto Bosses", "Auto Bosses", Boss.Toggle, {"autoboss", "bossfarm", "ab"})
 
 Rey:CreateToggle(Exclusive, "God Mode", "Required: Observation Haki", God.Toggle, {"god", "godmode", "gm"})
 
