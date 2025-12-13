@@ -25,6 +25,7 @@ ReyUILib.UIElements = {}
 ReyUILib.alldropdown = {}
 ReyUILib.CommandRegistry = {}
 ReyUILib.RestrictedCommands = {}
+ReyUILib.PrefixEja = "!"
 ReyUILib.MainUI = nil
 
 local ConfigPath = "ReyHub_Config.json"
@@ -3285,7 +3286,7 @@ function ReyUILib:UpdateCommandList()
 	end
 end
 
-function Rey:RestrictedCommand(...)
+function ReyUILib:RestrictedCommand(...)
 	local cmds = {...}
 	for _, commandName in ipairs(cmds) do
 		local cmd = self.CommandRegistry[commandName]
@@ -3303,7 +3304,6 @@ function Rey:RestrictedCommand(...)
 	end
 end
 
-self.PrefixEja = self.PrefixEja or "!"
 function ReyUILib:EnableChatCommands()
 	if self.ChatEnabled then
 		return true
