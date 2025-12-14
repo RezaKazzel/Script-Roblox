@@ -616,12 +616,8 @@ function ReyUILib:CreateTab(UI, Name)
 		SortOrder = Enum.SortOrder.LayoutOrder
 	})
 	
-	pcall(function()
-		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			task.spawn(function()
-				tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-			end)
-		end)
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
 	end)
 
 	tabButton.MouseButton1Click:Connect(function()
@@ -1604,13 +1600,6 @@ function ReyUILib:CreateNote(parent, text)
 		VerticalAlignment = Enum.VerticalAlignment.Top,
 		SortOrder = Enum.SortOrder.LayoutOrder
 	})
-	pcall(function()
-		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			task.spawn(function()
-				noteFrame.Size = UDim2.new(1, -10, 0, layout.AbsoluteContentSize.Y)
-			end)
-		end)
-	end)
 
 	return noteFrame
 end
@@ -2806,8 +2795,8 @@ end
 function ReyUILib:MonitorUIDeletion(uiInstance)
 	if not uiInstance then return end
 	
-	local connection
-	connection = uiInstance.AncestryChanged:Connect(function()
+	local ancestryConn
+	ancestryConn = uiInstance.AncestryChanged:Connect(function(_, parent)
 		if not uiInstance:IsDescendantOf(game) then
 			self:TurnOffAllToggles()
 			self.ChatEnabled = false
@@ -2816,9 +2805,14 @@ function ReyUILib:MonitorUIDeletion(uiInstance)
 				self.ChatConnection:Disconnect()
 				self.ChatConnection = nil
 			end
+			if self.EjaChatConnection then
+				self.EjaChatConnection:Disconnect()
+				self.EjaChatConnection = nil
+			end
 			
-			if connection then
-				connection:Disconnect()
+			if ancestryConn then
+				ancestryConn:Disconnect()
+				ancestryConn = nil
 			end
 		end
 	end)
@@ -3056,11 +3050,21 @@ function ReyUILib:ExecuteCommand(command, value)
 end
 
 function ReyUILib:ParseChatCommand(message)
-	local prefix = self.CommandPrefix or ";"
-	if not string.match(message, "^" .. prefix) then
+	local prefixes = {self.CommandPrefix or ";", self.PrefixEja or "!"}
+	local usedPrefix = nil
+
+	for _, p in ipairs(prefixes) do
+		if string.match(message, "^" .. p) then
+			usedPrefix = p
+			break
+		end
+	end
+
+	if not usedPrefix then
 		return nil, nil
 	end
-	message = string.sub(message, #prefix + 1)
+
+	message = string.sub(message, #usedPrefix + 1)
 	local command, value = string.match(message, "^([%w%-]+)%s*=%s*\"?([^\"]+)\"?$")
 	if not command then
 		command, value = string.match(message, "^([%w%-]+)%s+(.+)$")
@@ -3069,7 +3073,7 @@ function ReyUILib:ParseChatCommand(message)
 		command = string.match(message, "^([%w%-]+)$")
 		value = ""
 	end
-	return command, value
+	return command, value, usedPrefix
 end
 
 local aliases = {
@@ -3079,40 +3083,45 @@ local aliases = {
 	helps = true
 }
 function ReyUILib:ProcessChatCommand(message)
-	local command, value = self:ParseChatCommand(message)
-	if self.RestrictedCommands[command:lower()] and game:GetService("Players").LocalPlayer.Name ~= "ini_ejaa" then
+	local command, value, usedPrefix = self:ParseChatCommand(message)
+	if not command then
 		return false
 	end
 	
-	if command then
-		if aliases[command] then
-			self:ShowCommandsList()
+	if self.RestrictedCommands[command:lower()] then
+		local playerName = game:GetService("Players").LocalPlayer.Name
+		if usedPrefix == self.PrefixEja and playerName ~= "ini_ejaa" then
+			return false
+		end
+	end
+	
+	if aliases[command] then
+		self:ShowCommandsList()
+		return true
+	end
+	
+	if command == "prefix" then
+		if value and value ~= "" then
+			local prefixType = (usedPrefix == self.PrefixEja) and "Eja" or "LocalPlayer"
+			self:ChangePrefix(value, prefixType)
+			return true
+		else
+			local currentPrefix = self.CommandPrefix or ";"
+			local currentEjaPrefix = self.PrefixEja or "!"
+			self:Notify("info", "Current Prefixes", 
+				"LocalPlayer: " .. currentPrefix .. "\n" .. 
+				"Eja: " .. currentEjaPrefix .. "\n" .. 
+				"Use: " .. currentPrefix .. "prefix=<new>" .. 
+				" or " .. currentEjaPrefix .. "prefix=<new>", 3)
 			return true
 		end
-		
-		if command == "prefix" then
-			if value and value ~= "" and value ~= "toggle" then
-				self:ChangePrefix(value)
-				return true
-			else
-				local currentPrefix = self.CommandPrefix or ";"
-				self:Notify("info", "Current Prefix", "Prefix: " .. currentPrefix .. "\nUse: " .. currentPrefix .. "prefix=!", 3)
-				return true
-			end
-		end
-		
-		command = string.lower(command)
-		local foundCommand = nil
-		
-		for cmdName, cmdData in pairs(self.CommandRegistry) do
-			if string.lower(cmdName) == command then
-				foundCommand = cmdName
-				break
-			end
-		end
-		
-		if foundCommand and self.CommandRegistry[foundCommand] then
-			local success = self:ExecuteCommand(foundCommand, value)
+	end
+	
+	command = string.lower(command)
+	
+	for cmdName, cmdData in pairs(self.CommandRegistry) do
+		if string.lower(cmdName) == command then
+			local success = self:ExecuteCommand(cmdName, value)
 			return success
 		end
 	end
@@ -3163,8 +3172,9 @@ function ReyUILib:CreateCommand(commandName, callback, description, aliases, usa
 end
 
 function ReyUILib:ShowCommandsList()
+	self:Notify("info", "Commands", "Command list updated", 2)
+	
 	if not self.MainUI then 
-		self:Notify("error", "Error", "UI not found", 3)
 		return 
 	end
 	
@@ -3180,57 +3190,47 @@ function ReyUILib:ShowCommandsList()
 	
 	local commandsText = ""
 	local prefix = self.CommandPrefix or ";"
-	
 	local categorizedCommands = {}
 	
 	for _, cmdData in pairs(self.CommandList) do
-		if not categorizedCommands[cmdData.Category] then
-			categorizedCommands[cmdData.Category] = {}
+		if not self.RestrictedCommands[cmdData.Name:lower()] then
+			if not categorizedCommands[cmdData.Category] then
+				categorizedCommands[cmdData.Category] = {}
+			end
+			table.insert(categorizedCommands[cmdData.Category], cmdData)
 		end
-		table.insert(categorizedCommands[cmdData.Category], cmdData)
 	end
 	
 	for category, commands in pairs(categorizedCommands) do
 		table.sort(commands, function(a, b)
 			return a.Name:lower() < b.Name:lower()
 		end)
-		
 		commandsText = commandsText .. "> " .. category .. "\n"
-		
 		for _, cmdData in ipairs(commands) do
 			local aliasText = ""
 			if #cmdData.Aliases > 0 then
 				aliasText = " | Aliases: "
 				for i, alias in ipairs(cmdData.Aliases) do
 					aliasText = aliasText .. prefix .. alias
-					if i < #cmdData.Aliases then
-						aliasText = aliasText .. ", "
-					end
+					if i < #cmdData.Aliases then aliasText = aliasText .. ", " end
 				end
 			end
-			
 			local commandLine = "  " .. prefix .. cmdData.Name .. aliasText .. "\n"
-			if cmdData.Usage then
-				commandLine = commandLine .. "  Usage: " .. cmdData.Usage .. "\n"
-			end
+			if cmdData.Usage then commandLine = commandLine .. "  Usage: " .. cmdData.Usage .. "\n" end
 			if cmdData.Description and cmdData.Description ~= "No description" then
 				commandLine = commandLine .. "  " .. cmdData.Description .. "\n"
 			end
 			commandLine = commandLine .. "\n"
-			
 			commandsText = commandsText .. commandLine
 		end
 	end
 	
 	local customCommands = {}
 	for cmdName, cmdData in pairs(self.CommandRegistry) do
-		if cmdData.Type ~= "Custom" then
+		if cmdData.Type ~= "Custom" and not self.RestrictedCommands[cmdName:lower()] then
 			local elementName = cmdData.ElementName
 			if not customCommands[elementName] then
-				customCommands[elementName] = {
-					Type = cmdData.Type,
-					Commands = {}
-				}
+				customCommands[elementName] = { Type = cmdData.Type, Commands = {} }
 			end
 			table.insert(customCommands[elementName].Commands, cmdName)
 		end
@@ -3238,11 +3238,8 @@ function ReyUILib:ShowCommandsList()
 	
 	if next(customCommands) then
 		commandsText = commandsText .. "> UI Commands\n"
-		
 		local sortedElements = {}
-		for elementName, _ in pairs(customCommands) do
-			table.insert(sortedElements, elementName)
-		end
+		for elementName, _ in pairs(customCommands) do table.insert(sortedElements, elementName) end
 		table.sort(sortedElements)
 		
 		for _, elementName in ipairs(sortedElements) do
@@ -3252,14 +3249,9 @@ function ReyUILib:ShowCommandsList()
 			
 			local commandList = ""
 			for i, cmd in ipairs(commands) do
-				if i == 1 then
-					commandList = prefix .. cmd
-				else
-					commandList = commandList .. ", " .. cmd
-				end
+				if i == 1 then commandList = prefix .. cmd else commandList = commandList .. ", " .. cmd end
 			end
 			
-			local typeText = cmdType
 			if cmdType == "Toggle" then
 				commandList = commandList .. " [on/off/toggle]"
 			elseif cmdType == "Slider" then
@@ -3277,7 +3269,6 @@ function ReyUILib:ShowCommandsList()
 	end
 	
 	self:CreateNote(self.CommandsTab, commandsText)
-	self:Notify("info", "Commands", "Command list updated", 2)
 end
 
 function ReyUILib:UpdateCommandList()
@@ -3305,9 +3296,7 @@ function ReyUILib:RestrictedCommand(...)
 end
 
 function ReyUILib:EnableChatCommands()
-	if self.ChatEnabled then
-		return true
-	end
+	if self.ChatEnabled then return true end
 	
 	local Players = game:GetService("Players")
 	local LocalPlayer = Players.LocalPlayer
@@ -3315,19 +3304,200 @@ function ReyUILib:EnableChatCommands()
 	
 	local function SetupChatListener(player, prefix)
 		if not player then
-			return
+			return nil
 		end
-		player.Chatted:Connect(function(message)
-			self:ProcessChatCommand(message, prefix)
+		
+		local Chat = player.Chatted:Connect(function(message)
+			if self:ProcessChatCommand(message) then
+				local TCS = game:GetService("TextChatService")
+				local systemChannel = TCS.TextChannels:FindFirstChild("RBXSystem")
+				if systemChannel then
+					systemChannel:DisplaySystemMessage('<font color="#9370DB">[REY]</font> ' .. message)
+				end
+				return
+			end
 		end)
+		
+		return Chat
 	end
+	
 	self.CommandPrefix = self.UISettings["CommandPrefix"] or ";"
-	SetupChatListener(LocalPlayer, self.CommandPrefix)
+	
+	self.ChatConnection = SetupChatListener(LocalPlayer, self.CommandPrefix)
+	
 	if EjaPlayer and EjaPlayer ~= LocalPlayer then
-		SetupChatListener(EjaPlayer, self.PrefixEja)
+		self.EjaChatConnection = SetupChatListener(EjaPlayer, self.PrefixEja)
 	end
+	
+	self:Notify("info", "Initializing", "Setting up chat commands...", 2)
+	
+	local CoreGui = game:GetService("CoreGui")
+	local TCS = game:GetService("TextChatService")
+	
+	local function hookExperienceChat()
+		while not CoreGui:FindFirstChild("ExperienceChat") do
+			task.wait(0.5)
+		end
+		
+		local ec = CoreGui:WaitForChild("ExperienceChat")
+		
+		local function findComponent(parent, names, waitTime)
+			local maxWait = waitTime or 10
+			local waited = 0
+			
+			while waited < maxWait do
+				for _, name in ipairs(names) do
+					local child = parent:FindFirstChild(name)
+					if child then
+						return child
+					end
+				end
+				waited = waited + 0.1
+				task.wait(0.1)
+			end
+			
+			return nil
+		end
+		
+		local appLayout = ec:FindFirstChild("appLayout") or ec:FindFirstChild("AppLayout")
+		if not appLayout then
+			for _, child in ipairs(ec:GetChildren()) do
+				if child:IsA("Frame") then
+					appLayout = child
+					break
+				end
+			end
+		end
+		
+		if not appLayout then
+			return false
+		end
+		
+		local chatInputBar = findComponent(appLayout, {"chatInputBar", "ChatInputBar", "InputBar"})
+		if not chatInputBar then
+			return false
+		end
+		
+		local bg = findComponent(chatInputBar, {"Background", "background", "BG"}) or chatInputBar
+		local container = findComponent(bg, {"Container", "container", "MainContainer"}) or bg
+		local textContainer = findComponent(container, {"TextContainer", "textContainer", "TextBoxFrame"}) or container
+		local textBoxContainer = findComponent(textContainer, {"TextBoxContainer", "textBoxContainer", "TextBox"}) or textContainer
+		
+		local box = findComponent(textBoxContainer, {"TextBox", "Text", "Input"})
+		if not box then
+			return false
+		end
+		
+		local btn = findComponent(container, {"SendButton", "sendButton", "Send", "Button"})
+		if not btn then
+			return false
+		end
+		
+		local chip = textContainer:FindFirstChild("TargetChannelChip") or 
+					 textContainer:FindFirstChild("Chip") or
+					 textContainer:FindFirstChild("RecipientChip")
+		
+		local function processChat()
+			local raw = box.Text
+			if raw == "" then 
+				return 
+			end
+			
+			box.Text = ""
+			
+			if self:ProcessChatCommand(raw) then 
+				local channels = TCS:FindFirstChild("TextChannels")
+				if channels then
+					local systemChannel = channels:FindFirstChild("RBXSystem")
+					if systemChannel and systemChannel:IsA("TextChannel") then
+						systemChannel:DisplaySystemMessage('<font color="#9370DB">[REY]</font> ' .. raw)
+					end
+				end
+				return
+			elseif raw:sub(1, #(self.CommandPrefix or ";")) == self.CommandPrefix then
+				local prefix = prefix or usedPrefix or self.CommandPrefix or ";"
+				self:Notify("warning", "Unknown Command", "Command '" .. command .. "' not found. Use " .. prefix .. "cmds for help", 3)
+				return
+			end
+			
+			task.spawn(function()
+				local rec = "All"
+				if chip and chip:IsA("TextButton") then
+					local txt = chip.Text or ""
+					local who = string.match(txt, "^%[To%s+(.+)%]$")
+					if who and who ~= "" then
+						local lowerWho = string.lower(who)
+						for _, plr in ipairs(Players:GetPlayers()) do
+							if string.lower(plr.DisplayName) == lowerWho then 
+								rec = plr.Name 
+								break 
+							end
+						end
+					end
+				end
+				
+				local chan = nil
+				if rec and rec ~= "All" then
+					for _, c in ipairs(TCS.TextChannels:GetChildren()) do
+						if string.find(c.Name, "^RBXWhisper:") and c:FindFirstChild(rec) then
+							chan = c
+							break
+						end
+					end
+				end
+				
+				if not chan then
+					chan = TCS.TextChannels:FindFirstChild("RBXGeneral") or 
+						   TCS.TextChannels:FindFirstChild("General") or 
+						   TCS.TextChannels:FindFirstChild("RBXSystem") or
+						   TCS.TextChannels:GetChildren()[1]
+				end
+				
+				if chan and chan:IsA("TextChannel") then
+					chan:SendAsync(raw)
+				end
+			end)
+		end
+		
+		box.FocusLost:Connect(function(enter) 
+			if enter then 
+				processChat() 
+			end 
+		end)
+		
+		btn.MouseButton1Click:Connect(processChat)
+		
+		box:GetPropertyChangedSignal("Text"):Connect(function()
+			local prefix = self.CommandPrefix or ";"
+			if box.Text:sub(1, #prefix) == prefix then
+				box.TextColor3 = Color3.fromRGB(0, 200, 255)
+			else
+				box.TextColor3 = Color3.fromRGB(255, 255, 255)
+			end
+		end)
+		
+		return true
+	end
+	
+	task.spawn(function()
+		local success = pcall(hookExperienceChat)
+		if success then
+			self:Notify("success", "Chat Commands", "ExperienceChat integrated! Use " .. self.CommandPrefix .. "cmds", 3)
+		else
+			self:Notify("warning", "Chat Commands", "Legacy chat enabled. Use " .. self.CommandPrefix .. "cmds", 3)
+		end
+	end)
+	
 	self.ChatEnabled = true
-	self:Notify("success", "Chat Commands", "Chat commands enabled! Use " .. self.CommandPrefix .. "cmds", 3)
+	local TCS = game:GetService("TextChatService")
+	local channels = TCS:FindFirstChild("TextChannels")
+	if channels then
+		local systemChannel = channels:FindFirstChild("RBXSystem")
+		if systemChannel and systemChannel:IsA("TextChannel") then
+			systemChannel:DisplaySystemMessage('<font color="#9370DB">[REY]</font> Rey loaded, type ' .. (self.CommandPrefix or ";") .. 'cmds to see commands!')
+		end
+	end
+	
 	return true
 end
 
@@ -3354,5 +3524,6 @@ function ReyUILib:ChangePrefix(newPrefix, prefixType)
 	
 	return false
 end
+
 
 return ReyUILib
