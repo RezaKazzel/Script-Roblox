@@ -22,4 +22,5 @@ if ListGame[game.GameId] ~= nil then
 end
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Universal-2"))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/DatabaseCommands'))()
 loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/CommandsChat'))()

@@ -2838,7 +2838,11 @@ function ReyUILib:ExecuteCommand(command, value)
 	if not cmdData then return false end
 	if cmdData.Type == "Custom" then
 		if cmdData.FullCommand and cmdData.FullCommand.Callback then
-			pcall(cmdData.FullCommand.Callback, value)
+			local args = {}
+			for word in string.gmatch(value or "", "%S+") do
+				table.insert(args, word)
+			end
+			pcall(cmdData.FullCommand.Callback, args)
 			return true
 		end
 		return false
@@ -3416,7 +3420,8 @@ function ReyUILib:EnableChatCommands()
 				return
 			elseif raw:sub(1, #(self.CommandPrefix or ";")) == self.CommandPrefix then
 				local prefix = prefix or usedPrefix or self.CommandPrefix or ";"
-				self:Notify("warning", "Unknown Command", "Command '" .. command .. "' not found. Use " .. prefix .. "cmds for help", 3)
+				local cmdName = command or raw
+				self:Notify("warning", "Unknown Command", "Command '" .. cmdName .. "' not found. Use " .. prefix .. "cmds for help", 3)
 				return
 			end
 			
@@ -3482,9 +3487,7 @@ function ReyUILib:EnableChatCommands()
 	task.spawn(function()
 		local success = pcall(hookExperienceChat)
 		if success then
-			self:Notify("success", "Chat Commands", "ExperienceChat integrated! Use " .. self.CommandPrefix .. "cmds", 3)
-		else
-			self:Notify("warning", "Chat Commands", "Legacy chat enabled. Use " .. self.CommandPrefix .. "cmds", 3)
+			self:Notify("success", "Chat Commands", "ChatCommands integrated! Use " .. self.CommandPrefix .. "cmds", 3)
 		end
 	end)
 	

@@ -5,6 +5,8 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local VirtualUser = game:GetService("VirtualUser")
+
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -196,6 +198,13 @@ function Utils.RemoveBodyVelocity()
 	end
 end
 
+function Utils.Attack(char)
+	local tool = char and char:FindFirstChildOfClass("Tool")
+	if tool then
+		tool:Activate()
+	end
+end
+
 local AutoFarm = {}
 
 function AutoFarm.ToggleEquip(state)
@@ -224,7 +233,7 @@ function AutoFarm.ToggleFarm(state)
 			Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
 			return
 		end
-
+		
 		Utils.SetupBodyVelocity()
 		
 		Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
@@ -242,7 +251,7 @@ function AutoFarm.ToggleFarm(state)
 						
 						local targetPos = mobRoot.Position + Vector3.new(0, mobRoot.Size.Y / 2 + State.Distance, 0)
 						playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
-						
+						pcall(Utils.Attack(Character))
 						if not State.RestrictAutoFarm then
 							break
 						end
@@ -284,6 +293,7 @@ function AutoFarm.ToggleFarmNearby(state)
 				local targetRoot = target.HumanoidRootPart
 				local targetPos = targetRoot.Position + Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
 				playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
+				pcall(Utils.Attack(char))
 			else
 				target = nil
 				timer = checkDelay
@@ -302,17 +312,8 @@ function AutoClick.Toggle(state)
 			while State.AutoClick do
 				task.wait()
 				local char = LocalPlayer.Character
-				
-				local function Attack()
-					local tool = char and char:FindFirstChildOfClass("Tool")
-					if tool then
-						tool:Activate()
-					end
-				end
-
-				if pcall(Attack) then
-				else
-					local VirtualUser = game:GetService("VirtualUser")
+				local x = pcall(Utils.Attack(char))
+				if not x then
 					VirtualUser:CaptureController()
 					VirtualUser:Button1Down(Vector2.new(0, 0))
 					VirtualUser:Button1Up(Vector2.new(0, 0))
@@ -517,7 +518,6 @@ function KillAll.CreateButton(name, text, positionY, killFunc)
 				sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
 				sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
 				killFunc()
-				Rey:Notify("success", buttonName, "Killed all enemies!", 2)
 			end)
 		else
 			if coreGui then coreGui:Destroy() end
@@ -591,6 +591,7 @@ function ServerHop.AutoLoad(state)
 		State.TeleportCheck = false
 	end
 end
+-----------
 
 Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Utils.GetMonsterList(), function(selected)
 	State.SelectedMob = selected
@@ -630,7 +631,7 @@ Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 70, function(v
 	State.OneHitHealth = value / 100
 end)
 
-KillAll.CreateButton("Kill All V1", "KILL V1", -10, function()
+KillAll.CreateButton("Kill All V1 [BUTTON]", "if Health < Max Health", -10, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name and obj.Health < obj.MaxHealth then
 			obj.Health = 0
@@ -638,7 +639,7 @@ KillAll.CreateButton("Kill All V1", "KILL V1", -10, function()
 	end
 end)
 
-KillAll.CreateButton("Kill All V2", "KILL V2", 30, function()
+KillAll.CreateButton("Kill All V2 [BUTTON]", "if Health < Max Health (BreakJoints)", 30, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
@@ -648,13 +649,52 @@ KillAll.CreateButton("Kill All V2", "KILL V2", 30, function()
 	end
 end)
 
-KillAll.CreateButton("Kill All V3", "KILL V3", 70, function()
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
-			obj.Health = 0
+Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
+	local target = Players:FindFirstChild(playerName)
+	local Character = LocalPlayer.Character
+	local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+
+	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
+		local targetPos = target.Character.HumanoidRootPart.Position
+		playerRoot.CFrame = CFrame.new(targetPos)
+	end
+end, true)
+
+Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList, function(npcName)
+	local playerRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local npc = NPCCache[npcName]
+	
+	if not npc or npc.Parent == nil then
+		npc = nil
+		for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
+			if obj.Name == npcName and obj:IsA("Model") and (obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart) then
+				npc = obj
+				NPCCache[npcName] = npc
+				break
+			end
 		end
 	end
-end)
+	
+	if npc and playerRoot then
+		local targetCFrame = nil
+		if npc:FindFirstChild("HumanoidRootPart") then
+			targetCFrame = npc.HumanoidRootPart.CFrame
+		elseif npc.PrimaryPart then
+			targetCFrame = npc.PrimaryPart.CFrame
+		else
+			for _, part in ipairs(npc:GetChildren()) do
+				if part:IsA("BasePart") then
+					targetCFrame = part.CFrame
+					break
+				end
+			end
+		end
+
+		if targetCFrame then
+			playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+		end
+	end
+end, true)
 
 Rey:CreateButton(MiscTab, "Fly Gui", "Dark theme fly script", "Load", function()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
@@ -685,55 +725,6 @@ Rey:CreateToggle(MiscTab, "Noclip", "Walk through objects", Noclip.Toggle)
 Rey:CreateToggle(MiscTab, "Edge Jump", "Auto jump at edges", EdgeJump.Toggle)
 
 Rey:CreateToggle(MiscTab, "Infinite Jump", "Jump infinitely", InfiniteJump.Toggle)
-
-Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
-	local target = Players:FindFirstChild(playerName)
-	local Character = LocalPlayer.Character
-	local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-
-	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
-		local targetPos = target.Character.HumanoidRootPart.Position
-		playerRoot.CFrame = CFrame.new(targetPos)
-	end
-end, true)
-
-Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList, function(npcName)
-    local playerRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local npc = NPCCache[npcName]
-    
-    if not npc or npc.Parent == nil then
-        npc = nil
-        for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
-            if obj.Name == npcName and obj:IsA("Model") and (obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart) then
-                npc = obj
-                NPCCache[npcName] = npc
-                break
-            end
-        end
-    end
-    
-    if npc and playerRoot then
-        local targetCFrame = nil
-        if npc:FindFirstChild("HumanoidRootPart") then
-            targetCFrame = npc.HumanoidRootPart.CFrame
-        elseif npc.PrimaryPart then
-            targetCFrame = npc.PrimaryPart.CFrame
-        else
-            for _, part in ipairs(npc:GetChildren()) do
-                if part:IsA("BasePart") then
-                    targetCFrame = part.CFrame
-                    break
-                end
-            end
-        end
-
-        if targetCFrame then
-            playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-        end
-    end
-end, true)
-
-Rey:CreateNote(MiscTab, "This note is for spacing purposes to prevent UI bugs\n\n\n\n\n\n\n\n")
 
 Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
 	State.RestrictAutoFarm = state
