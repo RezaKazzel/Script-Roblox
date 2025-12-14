@@ -639,7 +639,7 @@ KillAll.CreateButton("KILL ALL V1", "if Health < Max Health", -10, function()
 	end
 end)
 
-KillAll.CreateButton("Kill All V2 [BUTTON]", "if Health < Max Health (BreakJoints)", 30, function()
+KillAll.CreateButton("Kill All V2", "if Health < Max Health (BreakJoints)", 30, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
@@ -649,7 +649,7 @@ KillAll.CreateButton("Kill All V2 [BUTTON]", "if Health < Max Health (BreakJoint
 	end
 end)
 
-KillAll.CreateButton("Kill All V3 [BUTTON]", "KILL ALL WITHOUT HESITATE", 10, function()
+KillAll.CreateButton("Kill All V3", "KILL ALL WITHOUT HESITATE", 10, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
 			obj.Health = 0
