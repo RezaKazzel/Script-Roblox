@@ -487,10 +487,10 @@ end
 
 local KillAll = {}
 
-function KillAll.CreateButton(name, text, positionY, killFunc)
+function KillAll.CreateButton(name, desc, positionY, killFunc)
 	local buttonName = name .. " [BUTTON]"
 	
-	return Rey:CreateToggle(UtilityTab, buttonName, "Kill all enemies", function(state)
+	return Rey:CreateToggle(UtilityTab, buttonName, desc, function(state)
 		local coreGui = CoreGui:FindFirstChild(buttonName)
 		
 		if state then
@@ -505,7 +505,7 @@ function KillAll.CreateButton(name, text, positionY, killFunc)
 			killBtn.Size = UDim2.new(0, 70, 0, 30)
 			killBtn.Position = UDim2.new(1, -130, 0, positionY)
 			killBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-			killBtn.Text = text
+			killBtn.Text = name
 			killBtn.TextColor3 = Color3.new(1, 0, 0)
 			killBtn.BorderSizePixel = 0
 			killBtn.Font = Enum.Font.GothamBold
@@ -631,7 +631,7 @@ Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 70, function(v
 	State.OneHitHealth = value / 100
 end)
 
-KillAll.CreateButton("Kill All V1 [BUTTON]", "if Health < Max Health", -10, function()
+KillAll.CreateButton("KILL ALL V1", "if Health < Max Health", -10, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name and obj.Health < obj.MaxHealth then
 			obj.Health = 0
@@ -645,6 +645,14 @@ KillAll.CreateButton("Kill All V2 [BUTTON]", "if Health < Max Health (BreakJoint
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
 				obj:BreakJoints()
 			end
+		end
+	end
+end)
+
+KillAll.CreateButton("Kill All V3 [BUTTON]", "KILL ALL WITHOUT HESITATE", 10, function()
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
+			obj.Health = 0
 		end
 	end
 end)
