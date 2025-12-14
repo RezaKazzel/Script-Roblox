@@ -1,0 +1,575 @@
+if not Rey then return end
+
+Rey:EnableChatCommands()
+Rey:RestrictedCommand("delete", "update", "save") -- load & list are free
+
+local UIS = game:GetService("UserInputService")
+local Heartbeat = game:GetService("RunService").Heartbeat
+local Players = game:GetService("Players")
+
+-- ===== GLOBAL VARIABLES ===== --
+local noclipActive = false
+local guiVisible = true
+
+_G.Fly = {
+	Active = false,
+	Speed = 1,
+	MaxSpeed = 50,
+	CurrentSpeed = 0,
+	TpWalking = false,
+	Controls = {f = 0, b = 0, l = 0, r = 0},
+	LastControls = {f = 0, b = 0, l = 0, r = 0},
+	BodyGyro = nil,
+	BodyVelocity = nil,
+	Connection = nil
+}
+
+_G.InfJumpEnabled = false
+_G.InfJumpConn = nil
+
+-- ===== FUNCTIONS ===== --
+
+local function findPlayer(name)
+	name = name:lower()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Name:lower():find(name) or player.DisplayName:lower():find(name) then
+			return player
+		end
+	end
+	return nil
+end
+
+local function enableStates(humanoid, enable)
+	local states = {
+		Enum.HumanoidStateType.Climbing,
+		Enum.HumanoidStateType.FallingDown,
+		Enum.HumanoidStateType.Flying,
+		Enum.HumanoidStateType.Freefall,
+		Enum.HumanoidStateType.GettingUp,
+		Enum.HumanoidStateType.Jumping,
+		Enum.HumanoidStateType.Landed,
+		Enum.HumanoidStateType.Physics,
+		Enum.HumanoidStateType.PlatformStanding,
+		Enum.HumanoidStateType.Ragdoll,
+		Enum.HumanoidStateType.Running,
+		Enum.HumanoidStateType.RunningNoPhysics,
+		Enum.HumanoidStateType.Seated,
+		Enum.HumanoidStateType.StrafingNoPhysics,
+		Enum.HumanoidStateType.Swimming
+	}
+	
+	for _, state in ipairs(states) do
+		humanoid:SetStateEnabled(state, enable)
+	end
+end
+
+local function disableFly()
+	local player = Players.LocalPlayer
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+	
+	_G.Fly.Active = false
+	
+	if _G.Fly.Connection then
+		_G.Fly.Connection:Disconnect()
+		_G.Fly.Connection = nil
+	end
+	
+	if humanoid then
+		enableStates(humanoid, true)
+		humanoid.PlatformStand = false
+	end
+	
+	if _G.Fly.BodyGyro then
+		_G.Fly.BodyGyro:Destroy()
+		_G.Fly.BodyGyro = nil
+	end
+	
+	if _G.Fly.BodyVelocity then
+		_G.Fly.BodyVelocity:Destroy()
+		_G.Fly.BodyVelocity = nil
+	end
+	
+	_G.Fly.Controls = {f = 0, b = 0, l = 0, r = 0}
+	_G.Fly.LastControls = {f = 0, b = 0, l = 0, r = 0}
+	_G.Fly.CurrentSpeed = 0
+	_G.Fly.TpWalking = false
+	
+	if character then
+		character.Animate.Disabled = false
+	end
+end
+
+-- ===== COMMANDS ===== --
+-- Teleport
+Rey:CreateCommand("teleport", function(args)
+    local success, error = pcall(function()
+        if #args < 3 then
+            Rey:Notify("error", "Teleport", "Usage: teleport <x> <y> <z>", 3)
+            return
+        end
+        
+        local coordsText = table.concat(args, " ")
+        local x, y, z = coordsText:match("([%d%.%-]+)[%s,]*([%d%.%-]+)[%s,]*([%d%.%-]+)")
+        
+        if not x or not y or not z then
+            x = tonumber(args[1])
+            y = tonumber(args[2])
+            z = tonumber(args[3])
+        else
+            x = tonumber(x)
+            y = tonumber(y)
+            z = tonumber(z)
+        end
+        
+        if x and y and z then
+            local character = Players.LocalPlayer.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                character.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(x, y, z))
+                Rey:Notify("success", "Teleport", string.format("Teleported to (%.1f, %.1f, %.1f)", x, y, z), 3)
+            else
+                Rey:Notify("error", "Teleport", "Character or HRP not found", 3)
+            end
+        else
+            Rey:Notify("error", "Teleport", "Invalid coordinates", 3)
+        end
+    end)
+    
+    if not success then
+        Rey:Notify("error", "Teleport", "Failed to teleport", 3)
+    end
+end, "Teleport to coordinates", {"tppos", "pos"}, "teleport <x> <y> <z>")
+
+
+Rey:CreateCommand("tpto", function(args)
+	local success, error = pcall(function()
+		local target = findPlayer(args[1])
+		
+		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			local localPlayer = Players.LocalPlayer
+			localPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+			Rey:Notify("success", "Teleport", "Teleported to " .. target.Name, 3)
+		else
+			Rey:Notify("error", "Teleport", "Player not found or no HRP", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Teleport", "Failed to teleport", 3)
+	end
+end, "Teleport to a player", false, "tpto <player>")
+
+-- WalkSpeed
+Rey:CreateCommand("walkspeed", function(args)
+	local success, error = pcall(function()
+		local speed = tonumber(args[1])
+		
+		if speed then
+			local character = Players.LocalPlayer.Character
+			if character and character:FindFirstChild("Humanoid") then
+				character.Humanoid.WalkSpeed = speed
+				Rey:Notify("success", "WalkSpeed", "Walk speed set to " .. speed, 3)
+			end
+		else
+			Rey:Notify("error", "WalkSpeed", "Invalid speed value", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "WalkSpeed", "Failed to set walk speed", 3)
+	end
+end, "Change your walk speed", {"ws"}, "walkspeed <number>")
+
+-- JumpPower
+Rey:CreateCommand("jumppower", function(args)
+	local success, error = pcall(function()
+		local power = tonumber(args[1])
+		
+		if power then
+			local character = Players.LocalPlayer.Character
+			if character and character:FindFirstChild("Humanoid") then
+				character.Humanoid.JumpPower = power
+				Rey:Notify("success", "JumpPower", "Jump power set to " .. power, 3)
+			end
+		else
+			Rey:Notify("error", "JumpPower", "Invalid jump power value", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "JumpPower", "Failed to set jump power", 3)
+	end
+end, "Change your jump power", {"jp"}, "jumppower <number>")
+
+-- Noclip
+Rey:CreateCommand("noclip", function()
+	local success, error = pcall(function()
+		noclipActive = not noclipActive
+		local character = Players.LocalPlayer.Character
+		
+		if character then
+			for _, part in pairs(character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = not noclipActive
+				end
+			end
+		end
+		
+		Rey:Notify(noclipActive and "success" or "info", "Noclip", noclipActive and "Enabled" or "Disabled", 3)
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Noclip", "Failed to toggle noclip", 3)
+	end
+end, "Toggle noclip", {"nc"}, "noclip")
+
+-- Fly
+Rey:CreateCommand("fly", function(args)
+	local success, error = pcall(function()
+		local player = Players.LocalPlayer
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+		
+		if not character or not humanoid then 
+			Rey:Notify("error", "Fly", "Character not found", 3)
+			return 
+		end
+		
+		-- Update speed if already flying
+		if _G.Fly.Active then
+			if args[1] then
+				local newSpeed = tonumber(args[1])
+				if newSpeed and newSpeed > 0 then
+					_G.Fly.Speed = newSpeed
+					_G.Fly.TpWalking = false
+					task.wait(0.1)
+					
+					for i = 1, _G.Fly.Speed do
+						spawn(function()
+							_G.Fly.TpWalking = true
+							local character = Players.LocalPlayer.Character
+							local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+							
+							while _G.Fly.TpWalking and Heartbeat:Wait() and character and humanoid and humanoid.Parent do
+								if humanoid.MoveDirection.Magnitude > 0 then
+									character:TranslateBy(humanoid.MoveDirection)
+								end
+							end
+						end)
+					end
+					
+					Rey:Notify("success", "Fly", "Speed updated to " .. _G.Fly.Speed, 3)
+				else
+					Rey:Notify("error", "Fly", "Invalid speed value", 3)
+				end
+			else
+				disableFly()
+				Rey:Notify("info", "Fly", "Flight disabled", 3)
+			end
+			return
+		end
+		
+		-- Enable fly
+		if args[1] then
+			local customSpeed = tonumber(args[1])
+			if customSpeed and customSpeed > 0 then 
+				_G.Fly.Speed = customSpeed 
+			end
+		end
+		
+		_G.Fly.Active = true
+		Rey:Notify("success", "Fly", "Flight enabled with speed " .. _G.Fly.Speed, 3)
+		
+		character.Animate.Disabled = true
+		enableStates(humanoid, false)
+		humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+		
+		-- TpWalking loop
+		for i = 1, _G.Fly.Speed do
+			spawn(function()
+				_G.Fly.TpWalking = true
+				while _G.Fly.TpWalking and Heartbeat:Wait() and character and humanoid and humanoid.Parent do
+					if humanoid.MoveDirection.Magnitude > 0 then
+						character:TranslateBy(humanoid.MoveDirection)
+					end
+				end
+			end)
+		end
+		
+		-- Find torso part
+		local torsoPart
+		if humanoid.RigType == Enum.HumanoidRigType.R6 then
+			torsoPart = character:FindFirstChild("Torso")
+		else
+			torsoPart = character:FindFirstChild("UpperTorso")
+		end
+		
+		if not torsoPart then return end
+		
+		-- Create BodyGyro
+		_G.Fly.BodyGyro = Instance.new("BodyGyro")
+		_G.Fly.BodyGyro.P = 9e4
+		_G.Fly.BodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+		_G.Fly.BodyGyro.cframe = torsoPart.CFrame
+		_G.Fly.BodyGyro.Parent = torsoPart
+		
+		-- Create BodyVelocity
+		_G.Fly.BodyVelocity = Instance.new("BodyVelocity")
+		_G.Fly.BodyVelocity.velocity = Vector3.new(0, 0.1, 0)
+		_G.Fly.BodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		_G.Fly.BodyVelocity.Parent = torsoPart
+		
+		humanoid.PlatformStand = true
+		
+		-- Setup render connection
+		if _G.Fly.Connection then
+			_G.Fly.Connection:Disconnect()
+		end
+		
+		_G.Fly.Connection = game:GetService("RunService").RenderStepped:Connect(function()
+			if not _G.Fly.Active or humanoid.Health <= 0 then return end
+			
+			local controls = _G.Fly.Controls
+			local last = _G.Fly.LastControls
+			local currentSpeed = _G.Fly.CurrentSpeed
+			
+			-- Update speed
+			if controls.l + controls.r ~= 0 or controls.f + controls.b ~= 0 then
+				_G.Fly.CurrentSpeed = currentSpeed + 0.5 + (currentSpeed / _G.Fly.MaxSpeed)
+				if _G.Fly.CurrentSpeed > _G.Fly.MaxSpeed then
+					_G.Fly.CurrentSpeed = _G.Fly.MaxSpeed
+				end
+			elseif currentSpeed ~= 0 then
+				_G.Fly.CurrentSpeed = currentSpeed - 1
+				if _G.Fly.CurrentSpeed < 0 then
+					_G.Fly.CurrentSpeed = 0
+				end
+			end
+			
+			-- Calculate velocity
+			local velocity
+			if controls.l + controls.r ~= 0 or controls.f + controls.b ~= 0 then
+				velocity = ((workspace.CurrentCamera.CFrame.lookVector * (controls.f + controls.b)) +
+						   ((workspace.CurrentCamera.CFrame * CFrame.new(controls.l + controls.r, (controls.f + controls.b) * 0.2, 0).p) - workspace.CurrentCamera.CFrame.p)) * _G.Fly.CurrentSpeed
+				_G.Fly.LastControls = {
+					f = controls.f,
+					b = controls.b,
+					l = controls.l,
+					r = controls.r
+				}
+			elseif currentSpeed ~= 0 then
+				velocity = ((workspace.CurrentCamera.CFrame.lookVector * (last.f + last.b)) +
+						   ((workspace.CurrentCamera.CFrame * CFrame.new(last.l + last.r, (last.f + last.b) * 0.2, 0).p) - workspace.CurrentCamera.CFrame.p)) * _G.Fly.CurrentSpeed
+			else
+				velocity = Vector3.new(0, 0, 0)
+			end
+			
+			_G.Fly.BodyVelocity.velocity = velocity
+			_G.Fly.BodyGyro.cframe = workspace.CurrentCamera.CFrame * CFrame.Angles(
+				-math.rad((controls.f + controls.b) * 50 * _G.Fly.CurrentSpeed / _G.Fly.MaxSpeed), 0, 0
+			)
+		end)
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Fly", "Failed to toggle fly", 3)
+	end
+end, "Toggle fly with optional speed", {"f"}, "fly <speed>")
+
+-- Unfly
+Rey:CreateCommand("unfly", function()
+	local success, error = pcall(function()
+		if _G.Fly.Active then
+			disableFly()
+			Rey:Notify("info", "Fly", "Flight disabled", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Fly", "Failed to disable fly", 3)
+	end
+end, "Disable fly", false, "unfly")
+
+-- Infinite Jump
+Rey:CreateCommand("infjump", function()
+	local success, error = pcall(function()
+		local player = Players.LocalPlayer
+		
+		if _G.InfJumpConn then
+			_G.InfJumpEnabled = not _G.InfJumpEnabled
+		else
+			_G.InfJumpEnabled = true
+			_G.InfJumpConn = UIS.JumpRequest:Connect(function()
+				local character = player.Character
+				local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+				
+				if _G.InfJumpEnabled and humanoid then
+					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				end
+			end)
+		end
+		
+		Rey:Notify(_G.InfJumpEnabled and "success" or "info", "Infinite Jump", 
+				  _G.InfJumpEnabled and "Enabled" or "Disabled", 3)
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Infinite Jump", "Failed to toggle infinite jump", 3)
+	end
+end, "Toggle infinite jump", {"ij"}, "infjump")
+
+-- Reset
+Rey:CreateCommand("reset", function()
+	local success, error = pcall(function()
+		local character = Players.LocalPlayer.Character
+		if character then
+			character:BreakJoints()
+			Rey:Notify("info", "Reset", "Character reset", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Reset", "Failed to reset character", 3)
+	end
+end, "Reset your character", {"r", "res", "respawn"}, "reset")
+
+-- Refresh
+Rey:CreateCommand("re", function(args)
+	local success, error = pcall(function()
+		local player = Players.LocalPlayer
+		local character = player.Character
+		if not character then return end
+		
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local rootPart = humanoid and humanoid.RootPart
+		local cameraCFrame = workspace.CurrentCamera.CFrame
+		local characterCFrame = rootPart and rootPart.CFrame
+		
+		if not humanoid then return end
+		
+		-- Remove non-essential parts
+		for _, child in pairs(character:GetChildren()) do
+			if not child:IsA("Humanoid") and not child:IsA("BasePart") then
+				child:Destroy()
+			end
+		end
+		
+		-- Simulate respawn
+		local tempModel = Instance.new("Model")
+		tempModel.Parent = workspace
+		player.Character = tempModel
+		
+		task.wait()
+		player.Character = character
+		tempModel:Destroy()
+		
+		-- Restore position and camera
+		task.spawn(function()
+			local newHumanoid = player.Character:WaitForChild("Humanoid", 5)
+			local newRootPart = newHumanoid and newHumanoid.RootPart
+			
+			if newRootPart and characterCFrame then
+				newRootPart.CFrame = characterCFrame
+			end
+			
+			workspace.CurrentCamera.CFrame = cameraCFrame
+		end)
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Refresh", "Failed to refresh character", 3)
+	end
+end, "Refresh your character", {"refresh"}, "re")
+
+-- Gravity
+Rey:CreateCommand("gravity", function(args)
+	local success, error = pcall(function()
+		local gravity = tonumber(args[1])
+		
+		if gravity then
+			local previousGravity = workspace.Gravity
+			workspace.Gravity = gravity
+			Rey:Notify("success", "Gravity", "Gravity set from " .. previousGravity .. " to " .. gravity, 3)
+		else
+			Rey:Notify("error", "Gravity", "Invalid value", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Gravity", "Failed to set gravity", 3)
+	end
+end, "Change workspace gravity", {"grav"}, "gravity <number>")
+
+-- Time
+Rey:CreateCommand("time", function(args)
+	local success, error = pcall(function()
+		local time = tonumber(args[1])
+		
+		if time and time >= 0 and time <= 24 then
+			game.Lighting.ClockTime = time
+			Rey:Notify("success", "Time", "Time set to " .. time, 3)
+		else
+			Rey:Notify("error", "Time", "Time must be 0-24", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "Time", "Failed to set time", 3)
+	end
+end, "Change time of day", {"settime"}, "time <0-24>")
+
+-- View
+Rey:CreateCommand("view", function(args)
+	local success, error = pcall(function()
+		local target = findPlayer(args[1])
+		
+		if target and target.Character and target.Character:FindFirstChildWhichIsA("Humanoid") then
+			workspace.CurrentCamera.CameraSubject = target.Character:FindFirstChildWhichIsA("Humanoid")
+			Rey:Notify("success", "View", "Now viewing " .. target.Name, 3)
+		else
+			Rey:Notify("error", "View", "Player not found", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "View", "Failed to change view", 3)
+	end
+end, "View from a player's perspective", {"spectate", "v"}, "view <player>")
+
+-- Unview
+Rey:CreateCommand("unview", function()
+	local success, error = pcall(function()
+		local player = Players.LocalPlayer
+		
+		if player.Character and player.Character:FindFirstChildWhichIsA("Humanoid") then
+			workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildWhichIsA("Humanoid")
+			Rey:Notify("info", "View", "Returned to normal view", 3)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "View", "Failed to return to normal view", 3)
+	end
+end, "Return to normal view", {"unspectate", "unv"}, "unview")
+
+-- Toggle GUI
+Rey:CreateCommand("togglegui", function()
+	local success, error = pcall(function()
+		local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+		
+		if playerGui then
+			for _, gui in pairs(playerGui:GetChildren()) do
+				if gui:IsA("ScreenGui") then
+					gui.Enabled = not gui.Enabled
+				end
+			end
+			
+			guiVisible = not guiVisible
+			Rey:Notify(guiVisible and "success" or "info", "GUI", guiVisible and "Enabled" or "Disabled", 2)
+		end
+	end)
+	
+	if not success then
+		Rey:Notify("error", "GUI", "Failed to toggle GUI", 3)
+	end
+end, "Toggle all GUIs", {"gui", "hidegui"}, "togglegui")
