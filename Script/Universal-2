@@ -135,19 +135,17 @@ function Utils.IsInTable(tbl, value)
 end
 
 function Utils.GetMonsterList()
-	return function()
-		local currentFolder = State.SelectedFolder
-		local monsters = {}
-		
-		for _, obj in ipairs(currentFolder:GetDescendants()) do
-			if obj:FindFirstChild("HumanoidRootPart") then
-				if not Utils.IsInTable(monsters, obj.Name) then
-					table.insert(monsters, obj.Name)
-				end
+	local currentFolder = State.SelectedFolder
+	local monsters = {}
+	
+	for _, obj in ipairs(currentFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
+			if not Utils.IsInTable(monsters, obj.Name) then
+				table.insert(monsters, obj.Name)
 			end
 		end
-		return monsters
 	end
+	return monsters
 end
 
 function Utils.GetBackpackTools()
@@ -293,7 +291,7 @@ function AutoFarm.ToggleFarmNearby(state)
 				local targetRoot = target.HumanoidRootPart
 				local targetPos = targetRoot.Position + Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
 				playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
-				pcall(Utils.Attack(char))
+				pcall(Utils.Attack, char)
 			else
 				target = nil
 				timer = checkDelay
@@ -312,7 +310,7 @@ function AutoClick.Toggle(state)
 			while State.AutoClick do
 				task.wait()
 				local char = LocalPlayer.Character
-				local x = pcall(Utils.Attack(char))
+				local x = pcall(Utils.Attack, char)
 				if not x then
 					VirtualUser:CaptureController()
 					VirtualUser:Button1Down(Vector2.new(0, 0))
@@ -593,7 +591,7 @@ function ServerHop.AutoLoad(state)
 end
 -----------
 
-Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Utils.GetMonsterList(), function(selected)
+Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Utils.GetMonsterList, function(selected)
 	State.SelectedMob = selected
 	Rey:Notify("info", "Auto Farm", "Selected Mob: "..selected, 3)
 end, true)
