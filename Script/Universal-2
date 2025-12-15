@@ -249,7 +249,7 @@ function AutoFarm.ToggleFarm(state)
 						
 						local targetPos = mobRoot.Position + Vector3.new(0, mobRoot.Size.Y / 2 + State.Distance, 0)
 						playerRoot.CFrame = CFrame.new(targetPos, targetPos - Vector3.new(0, 1, 0))
-						pcall(Utils.Attack(Character))
+						pcall(Utils.Attack, Character)
 						if not State.RestrictAutoFarm then
 							break
 						end
