@@ -39,10 +39,16 @@ local MiscTab = Rey:CreateTab(UI, "Misc")
 local Utils = {}
 
 function Utils.Disconnect(key)
-	if ActiveConnections[key] then
-		ActiveConnections[key]:Disconnect()
-		ActiveConnections[key] = nil
+	local obj = ActiveConnections[key]
+	if not obj then return end
+
+	if typeof(obj) == "RBXScriptConnection" then
+		obj:Disconnect()
+	elseif type(obj) == "thread" then
+		coroutine.close(obj)
 	end
+
+	ActiveConnections[key] = nil
 end
 
 function Utils.AddConnection(key, conn)
@@ -52,7 +58,7 @@ end
 
 function Utils.StartThread(key, func)
 	if ActiveConnections[key] then
-		coroutine.close(ActiveConnections[key])
+		Utils.Disconnect(ActiveConnections[key])
 		ActiveConnections[key] = nil
 	end
 	ActiveConnections[key] = coroutine.create(func)
@@ -320,7 +326,7 @@ function AutoClick.Toggle(state)
 		end)
 	else
 		if ActiveConnections["AutoClick"] then
-			coroutine.close(ActiveConnections["AutoClick"])
+			Utils.Disconnect(ActiveConnections["AutoClick"])
 			ActiveConnections["AutoClick"] = nil
 		end
 	end
@@ -355,7 +361,7 @@ function AutoGrab.Toggle(state)
 		end)
 	else
 		if ActiveConnections["AutoGrab"] then
-			coroutine.close(ActiveConnections["AutoGrab"])
+			Utils.Disconnect(ActiveConnections["AutoGrab"])
 			ActiveConnections["AutoGrab"] = nil
 		end
 	end
@@ -524,51 +530,50 @@ function KillAll.CreateButton(name, desc, positionY, killFunc)
 end
 
 local function KILLV4(state)
-    if state then
-        Utils.StartThread("KILLV4", function()
-            local hooked = {}
+	if state then
+		Utils.StartThread("KILLV4", function()
+			local hooked = {}
 
-            local function hookHumanoid(humanoid)
-                if hooked[humanoid] then return end
-                hooked[humanoid] = true
+			local function hookHumanoid(humanoid)
+				if hooked[humanoid] then return end
+				hooked[humanoid] = true
 
-                Utils.AddConnection(humanoid, humanoid.HealthChanged:Connect(function()
-                    if humanoid.Health > 0 
-                       and humanoid.Health / math.max(humanoid.MaxHealth, 1) < State.OneHitHealth then
-                        humanoid.Health = 0
-                        if humanoid.Parent then 
-                            humanoid.Parent:BreakJoints() 
-                        end
-                    end
-                end))
-            end
+				Utils.AddConnection(humanoid, humanoid.HealthChanged:Connect(function()
+					if humanoid.Parent.Name ~= LocalPlayer.Name and humanoid.Health > 0 and humanoid.Health / math.max(humanoid.MaxHealth, 1) < State.OneHitHealth then
+						humanoid.Health = 0
+						if humanoid.Parent then 
+							humanoid.Parent:BreakJoints() 
+						end
+					end
+				end))
+			end
 
-            for _, descendant in ipairs(workspace:GetDescendants()) do
-                if descendant:IsA("Humanoid") then
-                    hookHumanoid(descendant)
-                end
-            end
+			for _, descendant in ipairs(workspace:GetDescendants()) do
+				if descendant:IsA("Humanoid") then
+					hookHumanoid(descendant)
+				end
+			end
 
-            Utils.AddConnection("KILLV4_ADD", workspace.DescendantAdded:Connect(function(obj)
-                if obj:IsA("Humanoid") then
-                    hookHumanoid(obj)
-                end
-            end))
+			Utils.AddConnection("KILLV4_ADD", workspace.DescendantAdded:Connect(function(obj)
+				if obj:IsA("Humanoid") then
+					hookHumanoid(obj)
+				end
+			end))
 
-            while true do
-                task.wait()
-            end
-        end)
-    else
-        Utils.Disconnect("KILLV4_ADD")
-        Utils.Disconnect("KILLV4")
+			while true do
+				task.wait()
+			end
+		end)
+	else
+		Utils.Disconnect("KILLV4_ADD")
+		Utils.Disconnect("KILLV4")
 
-        for _, descendant in ipairs(workspace:GetDescendants()) do
-            if descendant:IsA("Humanoid") then
-                Utils.Disconnect(descendant)
-            end
-        end
-    end
+		for _, descendant in ipairs(workspace:GetDescendants()) do
+			if descendant:IsA("Humanoid") then
+				Utils.Disconnect(descendant)
+			end
+		end
+	end
 end
 
 local NPCCache = {}
@@ -814,7 +819,7 @@ local Cleanup = {}
 function Cleanup.All()
 	for key, conn in pairs(ActiveConnections) do
 		if type(conn) == "thread" then
-			coroutine.close(conn)
+			Utils.Disconnect(conn)
 		else
 			conn:Disconnect()
 		end
