@@ -219,42 +219,79 @@ end)
 Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss yang bisa, okarun ga ngespawn otomatis jadinya gbisa")
 Rey:CreateNote(Exclusive, "-- Misc")
 
--- Auto Mission
 local function runAutoMission()
 	sGoblet = nil
-	local missionStatus = LocalPlayer.MissionData.Active.Value
+	local missionStatus = pcall(function()
+		return LocalPlayer.MissionData.Active.Value
+	end)
+	
 	if not missionStatus then
 		miaw = miaw + 1
-		local questNpc = workspace.Npc.Quest.Mission
+		local questNpc
+		pcall(function()
+			questNpc = workspace.Npc.Quest.Mission
+		end)
+		
 		if questNpc and questNpc.HumanoidRootPart then
 			move(questNpc.HumanoidRootPart.CFrame)
-			questNpc.ProximityPrompt.HoldDuration = 0
+			pcall(function()
+				questNpc.ProximityPrompt.HoldDuration = 0
+			end)
 			task.wait(0.1)
 			pressKey("E")
-			if miaw > 5 then task.wait(1) miaw = 0 end
+			if miaw > 5 then 
+				task.wait(1) 
+				miaw = 0 
+			end
 		end
 		return
 	end
 
-	local questTitle = LocalPlayer.MissionData["Quest Title"].Value
+	local questTitle
+	pcall(function()
+		questTitle = LocalPlayer.MissionData["Quest Title"].Value
+	end)
+	
 	local questActions = {
-		["Curse object"] = function() move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
-		["Civilains"] = function() move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame); for i = 1, 10 do pressKey("E") end end,
-		["Goblet"] = function() move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame); for i = 1, 750 do pressKey("E") end; sGoblet = true end,
-		["Shadow Portal"] = function() move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame); for i = 1, 750 do pressKey("E") end end,
+		["Curse object"] = function() 
+			pcall(function()
+				move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame)
+			end)
+			for i = 1, 10 do pressKey("E") end 
+		end,
+		["Civilains"] = function() 
+			pcall(function()
+				move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame)
+			end)
+			for i = 1, 10 do pressKey("E") end 
+		end,
+		["Goblet"] = function() 
+			pcall(function()
+				move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
+			end)
+			for i = 1, 750 do pressKey("E") end 
+			sGoblet = true 
+		end,
+		["Shadow Portal"] = function() 
+			pcall(function()
+				move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame)
+			end)
+			for i = 1, 750 do pressKey("E") end 
+		end,
 		["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
 		["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
 	}
 
-	for questName, action in pairs(questActions) do
-		if questTitle:find(questName) then
-			action()
-			return
+	if questTitle then
+		for questName, action in pairs(questActions) do
+			if questTitle:find(questName) then
+				action()
+				return
+			end
 		end
 	end
 end
 
--- Farm Gems
 local function runFarmGems()
 	if not sGoblet then
 		runAutoMission()
@@ -264,14 +301,17 @@ local function runFarmGems()
 		pcall(function()
 			shopNpc = workspace.Npc["Adventure Shop"]["Adventure Shop"]
 		end)
+		
 		if shopNpc and shopNpc.HumanoidRootPart then
-			shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
+			pcall(function()
+				shopNpc.HumanoidRootPart.ProximityPrompt.HoldDuration = 0
+			end)
 			move(shopNpc.HumanoidRootPart.CFrame)
 			task.wait(0.1)
 			pressKey("E")
 			task.wait(0.1)
-			local args = {[1] = "750"}
 			pcall(function()
+				local args = {[1] = "750"}
 				LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
 			end)
 			move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
@@ -282,14 +322,26 @@ local function runFarmGems()
 	end
 end
 
--- Auto Mission Toggle
 Rey:CreateToggle(Exclusive, "Auto Mission (Lvl 1.000+)", "-", function(state)
 	_G.AutoMissions = state
-	for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
-		if prompt:IsA("ProximityPrompt") then prompt.HoldDuration = 0 end
-	end
+	pcall(function()
+		for _, prompt in ipairs(workspace.Main["Mission Quest"]:GetDescendants()) do
+			if prompt:IsA("ProximityPrompt") then 
+				prompt.HoldDuration = 0 
+			end
+		end
+	end)
+	
 	setBodyVelocity(state)
-	activeConnections["AutoMissions"] = _G.AutoMissions and RunService.Heartbeat:Connect(runAutoMission) or (activeConnections["AutoMissions"] and activeConnections["AutoMissions"]:Disconnect())
+	
+	if activeConnections["AutoMissions"] then
+		activeConnections["AutoMissions"]:Disconnect()
+		activeConnections["AutoMissions"] = nil
+	end
+	
+	if state then
+		activeConnections["AutoMissions"] = RunService.Heartbeat:Connect(runAutoMission)
+	end
 end)
 
 -- Auto Mob
