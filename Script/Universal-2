@@ -112,16 +112,16 @@ end
 
 function Utils.ApplyOneHit(object)
 	task.spawn(function()
-		repeat
+		pcall(function()
 			local beforeHealth = object.Humanoid.Health
-			if object and object.Humanoid.Health > 0 and object.Humanoid.Health < object.Humanoid.MaxHealth * State.OneHitHealth then
+			if object and object.Humanoid.Health > 0 and object.Humanoid.Health / math.max(object.Humanoid.MaxHealth, 1) < State.OneHitHealth then
 				object.Humanoid.Health = 0
 			end
 			task.wait(1.5)
 			if object then
 				object.Humanoid.Health = beforeHealth
 			end
-		until not object or object.Parent == nil or object.Humanoid.Health <= 0
+		end)
 	end)
 end
 
@@ -379,7 +379,7 @@ end
 
 local Noclip = {}
 
-function Noclip.Toggle(state)
+local function Noclip.Toggle(state)
 	State.Noclip = state
 	Utils.Disconnect("Noclip")
 
@@ -399,7 +399,7 @@ end
 
 local EdgeJump = {}
 
-function EdgeJump.Toggle(state)
+local function EdgeJump.Toggle(state)
 	if HumanModCons.EdgeJumpLoop then 
 		HumanModCons.EdgeJumpLoop:Disconnect() 
 		HumanModCons.EdgeJumpLoop = nil 
@@ -441,7 +441,7 @@ end
 
 local InfiniteJump = {}
 
-function InfiniteJump.Toggle(state)
+local function InfiniteJump.Toggle(state)
 	if _G.InfiniteJumpConn then 
 		_G.InfiniteJumpConn:Disconnect() 
 		_G.InfiniteJumpConn = nil 
@@ -464,7 +464,7 @@ end
 
 local Brightness = {}
 
-function Brightness.Toggle(state)
+local function Brightness.Toggle(state)
 	local Lighting = game:GetService("Lighting")
 	
 	if _G.BrightLoop then
@@ -485,7 +485,7 @@ end
 
 local KillAll = {}
 
-function KillAll.CreateButton(name, desc, positionY, killFunc)
+local function KillAll.CreateButton(name, desc, positionY, killFunc)
 	local buttonName = name .. " [BUTTON]"
 	
 	return Rey:CreateToggle(UtilityTab, buttonName, desc, function(state)
@@ -521,6 +521,54 @@ function KillAll.CreateButton(name, desc, positionY, killFunc)
 			if coreGui then coreGui:Destroy() end
 		end
 	end)
+end
+
+local function KILLV4(state)
+    if state then
+        Utils.StartThread("KILLV4", function()
+            local hooked = {}
+
+            local function hookHumanoid(humanoid)
+                if hooked[humanoid] then return end
+                hooked[humanoid] = true
+
+                Utils.AddConnection(humanoid, humanoid.HealthChanged:Connect(function()
+                    if humanoid.Health > 0 
+                       and humanoid.Health / math.max(humanoid.MaxHealth, 1) < State.OneHitHealth then
+                        humanoid.Health = 0
+                        if humanoid.Parent then 
+                            humanoid.Parent:BreakJoints() 
+                        end
+                    end
+                end))
+            end
+
+            for _, descendant in ipairs(workspace:GetDescendants()) do
+                if descendant:IsA("Humanoid") then
+                    hookHumanoid(descendant)
+                end
+            end
+
+            Utils.AddConnection("KILLV4_ADD", workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("Humanoid") then
+                    hookHumanoid(obj)
+                end
+            end))
+
+            while true do
+                task.wait()
+            end
+        end)
+    else
+        Utils.Disconnect("KILLV4_ADD")
+        Utils.Disconnect("KILLV4")
+
+        for _, descendant in ipairs(workspace:GetDescendants()) do
+            if descendant:IsA("Humanoid") then
+                Utils.Disconnect(descendant)
+            end
+        end
+    end
 end
 
 local NPCCache = {}
@@ -626,7 +674,7 @@ Rey:CreateToggle(UtilityTab, "1 Hit Kill", "Kill enemies with one hit", function
 end)
 
 Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 70, function(value)
-	State.OneHitHealth = value / 100
+	State.OneHitHealth = math.clamp(value / 100, 0, 1)
 end)
 
 KillAll.CreateButton("KILL ALL V1", "if Health < Max Health", -10, function()
@@ -637,7 +685,7 @@ KillAll.CreateButton("KILL ALL V1", "if Health < Max Health", -10, function()
 	end
 end)
 
-KillAll.CreateButton("Kill All V2", "if Health < Max Health (BreakJoints)", 30, function()
+KillAll.CreateButton("KILL ALL V2", "if Health < Max Health (BreakJoints)", 30, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
@@ -647,13 +695,16 @@ KillAll.CreateButton("Kill All V2", "if Health < Max Health (BreakJoints)", 30, 
 	end
 end)
 
-KillAll.CreateButton("Kill All V3", "KILL ALL WITHOUT HESITATE", 10, function()
+KillAll.CreateButton("KILL ALL V3", "KILL ALL WITHOUT HESITATE", 10, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
 			obj.Health = 0
 		end
 	end
 end)
+
+Rey:CreateToggle(UtilityTab, "KILL ALL V4", "AUTO KILL SESUAI PERSEN (OP!)", KILLV4)
+
 
 Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
 	local target = Players:FindFirstChild(playerName)
