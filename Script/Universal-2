@@ -19,7 +19,7 @@ local State = {
 	SelectedFolder = workspace,
 	NPCFolder = workspace,
 	Range = 100,
-	OneHitHealth = 0.7,
+	OneHitHealth = 0.9,
 	SelectedMob = nil,
 	SelectedTool = nil,
 	InfJumpDebounce = false,
@@ -673,7 +673,7 @@ Rey:CreateToggle(UtilityTab, "1 Hit Kill", "Kill enemies with one hit", function
 	State.OneHit = state
 end)
 
-Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 70, function(value)
+Rey:CreateSlider(UtilityTab, "Kill Health Threshold (%)", 1, 100, 90, function(value)
 	State.OneHitHealth = math.clamp(value / 100, 0, 1)
 end)
 
