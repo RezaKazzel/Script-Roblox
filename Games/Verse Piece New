@@ -220,76 +220,94 @@ Rey:CreateNote(Exclusive, "Last Update -- Valentine D4C Boss\nCuma World Boss ya
 Rey:CreateNote(Exclusive, "-- Misc")
 
 local function runAutoMission()
-	sGoblet = nil
-	local missionStatus = pcall(function()
-		return LocalPlayer.MissionData.Active.Value
-	end)
-	
-	if not missionStatus then
-		miaw = miaw + 1
-		local questNpc
-		pcall(function()
-			questNpc = workspace.Npc.Quest.Mission
-		end)
-		
-		if questNpc and questNpc.HumanoidRootPart then
-			move(questNpc.HumanoidRootPart.CFrame)
-			pcall(function()
-				questNpc.ProximityPrompt.HoldDuration = 0
-			end)
-			task.wait(0.1)
-			pressKey("E")
-			if miaw > 5 then 
-				task.wait(1) 
-				miaw = 0 
-			end
-		end
-		return
-	end
+    sGoblet = nil
+    local missionStatus
+    pcall(function()
+        missionStatus = LocalPlayer.MissionData.Active.Value
+    end)
+    
+    if not missionStatus then
+        miaw = miaw + 1
+        
+        if activeConnections["AutoMob_Curse Spirit"] then
+            activeConnections["AutoMob_Curse Spirit"]:Disconnect()
+            activeConnections["AutoMob_Curse Spirit"] = nil
+        end
+        
+        if activeConnections["AutoMob_Kashimo"] then
+            activeConnections["AutoMob_Kashimo"]:Disconnect()
+            activeConnections["AutoMob_Kashimo"] = nil
+        end
+        
+        setBodyVelocity(false)
+        
+        local questNpc
+        pcall(function()
+            questNpc = workspace.Npc.Quest.Mission
+        end)
+        
+        if questNpc and questNpc.HumanoidRootPart then
+            move(questNpc.HumanoidRootPart.CFrame)
+            pcall(function()
+                questNpc.ProximityPrompt.HoldDuration = 0
+            end)
+            task.wait(0.1)
+            pressKey("E")
+            if miaw > 5 then 
+                task.wait(1) 
+                miaw = 0 
+            end
+        end
+        return
+    end
 
-	local questTitle
-	pcall(function()
-		questTitle = LocalPlayer.MissionData["Quest Title"].Value
-	end)
-	
-	local questActions = {
-		["Curse object"] = function() 
-			pcall(function()
-				move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame)
-			end)
-			for i = 1, 10 do pressKey("E") end 
-		end,
-		["Civilains"] = function() 
-			pcall(function()
-				move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame)
-			end)
-			for i = 1, 10 do pressKey("E") end 
-		end,
-		["Goblet"] = function() 
-			pcall(function()
-				move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
-			end)
-			for i = 1, 750 do pressKey("E") end 
-			sGoblet = true 
-		end,
-		["Shadow Portal"] = function() 
-			pcall(function()
-				move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame)
-			end)
-			for i = 1, 750 do pressKey("E") end 
-		end,
-		["Curse Spirit"] = function() autoMob("Curse Spirit", true) end,
-		["Lightning Sorceror"] = function() autoMob("Kashimo", true) end,
-	}
+    local questTitle
+    pcall(function()
+        questTitle = LocalPlayer.MissionData["Quest Title"].Value
+    end)
+    
+    local questActions = {
+        ["Curse object"] = function() 
+            pcall(function()
+                move(workspace.Main["Mission Quest"]["1"]:GetChildren()[6].HumanoidRootPart.CFrame)
+            end)
+            for i = 1, 10 do pressKey("E") end 
+        end,
+        ["Civilains"] = function() 
+            pcall(function()
+                move(workspace.Main["Mission Quest"]["4"]:GetChildren()[4].HumanoidRootPart.CFrame)
+            end)
+            for i = 1, 10 do pressKey("E") end 
+        end,
+        ["Goblet"] = function() 
+            pcall(function()
+                move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
+            end)
+            for i = 1, 750 do pressKey("E") end 
+            sGoblet = true 
+        end,
+        ["Shadow Portal"] = function() 
+            pcall(function()
+                move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame)
+            end)
+            for i = 1, 750 do pressKey("E") end 
+        end,
+        ["Curse Spirit"] = function() 
+            autoMob("Curse Spirit", true) 
+        end,
+        ["Lightning Sorceror"] = function() 
+            autoMob("Kashimo", true) 
+        end,
+    }
 
-	if questTitle then
-		for questName, action in pairs(questActions) do
-			if questTitle:find(questName) then
-				action()
-				return
-			end
-		end
-	end
+    if questTitle then
+        for questName, action in pairs(questActions) do
+            if questTitle:find(questName) then
+                action()
+                return
+            end
+        end
+    end
 end
 
 local function runFarmGems()
@@ -314,7 +332,7 @@ local function runFarmGems()
 				local args = {[1] = "750"}
 				LocalPlayer.PlayerGui:FindFirstChild("Adventure Store").Main.Iinv:FindFirstChild("{}").Events:FireServer(unpack(args))
 			end)
-			move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+			move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
 			task.wait(0.1)
 			for i = 1, 770 do pressKey("E") end
 			task.wait(3)
@@ -346,43 +364,69 @@ end)
 
 -- Auto Mob
 function autoMob(mob, state)
-	if state then
-		activeConnections["AutoMob" .. mob] = RunService.Heartbeat:Connect(function()
-			if currentPriority == "Boss" or currentPriority == "VastoLorde" then return end
+    if state then
+        if activeConnections["AutoMob_" .. mob] then
+            activeConnections["AutoMob_" .. mob]:Disconnect()
+            activeConnections["AutoMob_" .. mob] = nil
+        end
+        
+        activeConnections["AutoMob_" .. mob] = RunService.Heartbeat:Connect(function()
+            if currentPriority == "Boss" or currentPriority == "VastoLorde" then 
+                if activeConnections["AutoMob_" .. mob] then
+                    activeConnections["AutoMob_" .. mob]:Disconnect()
+                    activeConnections["AutoMob_" .. mob] = nil
+                end
+                return 
+            end
 
-			local target = workspace.Main.Forest:FindFirstChild(mob)
-			if target then
-				local foundTarget = false
-				for _, child in ipairs(target:GetChildren()) do
-					if child:IsA("Model") and child:FindFirstChild("HumanoidRootPart") and child.Humanoid.Health > 0 then
-						foundTarget = true
-						setBodyVelocity(true)
-						local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
-						move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
-						if selectedWeapons then
-							pcall(function()
-								selectedWeapons.Parent = LocalPlayer.Character
-								selectedWeapons:Activate()
-							end)
-						end
-						break
-					end
-				end
-				if not foundTarget then
-					setBodyVelocity(false)
-				end
-			else
-				autoMob(mob, false)
-				setBodyVelocity(false)
-			end
-		end)
-	else
-		if activeConnections["AutoMob" .. mob] then
-			activeConnections["AutoMob" .. mob]:Disconnect()
-			activeConnections["AutoMob" .. mob] = nil
-			setBodyVelocity(false)
-		end
-	end
+            local target
+            pcall(function()
+                target = workspace.Main.Forest:FindFirstChild(mob)
+            end)
+            
+            if target then
+                local foundTarget = false
+                pcall(function()
+                    for _, child in ipairs(target:GetChildren()) do
+                        if child:IsA("Model") and child:FindFirstChild("HumanoidRootPart") then
+                            local health = 0
+                            pcall(function()
+                                health = child.Humanoid.Health
+                            end)
+                            if health > 0 then
+                                foundTarget = true
+                                setBodyVelocity(true)
+                                local targetPosition = child.HumanoidRootPart.Position + Vector3.new(0, child.HumanoidRootPart.Size.Y / 2 + 3, 0)
+                                move(CFrame.new(targetPosition, targetPosition - Vector3.new(0, 1, 0)))
+                                if selectedWeapons then
+                                    pcall(function()
+                                        selectedWeapons.Parent = LocalPlayer.Character
+                                        selectedWeapons:Activate()
+                                    end)
+                                end
+                                break
+                            end
+                        end
+                    end
+                end)
+                if not foundTarget then
+                    setBodyVelocity(false)
+                end
+            else
+                if activeConnections["AutoMob_" .. mob] then
+                    activeConnections["AutoMob_" .. mob]:Disconnect()
+                    activeConnections["AutoMob_" .. mob] = nil
+                end
+                setBodyVelocity(false)
+            end
+        end)
+    else
+        if activeConnections["AutoMob_" .. mob] then
+            activeConnections["AutoMob_" .. mob]:Disconnect()
+            activeConnections["AutoMob_" .. mob] = nil
+            setBodyVelocity(false)
+        end
+    end
 end
 
 -- Adventure Shop Teleport
@@ -408,7 +452,7 @@ end)
 
 -- Auto Goblet (Manual Click)
 Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
-	move(CFrame.new(-4941.32715, 8.59784603, 3310.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+	move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
 	task.wait(0.1)
 	for i = 1, 750 do pressKey("E") end
 end)
