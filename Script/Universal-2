@@ -306,6 +306,76 @@ function AutoFarm.ToggleFarmNearby(state)
 	end
 end
 
+function AutoFarm.ToggleFarmV2(state)
+	local Character = LocalPlayer.Character
+	local torso = Character and (Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("LowerTorso"))
+	Utils.Disconnect("AutoFarm")
+	Utils.Disconnect("AutoFarmLogic")
+	Utils.RemoveBodyVelocity()
+
+	if state and State.SelectedMob and torso then
+		local mobFolder = Utils.GetMobFolder(State.SelectedMob)
+		if not mobFolder then
+			Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
+			return
+		end
+
+		Utils.SetupBodyVelocity()
+		local currentTarget
+
+		Utils.StartThread("AutoFarmLogic", function()
+			while State.AutoFarm do
+				currentTarget = nil
+				local char = LocalPlayer.Character
+				if not char then task.wait(1) continue end
+
+				for _, mob in ipairs(mobFolder:GetChildren()) do
+					if not State.AutoFarm then break end
+					if mob:IsA("Model") and mob.Name == State.SelectedMob then
+						local hum = mob:FindFirstChild("Humanoid")
+						local root = mob:FindFirstChild("HumanoidRootPart")
+						if hum and root and hum.Health > 0 then
+							currentTarget = mob
+							break
+						end
+					end
+				end
+
+				if currentTarget then
+					if State.OneHit then
+						pcall(Utils.ApplyOneHit, currentTarget)
+					end
+					pcall(Utils.Attack, char)
+					task.wait(0.08)
+				else
+					task.wait(0.4)
+				end
+			end
+
+			currentTarget = nil
+		end)
+
+		Utils.AddConnection("AutoFarm",
+			RunService.Heartbeat:Connect(function()
+				if not State.AutoFarm then return end
+				if not currentTarget then return end
+
+				local char = LocalPlayer.Character
+				local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+				local mobRoot = currentTarget:FindFirstChild("HumanoidRootPart")
+				if not playerRoot or not mobRoot then return end
+
+				local pos = mobRoot.Position + Vector3.new(
+					0,
+					mobRoot.Size.Y / 2 + State.Distance,
+					0
+				)
+				playerRoot.CFrame = CFrame.new(pos, pos - Vector3.new(0, 1, 0))
+			end)
+		)
+	end
+end
+
 local AutoClick = {}
 
 function AutoClick.Toggle(state)
@@ -660,9 +730,9 @@ end, true)
 
 Rey:CreateToggle(AutoFarmTab, "Auto Equip Selected Tool", "Equip selected tool automatically", AutoFarm.ToggleEquip)
 
-Rey:CreateToggle(AutoFarmTab, "AutoFarm (Selected Mob)", "Farm selected mob", AutoFarm.ToggleFarm)
-
-Rey:CreateToggle(AutoFarmTab, "AutoFarm V2 (Nearby)", "Farm nearby enemies", AutoFarm.ToggleFarmNearby)
+Rey:CreateToggle(AutoFarmTab, "AutoFarm V1(Selected Mob)", "Farm selected mob", AutoFarm.ToggleFarm)
+Rey:CreateToggle(AutoFarmTab, "AutoFarm V2(versi sehat V1)", "Farm selected mob V2", AutoFarm.ToggleFarmV2)
+Rey:CreateToggle(AutoFarmTab, "AutoFarm V3 (Nearby)", "Farm nearby enemies", AutoFarm.ToggleFarmNearby)
 
 Rey:CreateSlider(AutoFarmTab, "Nearby Distance", 1, 100, 10, function(value)
 	State.Range = value * 10
