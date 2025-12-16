@@ -28,6 +28,7 @@ local State = {
 	AutoClick = false,
 	AutoGrab = false,
 	RestrictAutoFarm = false,
+	RestrictedParent = false,
 	Noclip = false
 }
 
@@ -307,73 +308,82 @@ function AutoFarm.ToggleFarmNearby(state)
 end
 
 function AutoFarm.ToggleFarmV2(state)
+	State.AutoFarm = state
+
 	local Character = LocalPlayer.Character
-	local torso = Character and (Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("LowerTorso"))
+	local torso = Character and Character:FindFirstChild("HumanoidRootPart")
+
 	Utils.Disconnect("AutoFarm")
 	Utils.Disconnect("AutoFarmLogic")
 	Utils.RemoveBodyVelocity()
 
-	if state and State.SelectedMob and torso then
-		local mobFolder = Utils.GetMobFolder(State.SelectedMob)
-		if not mobFolder then
-			Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
-			return
-		end
+	if not state then return end
+	if not State.SelectedMob or not torso then return end
 
-		Utils.SetupBodyVelocity()
-		local currentTarget
+	local mobFolder = Utils.GetMobFolder(State.SelectedMob)
+	if not mobFolder then
+		Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
+		return
+	end
 
-		Utils.StartThread("AutoFarmLogic", function()
-			while State.AutoFarm do
-				currentTarget = nil
-				local char = LocalPlayer.Character
-				if not char then task.wait(1) continue end
+	Utils.SetupBodyVelocity()
 
-				for _, mob in ipairs(mobFolder:GetChildren()) do
-					if not State.AutoFarm then break end
-					if mob:IsA("Model") and mob.Name == State.SelectedMob then
-						local hum = mob:FindFirstChild("Humanoid")
-						local root = mob:FindFirstChild("HumanoidRootPart")
-						if hum and root and hum.Health > 0 then
+	local currentTarget = nil
+
+	Utils.StartThread("AutoFarmLogic", function()
+		while State.AutoFarm do
+			currentTarget = nil
+
+			local char = LocalPlayer.Character
+			if not char then
+				task.wait(1)
+				continue
+			end
+
+			for _, mob in ipairs(mobFolder:GetChildren()) do
+				if not State.AutoFarm then break end
+				if mob:IsA("Model") and mob.Name == State.SelectedMob then
+					local hum = mob:FindFirstChild("Humanoid")
+					local root = mob:FindFirstChild("HumanoidRootPart")
+					if hum and root then
+						if State.RestrictedParent or hum.Health > 0 then
 							currentTarget = mob
 							break
 						end
 					end
 				end
-
-				if currentTarget then
-					if State.OneHit then
-						pcall(Utils.ApplyOneHit, currentTarget)
-					end
-					pcall(Utils.Attack, char)
-					task.wait(0.08)
-				else
-					task.wait(0.4)
-				end
 			end
 
-			currentTarget = nil
+			if currentTarget then
+				if State.OneHit then
+					pcall(Utils.ApplyOneHit, currentTarget)
+				end
+				pcall(Utils.Attack, char)
+				task.wait(0.08)
+			else
+				task.wait(0.4)
+			end
+		end
+
+		currentTarget = nil
+	end)
+
+	Utils.AddConnection("AutoFarm",
+		RunService.Heartbeat:Connect(function()
+			if not State.AutoFarm then return end
+			if not currentTarget or not currentTarget.Parent then return end
+	
+			local char = LocalPlayer.Character
+			local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+			local mobRoot = currentTarget:FindFirstChild("HumanoidRootPart")
+			if not playerRoot or not mobRoot then return end
+	
+			local pos = mobRoot.Position
+				+ Vector3.new(0, mobRoot.Size.Y / 2 + State.Distance, 0)
+	
+			playerRoot.CFrame = CFrame.new(pos, pos - Vector3.new(0, 1, 0))
 		end)
-
-		Utils.AddConnection("AutoFarm",
-			RunService.Heartbeat:Connect(function()
-				if not State.AutoFarm then return end
-				if not currentTarget then return end
-
-				local char = LocalPlayer.Character
-				local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-				local mobRoot = currentTarget:FindFirstChild("HumanoidRootPart")
-				if not playerRoot or not mobRoot then return end
-
-				local pos = mobRoot.Position + Vector3.new(
-					0,
-					mobRoot.Size.Y / 2 + State.Distance,
-					0
-				)
-				playerRoot.CFrame = CFrame.new(pos, pos - Vector3.new(0, 1, 0))
-			end)
-		)
-	end
+	)
 end
 
 local AutoClick = {}
@@ -860,6 +870,11 @@ Rey:CreateToggle(MiscTab, "Infinite Jump", "Jump infinitely", InfiniteJump.Toggl
 
 Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
 	State.RestrictAutoFarm = state
+end)
+
+
+Rey:CreateToggle(UI.SettingsTab, "AutoFarmV2 ext.", "check parent, not health", function(state)
+	State.RestrictedParent = state
 end)
 
 Rey:CreateNote(UI.SettingsTab, "**Enabled**: AutoFarm will TP to all mobs repeatedly\n**Disabled**: AutoFarm will lock onto 1 mob")
