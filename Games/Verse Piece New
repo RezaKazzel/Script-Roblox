@@ -283,14 +283,14 @@ local function runAutoMission()
             pcall(function()
                 move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
             end)
-            for i = 1, 750 do pressKey("E") end 
+            for i = 1, 2000 do pressKey("E") end 
             sGoblet = true 
         end,
         ["Shadow Portal"] = function() 
             pcall(function()
                 move(workspace.Main["Mission Quest"]["5"]:GetChildren()[4].CFrame)
             end)
-            for i = 1, 750 do pressKey("E") end 
+            for i = 1, 2000 do pressKey("E") end 
         end,
         ["Curse Spirit"] = function() 
             autoMob("Curse Spirit", true) 
@@ -334,7 +334,7 @@ local function runFarmGems()
 			end)
 			move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
 			task.wait(0.1)
-			for i = 1, 770 do pressKey("E") end
+			for i = 1, 2000 do pressKey("E") end
 			task.wait(3)
 		end
 	end
@@ -454,7 +454,7 @@ end)
 Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "Start", function()
 	move(workspace.Main["Mission Quest"]["2"]:GetChildren()[3].CFrame)
 	task.wait(0.1)
-	for i = 1, 750 do pressKey("E") end
+	for i = 1, 2000 do pressKey("E") end
 end)
 
 -- Auto Buy Black Merchant (Slow)
