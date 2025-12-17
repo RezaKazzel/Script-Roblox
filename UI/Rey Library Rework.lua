@@ -23,6 +23,7 @@ ReyUILib.ExternalData = ExternalData
 ReyUILib.UISettings = {}
 ReyUILib.UIElements = {}
 ReyUILib.alldropdown = {}
+ReyUILib.CommandList = {}
 ReyUILib.CommandRegistry = {}
 ReyUILib.RestrictedCommands = {}
 ReyUILib.PrefixEja = "!"
@@ -783,8 +784,8 @@ function ReyUILib:CreateToggle(Parent, Name, Description, Callback, CommandName)
 	if CommandName and CommandName ~= "" then
 
 
-local commands = type(CommandName) == "table" and CommandName or {CommandName}
-		self:RegisterCommand("Toggle", Name, CommandName)
+	local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Toggle", Name, commands)
 	end
 	self.CallbackManager.Toggles[Name] = Callback
 	
@@ -847,8 +848,8 @@ function ReyUILib:CreateDropdown(Tab, Name, Options, Callback, Refresh, CommandN
 	if CommandName and CommandName ~= "" then
 
 
-local commands = type(CommandName) == "table" and CommandName or {CommandName}
-		self:RegisterCommand("Dropdown", Name, CommandName)
+	local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Dropdown", Name, commands)
 	end
 	
 	self.alldropdown[Name] = {
@@ -1070,8 +1071,8 @@ function ReyUILib:CreateMultipleDropdown(Tab, Name, Options, Callback, Refresh, 
 	if CommandName and CommandName ~= "" then
 
 
-local commands = type(CommandName) == "table" and CommandName or {CommandName}
-		self:RegisterCommand("MultiDropdown", Name, CommandName)
+	local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("MultiDropdown", Name, commands)
 	end
 	
 	self.alldropdown[Name] = {
@@ -1333,8 +1334,8 @@ function ReyUILib:CreateSlider(parent, Name, min, max, default, callback, Comman
 	if CommandName and CommandName ~= "" then
 
 
-local commands = type(CommandName) == "table" and CommandName or {CommandName}
-		self:RegisterCommand("Slider", Name, CommandName)
+	local commands = type(CommandName) == "table" and CommandName or {CommandName}
+		self:RegisterCommand("Slider", Name, commands)
 	end
 	
 	self.CallbackManager.Sliders[Name] = callback
@@ -1611,7 +1612,7 @@ function ReyUILib:CreateInput(parent, title, description, callback, CommandName)
 
 
 	local commands = type(CommandName) == "table" and CommandName or {CommandName}
-		self:RegisterCommand("Input", title, CommandName)
+		self:RegisterCommand("Input", title, commands)
 	end
 	
 	local inputFrame = Create("Frame", {
@@ -3141,14 +3142,6 @@ function ReyUILib:CreateCommand(commandName, callback, description, aliases, usa
 		error("Callback must be a function")
 	end
 	
-	if not self.CommandRegistry then
-		self.CommandRegistry = {}
-	end
-	
-	if not self.CommandList then
-		self.CommandList = {}
-	end
-	
 	local commandEntry = {
 		Name = commandName,
 		Callback = callback,
@@ -3176,7 +3169,9 @@ function ReyUILib:CreateCommand(commandName, callback, description, aliases, usa
 end
 
 function ReyUILib:ShowCommandsList()
-	self:Notify("info", "Commands", "Command list updated", 2)
+	if not self.CommandList or #self.CommandList == 0 then
+		return self:Notify("error", "Commands", "Command List is empty!", 2)
+	end
 	
 	if not self.MainUI then 
 		return 

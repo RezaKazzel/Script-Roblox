@@ -727,7 +727,7 @@ end
 Rey:CreateDropdown(AutoFarmTab, "▼ Select Mob ▼", Utils.GetMonsterList, function(selected)
 	State.SelectedMob = selected
 	Rey:Notify("info", "Auto Farm", "Selected Mob: "..selected, 3)
-end, true)
+end, true, "selectmob")
 
 Rey:CreateSlider(AutoFarmTab, "Distance from Mob", 1, 20, 11, function(value)
 	State.Distance = value
@@ -836,7 +836,7 @@ Rey:CreateDropdown(MiscTab, "Teleport to NPC", GetNPCList, function(npcName)
 			playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
 		end
 	end
-end, true)
+end, true, {"tpnpc", "tptonpc"})
 
 Rey:CreateButton(MiscTab, "Fly Gui", "Dark theme fly script", "Load", function()
 	loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
@@ -893,11 +893,11 @@ end)
 
 Rey:CreateToggle(UI.SettingsTab, "Auto Load on Server Hop", "Automatically load script after server hop", ServerHop.AutoLoad)
 
-Rey:CreateButton(UI.SettingsTab, "Hop Server", "Join another public server", "Tap", ServerHop.Hop)
+Rey:CreateButton(UI.SettingsTab, "Hop Server", "Join another public server", "Tap", ServerHop.Hop, {"hop", "hopserver"})
 
 Rey:CreateButton(UI.SettingsTab, "Rejoin", "Rejoin current server", "Tap", function()
 	TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
-end)
+end, {"rejoin", "rj"})
 
 local Cleanup = {}
 
