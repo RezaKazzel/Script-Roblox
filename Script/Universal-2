@@ -100,7 +100,7 @@ function Utils.GetNearbyEnemies(range)
 	local rootPart = Character.HumanoidRootPart
 
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
+		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
@@ -147,7 +147,7 @@ function Utils.GetMonsterList()
 	local monsters = {}
 	
 	for _, obj in ipairs(currentFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
+		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Name ~= LocalPlayer.Name then
 			if not Utils.IsInTable(monsters, obj.Name) then
 				table.insert(monsters, obj.Name)
 			end
@@ -265,7 +265,7 @@ function AutoFarm.ToggleFarm(state)
 			currentTarget = nil
 			for _, mob in ipairs(mobFolder:GetChildren()) do
 				if mob:IsA("Model") and mob.Name == State.SelectedMob then
-					local hum = mob:FindFirstChild("Humanoid")
+					local hum = mob:FindFirstChildWhichIsA("Humanoid")
 					local root = mob:FindFirstChild("HumanoidRootPart")
 					if hum and root and hum.Health > 0 then
 						currentTarget = mob
@@ -275,7 +275,7 @@ function AutoFarm.ToggleFarm(state)
 			end
 		end
 		if not currentTarget then return end
-		local hum = currentTarget:FindFirstChild("Humanoid")
+		local hum = currentTarget:FindFirstChildWhichIsA("Humanoid")
 		local root = currentTarget:FindFirstChild("HumanoidRootPart")
 		if not hum or not root or hum.Health <= 0 then
 			currentTarget = nil
@@ -314,7 +314,7 @@ function AutoFarm.ToggleFarmNearby(state)
 			target = nil
 			return
 		end
-		local hum = target:FindFirstChild("Humanoid")
+		local hum = target:FindFirstChildWhichIsA("Humanoid")
 		local root = target:FindFirstChild("HumanoidRootPart")
 		if not hum or not root or hum.Health <= 0 then
 			target = nil
@@ -351,7 +351,7 @@ function AutoFarm.ToggleFarmV2(state)
 			for _, mob in ipairs(mobFolder:GetChildren()) do
 				if not State.AutoFarm then break end
 				if mob:IsA("Model") and mob.Name == State.SelectedMob then
-					local hum = mob:FindFirstChild("Humanoid")
+					local hum = mob:FindFirstChildWhichIsA("Humanoid")
 					local root = mob:FindFirstChild("HumanoidRootPart")
 					if hum and root and hum.Health > 0 then
 						currentTarget = mob
@@ -775,7 +775,7 @@ end)
 
 KillAll.CreateButton("KILL ALL V2", "if Health < Max Health (BreakJoints)", 30, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
+		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") and obj.Name ~= LocalPlayer.Name then
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
 				obj:BreakJoints()
 			end
