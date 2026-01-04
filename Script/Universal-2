@@ -949,7 +949,7 @@ removeConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
     end
 end)
 
-UI.AncestryChanged:Connect(function(_, parent)
+UI.ScreenGui.AncestryChanged:Connect(function(_, parent)
     if not parent then
         Cleanup.All()
     end
