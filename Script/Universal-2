@@ -584,12 +584,9 @@ local function createFloatGUI()
 end
 
 function Floating.Enable()
-    if Floating.Enabled then return end
-    
     local char = LocalPlayer.Character
     if not char then return end
     
-    Floating.Enabled = true
     Floating.FloatName = Utils.randomString()
     Floating.FloatValue = -3.1
     
@@ -621,15 +618,9 @@ function Floating.Enable()
             Floating.FloatPart.CFrame = root.CFrame * CFrame.new(0, Floating.FloatValue, 0)
         end
     end))
-    
-    Rey:Notify("info", "Float", "Float Enabled", 3)
 end
 
 function Floating.Disable()
-    if not Floating.Enabled then return end
-    
-    Floating.Enabled = false
-    
     if Floating.FloatPart then
         Floating.FloatPart:Destroy()
         Floating.FloatPart = nil
@@ -642,17 +633,17 @@ function Floating.Disable()
     
     Utils.Disconnect("FloatDeath")
     Utils.Disconnect("FloatLoop")
-    
-    Rey:Notify("info", "Float", "Float Disabled", 3)
 end
 
 function Floating.Toggle(state)
 	Floating.Enabled = state
     
-    if state then
+    if Floating.Enabled then
         Floating.Enable()
+        Rey:Notify("info", "Float", "Float Enabled", 3)
     else
         Floating.Disable()
+        Rey:Notify("info", "Float", "Float Disabled", 3)
     end
 end
 
@@ -1143,7 +1134,8 @@ Rey:CreateButton(MiscTab, "[FE] Rewind", "Rewind to previous position", "Load", 
 end)
 
 Rey:CreateToggle(MiscTab, "Player ESP", "See other players through walls", function(state)
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+	local esp = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+	esp(state)
 end)
 
 Rey:CreateToggle(MiscTab, "Full Bright", "Brighten the entire map", Brightness.Toggle)
