@@ -2307,20 +2307,6 @@ end, function()
 	end
 end, Color3.fromRGB(106, 90, 205)) -- Slate Blue (Function Info)
 
-newButton("Decompile", function()
-	return "Attempts to decompile source script\nWARNING: Not super reliable, nil == could not find"
-end, function()
-	if selected then
-		if selected.Source then
-			codebox:setRaw(decompile(selected.Source))
-			TextLabel.Text = "Done!"
-		else
-			TextLabel.Text = "Source not found!"
-		end
-	end
-end, Color3.fromRGB(138, 43, 226)) -- Blue Violet (Advanced Debug)
-
--- ===== CLEAR BUTTONS =====
 newButton("Clr Logs", function()
 	return "Click to clear logs"
 end, function()
@@ -2455,6 +2441,19 @@ end]], selected.GenScript)
 	setclipboard(loopCode)
 	TextLabel.Text = "For loop copied!"
 end, Color3.fromRGB(60, 179, 113)) -- Medium Sea Green (Fast Loop)
+
+newButton("Decompile", function()
+	return "Attempts to decompile source script\nWARNING: Not super reliable, nil == could not find"
+end, function()
+	if selected then
+		if selected.Source then
+			codebox:setRaw(decompile(selected.Source))
+			TextLabel.Text = "Done!"
+		else
+			TextLabel.Text = "Source not found!"
+		end
+	end
+end, Color3.fromRGB(138, 43, 226)) -- Blue Violet (Advanced Debug)
 
 -- ===== SETTING/TOGGLE BUTTONS =====
 newButton("Disable Info", function()
