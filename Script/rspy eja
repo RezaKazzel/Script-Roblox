@@ -2428,6 +2428,24 @@ end]], connectionVarName, connectionVarName, connectionVarName, connectionVarNam
 	TextLabel.Text = "RunService loop copied! Variable: _G." .. varName
 end)
 
+newButton("CopyForLoop", function()
+	return "Copy for loop"
+end, function()
+	if not selected then
+		TextLabel.Text = "Select a remote first!"
+		return
+	end
+	
+	local loopCode = string.format([[-- Ubah jumlah jadi yg lu mau
+local jumlah = 10
+for i = 1, jumlah do
+	%s
+end]], selected.GenScript)
+	
+	setclipboard(loopCode)
+	TextLabel.Text = "For loop copied!"
+end)
+
 --- Attempts to decompile the source script
 newButton("Decompile", function()
 	return "Attempts to decompile source script\nWARNING: Not super reliable, nil == could not find"
