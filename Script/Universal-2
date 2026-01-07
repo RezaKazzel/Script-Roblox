@@ -489,7 +489,7 @@ function XRay.Toggle(state)
             if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
                 v.LocalTransparencyModifier = 0.5
             end
-        }))
+        end))
         State.XRay = true
     else
         for part, value in pairs(XRay.Stored) do
