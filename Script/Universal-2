@@ -27,12 +27,14 @@ local State = {
 	OneHitHealth = 0.9,
 	SelectedMob = nil,
 	SelectedTool = nil,
+	XRay = false,
 	InfJumpDebounce = false,
 	TeleportCheck = false,
 	OneHit = false,
 	AutoClick = false,
 	AutoGrab = false,
-	AutoProximity,
+	AutoProximityShown = false,
+	AutoProximityInstant = false,
 	AutoFarm = false,
 	RestrictAutoFarm = false,
 	RestrictedParent = false,
@@ -645,9 +647,7 @@ function Floating.Disable()
 end
 
 function Floating.Toggle(state)
-    if state == nil then
-        state = not Floating.Enabled
-    end
+	Floating.Enabled = state
     
     if state then
         Floating.Enable()
@@ -763,10 +763,10 @@ local ProximityP = {
 }
 
 function ProximityP.Instant(state)
-	State.AutoProximity = state
+	State.AutoProximityInstant = state
 	Utils.Disconnect("AutoProximityInstant")
 	
-	if State.AutoProximity then
+	if State.AutoProximityInstant then
 		Utils.AddConnection("AutoProximityInstant", game:GetService("ProximityPromptService").PromptShown:Connect(function(p)
 			if not ProximityP.originalDurations[p] then
 				ProximityP.originalDurations[p] = p.HoldDuration
@@ -784,10 +784,10 @@ function ProximityP.Instant(state)
 end
 
 function ProximityP.Shown(state)
-	State.AutoProximity = state
+	State.AutoProximityShown = state
 	Utils.Disconnect("AutoProximityShown")
 	
-	if State.AutoProximity then
+	if State.AutoProximityShown then
 		Utils.AddConnection("AutoProximityShown", game:GetService("ProximityPromptService").PromptShown:Connect(function(p)
 			fireproximityprompt(p)
 		end))
