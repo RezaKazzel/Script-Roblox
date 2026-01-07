@@ -1,0 +1,379 @@
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local core = game:GetService("CoreGui")
+
+local queueteleport = (syn and syn.queue_on_teleport)
+    or queue_on_teleport
+    or (fluxus and fluxus.queue_on_teleport)
+
+local player = Players.LocalPlayer
+local placeId = game.PlaceId
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ServerHopGui"
+gui.ResetOnSpawn = false
+gui.Parent = core
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 400, 0, 370)
+frame.Position = UDim2.new(0.5, -200, 0.4, -185)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "🌐 Server Hop"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.new(1, 1, 1)
+
+local refreshBtn = Instance.new("TextButton", frame)
+refreshBtn.Size = UDim2.new(0, 80, 0, 26)
+refreshBtn.Position = UDim2.new(0, 10, 0, 36)
+refreshBtn.Text = "Refresh"
+refreshBtn.Font = Enum.Font.Gotham
+refreshBtn.TextSize = 14
+refreshBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+refreshBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", refreshBtn)
+
+local destroyBtn = Instance.new("TextButton", frame)
+destroyBtn.Size = UDim2.new(0, 80, 0, 26)
+destroyBtn.Position = UDim2.new(1, -90, 0, 36)
+destroyBtn.Text = "Destroy"
+destroyBtn.Font = Enum.Font.Gotham
+destroyBtn.TextSize = 14
+destroyBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+destroyBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", destroyBtn)
+
+local savedPos = destroyBtn.Position
+destroyBtn.MouseButton1Click:Connect(function()
+    if destroyBtn.Position ~= savedPos then
+        savedPos = destroyBtn.Position
+        return
+    end
+    gui:Destroy()
+end)
+
+local saveCurrentBtn = Instance.new("TextButton", frame)
+saveCurrentBtn.Size = UDim2.new(0, 120, 0, 26)
+saveCurrentBtn.Position = UDim2.new(0, 100, 0, 36)
+saveCurrentBtn.Text = "Simpan Server Ini"
+saveCurrentBtn.Font = Enum.Font.Gotham
+saveCurrentBtn.TextSize = 14
+saveCurrentBtn.BackgroundColor3 = Color3.fromRGB(150, 120, 220)
+saveCurrentBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", saveCurrentBtn)
+
+local minPlayersLabel = Instance.new("TextLabel", frame)
+minPlayersLabel.Size = UDim2.new(0, 100, 0, 20)
+minPlayersLabel.Position = UDim2.new(0, 10, 0, 75)
+minPlayersLabel.BackgroundTransparency = 1
+minPlayersLabel.Text = "Min Players:"
+minPlayersLabel.Font = Enum.Font.Gotham
+minPlayersLabel.TextSize = 13
+minPlayersLabel.TextColor3 = Color3.new(1, 1, 1)
+minPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local minPlayersBox = Instance.new("TextBox", frame)
+minPlayersBox.Size = UDim2.new(0, 50, 0, 20)
+minPlayersBox.Position = UDim2.new(0, 110, 0, 75)
+minPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+minPlayersBox.TextColor3 = Color3.new(1, 1, 1)
+minPlayersBox.Font = Enum.Font.Gotham
+minPlayersBox.TextSize = 13
+minPlayersBox.Text = "0"
+minPlayersBox.PlaceholderText = "Min"
+Instance.new("UICorner", minPlayersBox)
+
+local maxPlayersLabel = Instance.new("TextLabel", frame)
+maxPlayersLabel.Size = UDim2.new(0, 100, 0, 20)
+maxPlayersLabel.Position = UDim2.new(0.5, 0, 0, 75)
+maxPlayersLabel.BackgroundTransparency = 1
+maxPlayersLabel.Text = "Max Players:"
+maxPlayersLabel.Font = Enum.Font.Gotham
+maxPlayersLabel.TextSize = 13
+maxPlayersLabel.TextColor3 = Color3.new(1, 1, 1)
+maxPlayersLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local maxPlayersBox = Instance.new("TextBox", frame)
+maxPlayersBox.Size = UDim2.new(0, 50, 0, 20)
+maxPlayersBox.Position = UDim2.new(0.5, 110, 0, 75)
+maxPlayersBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+maxPlayersBox.TextColor3 = Color3.new(1, 1, 1)
+maxPlayersBox.Font = Enum.Font.Gotham
+maxPlayersBox.TextSize = 13
+maxPlayersBox.Text = "0"
+maxPlayersBox.PlaceholderText = "Max"
+Instance.new("UICorner", maxPlayersBox)
+
+local autoSetBtn = Instance.new("TextButton", frame)
+autoSetBtn.Size = UDim2.new(0, 60, 0, 20)
+autoSetBtn.Position = UDim2.new(0, 170, 0, 75)
+autoSetBtn.Text = "Auto Set"
+autoSetBtn.Font = Enum.Font.Gotham
+autoSetBtn.TextSize = 12
+autoSetBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+autoSetBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", autoSetBtn)
+
+local joinedPath = "JoinedServers.json"
+local function saveJoinedServer(jobId)
+    if not isfile or not writefile then return end
+    local data = {}
+    if isfile(joinedPath) then
+        pcall(function()
+            data = HttpService:JSONDecode(readfile(joinedPath)) or {}
+        end)
+    end
+    table.insert(data, 1, {JobId = jobId,Time = os.time()})
+    while #data > 10 do
+        table.remove(data, #data)
+    end
+    pcall(function()
+        writefile(joinedPath, HttpService:JSONEncode(data))
+    end)
+end
+
+local function loadJoinedServers()
+    if not isfile or not readfile then return {} end
+    if not isfile(joinedPath) then return {} end
+
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(readfile(joinedPath)) or {}
+    end)
+
+    return success and result or {}
+end
+
+local function getColorForServer(jobId)
+    local data = loadJoinedServers()
+
+    for _, entry in ipairs(data) do
+        if entry.JobId == jobId then
+            local age = os.time() - entry.Time
+
+            if age < 180 then
+                return Color3.fromRGB(255, 220, 70)
+            elseif age < 600 then
+                return Color3.fromRGB(255, 150, 70)
+            else
+                return Color3.fromRGB(255, 80, 80)
+            end
+        end
+    end
+
+    return Color3.fromRGB(35, 35, 35)
+end
+
+local function saveServer(jobId)
+    if not isfile or not writefile or not readfile then return end
+    local path = "ServerList.json"
+    local data = {}
+    if isfile(path) then
+        pcall(function()
+            data = HttpService:JSONDecode(readfile(path)) or {}
+        end)
+    end
+    table.insert(data, { JobId = jobId, GameId = placeId })
+    pcall(function() writefile(path, HttpService:JSONEncode(data)) end)
+end
+
+saveCurrentBtn.MouseButton1Click:Connect(function()
+    saveServer(game.JobId)
+    saveCurrentBtn.Text = "✔ Tersimpan"
+    task.delay(1.2, function()
+        if saveCurrentBtn and saveCurrentBtn.Parent then
+            saveCurrentBtn.Text = "Simpan Server Ini"
+        end
+    end)
+end)
+
+autoSetBtn.MouseButton1Click:Connect(function()
+    local maxText = maxPlayersBox.Text
+    if maxText == "" or maxText == "0" then return end
+    
+    local maxNum = tonumber(maxText)
+    if not maxNum then return end
+    
+    local minNum = math.floor(maxNum / 2)
+    minPlayersBox.Text = tostring(minNum)
+end)
+
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, -20, 1, -110)
+scroll.Position = UDim2.new(0, 10, 0, 105)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 6
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 4)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 4)
+end)
+
+local function getMaxServerCapacity()
+    local url = ("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=10")
+        :format(placeId)
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(url))
+    end)
+    
+    if success and data.data and #data.data > 0 then
+        local maxPlayers = 0
+        for _, srv in ipairs(data.data) do
+            if srv.maxPlayers and srv.maxPlayers > maxPlayers then
+                maxPlayers = srv.maxPlayers
+            end
+        end
+        return maxPlayers > 0 and maxPlayers or 12
+    end
+    return 12
+end
+
+local function getServers()
+    local minPlayers = tonumber(minPlayersBox.Text) or 0
+    local maxPlayers = tonumber(maxPlayersBox.Text) or 0
+    
+    if maxPlayers > 0 and minPlayers == 0 then
+        minPlayers = math.floor(maxPlayers / 2)
+        minPlayersBox.Text = tostring(minPlayers)
+    end
+    
+    local servers = {}
+    local cursor = ""
+    repeat
+        local url = ("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s")
+            :format(placeId, cursor ~= "" and "&cursor=" .. cursor or "")
+        local data = HttpService:JSONDecode(game:HttpGet(url))
+        
+        for _, srv in ipairs(data.data) do
+            local shouldAdd = true
+            
+            if srv.id == game.JobId then
+                shouldAdd = false
+            end
+            
+            if maxPlayers > 0 and srv.maxPlayers > maxPlayers then
+                shouldAdd = false
+            end
+            
+            if minPlayers > 0 and srv.playing < minPlayers then
+                shouldAdd = false
+            end
+            
+            if shouldAdd and srv.playing < srv.maxPlayers then
+                table.insert(servers, {
+                    id = srv.id,
+                    ping = srv.ping or math.random(40, 250),
+                    players = srv.playing .. "/" .. srv.maxPlayers,
+                    playing = srv.playing,
+                    max = srv.maxPlayers
+                })
+            end
+            
+            if #servers >= 50 then break end
+        end
+        cursor = data.nextPageCursor or ""
+    until cursor == "" or #servers >= 50
+    
+    table.sort(servers, function(a, b) 
+        if a.ping == b.ping then
+            return a.playing < b.playing
+        end
+        return a.ping < b.ping 
+    end)
+    return servers
+end
+
+local function buildList()
+    for _, v in ipairs(scroll:GetChildren()) do
+        if v ~= layout then
+            v:Destroy()
+        end
+    end
+
+    if maxPlayersBox.Text == "0" then
+        local maxCapacity = getMaxServerCapacity()
+        maxPlayersBox.Text = tostring(maxCapacity)
+        minPlayersBox.Text = tostring(math.floor(maxCapacity / 2))
+    end
+
+    task.spawn(function()
+        local servers = getServers()
+        if #servers == 0 then
+            local noData = Instance.new("TextLabel", scroll)
+            noData.Size = UDim2.new(1, 0, 0, 30)
+            noData.Text = "❌ Tidak ada server ditemukan"
+            noData.TextColor3 = Color3.new(1, 1, 1)
+            noData.BackgroundTransparency = 1
+            noData.Font = Enum.Font.Gotham
+            noData.TextSize = 14
+            return
+        end
+        for _, s in ipairs(servers) do
+            local item = Instance.new("Frame", scroll)
+            item.Size = UDim2.new(1, 0, 0, 30)
+            item.BackgroundColor3 = getColorForServer(s.id)
+            Instance.new("UICorner", item)
+
+            local info = Instance.new("TextLabel", item)
+            info.Size = UDim2.new(0.5, 0, 1, 0)
+            info.Position = UDim2.new(0, 10, 0, 0)
+            info.BackgroundTransparency = 1
+            info.Text = string.format("Ping: %dms | %s", s.ping, s.players)
+            info.TextColor3 = Color3.new(1, 1, 1)
+            info.Font = Enum.Font.Gotham
+            info.TextSize = 14
+            info.TextXAlignment = Enum.TextXAlignment.Left
+
+            local joinBtn = Instance.new("TextButton", item)
+            joinBtn.Size = UDim2.new(0, 60, 0, 22)
+            joinBtn.Position = UDim2.new(0.65, 0, 0.15, 0)
+            joinBtn.Text = "Join"
+            joinBtn.Font = Enum.Font.Gotham
+            joinBtn.TextSize = 14
+            joinBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 80)
+            joinBtn.TextColor3 = Color3.new(1, 1, 1)
+            Instance.new("UICorner", joinBtn)
+
+            local saveBtn = Instance.new("TextButton", item)
+            saveBtn.Size = UDim2.new(0, 60, 0, 22)
+            saveBtn.Position = UDim2.new(0.8, 0, 0.15, 0)
+            saveBtn.Text = "Simpan"
+            saveBtn.Font = Enum.Font.Gotham
+            saveBtn.TextSize = 14
+            saveBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+            saveBtn.TextColor3 = Color3.new(1, 1, 1)
+            Instance.new("UICorner", saveBtn)
+
+            joinBtn.MouseButton1Click:Connect(function()
+                saveJoinedServer(s.id)
+                TeleportService:TeleportToPlaceInstance(placeId, s.id, player)
+            end)
+
+            saveBtn.MouseButton1Click:Connect(function()
+                saveServer(s.id)
+                saveBtn.Text = "✔"
+                task.delay(1, function()
+                    if saveBtn and saveBtn.Parent then
+                        saveBtn.Text = "Simpan"
+                    end
+                end)
+            end)
+        end
+    end)
+end
+
+refreshBtn.MouseButton1Click:Connect(buildList)
+buildList()
+
+print("[ServerHop] GUI aktif.")
