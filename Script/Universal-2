@@ -32,6 +32,7 @@ local State = {
 	OneHit = false,
 	AutoClick = false,
 	AutoGrab = false,
+	AutoProximity,
 	AutoFarm = false,
 	RestrictAutoFarm = false,
 	RestrictedParent = false,
@@ -72,7 +73,7 @@ end
 
 function Utils.GetMobFolder(modelName)
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
 			local currentObj = obj
 			while currentObj and not currentObj:IsA("Folder") do
 				if currentObj.Parent and currentObj.Parent:IsA("Folder") then
@@ -92,7 +93,7 @@ function Utils.GetNearbyEnemies(range)
 	local rootPart = Character.HumanoidRootPart
 	
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
@@ -128,7 +129,7 @@ end
 function Utils.GetMonsterList()
 	local monsters = {}
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
 			if not table.find(monsters, obj.Name) then
 				table.insert(monsters, obj.Name)
 			end
@@ -149,9 +150,9 @@ end
 
 function Utils.GetFolders()
 	local folders = {}
-	for _, descendant in ipairs(workspace:GetDescendants()) do
-		if descendant:IsA("Folder") then
-			table.insert(folders, descendant)
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("Folder") then
+			table.insert(folders, v)
 		end
 	end
 	return folders
@@ -207,6 +208,15 @@ function Utils.getTargetCFrame(targetRoot)
 	return CFrame.new(pos, targetRoot.Position)
 end
 
+function Utils.randomString()
+    local length = math.random(10,20)
+    local array = {}
+    for i = 1, length do
+        array[i] = string.char(math.random(32, 126))
+    end
+    return table.concat(array)
+end
+
 -- AutoFarm Function
 local AutoFarm = {}
 
@@ -227,9 +237,7 @@ end
 function AutoFarm.ToggleFarm(state)
 	Utils.Disconnect("AutoFarm")
 	Utils.RemoveBodyVelocity()
-	if not state then return end
-	
-	if not State.SelectedMob then return end
+	if not state or not State.SelectedMob then return end
 	
 	local char = LocalPlayer.Character
 	local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
@@ -398,7 +406,7 @@ function AutoClick.Toggle(state)
 	State.AutoClick = state
 	Utils.Disconnect("AutoClick")
 	
-	if state then
+	if State.AutoClick then
 		Utils.StartThread("AutoClick", function()
 			while State.AutoClick do
 				task.wait()
@@ -420,7 +428,7 @@ function AutoGrab.Toggle(state)
 	State.AutoGrab = state
 	Utils.Disconnect("AutoGrab")
 	
-	if state then
+	if State.AutoGrab then
 		Utils.StartThread("AutoGrab", function()
 			while State.AutoGrab do
 				task.wait(0.2)
@@ -461,24 +469,222 @@ function EquipAllTools.Toggle(state)
 	end
 end
 
+local XRay = {
+    Stored = {}
+}
+
+function XRay.Toggle(state)
+    State.XRay = state
+    
+    if State.XRay then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+                XRay.Stored[v] = v.LocalTransparencyModifier
+                v.LocalTransparencyModifier = 0.5
+            end
+        end
+        Utils.AddConnection("XRayAdd", workspace.DescendantAdded:Connect(function(v)
+            if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+                v.LocalTransparencyModifier = 0.5
+            end
+        }))
+        State.XRay = true
+    else
+        for part, value in pairs(XRay.Stored) do
+            if part and part.Parent then
+                part.LocalTransparencyModifier = value
+            end
+        end
+        Utils.Disconnect("XRayAdd")
+        table.clear(XRay.Stored)
+        State.XRay = false
+    end
+end
+
+local Floating = {
+    Enabled = false,
+    FloatPart = nil,
+    FloatValue = -3.1,
+    FloatName = "",
+    FloatGUI = nil
+}
+
+local function getRoot(char)
+    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso"))
+end
+
+local function createFloatGUI()
+    if Floating.FloatGUI then
+        Floating.FloatGUI:Destroy()
+    end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "FloatControlGUI"
+    screenGui.Parent = CoreGui
+    screenGui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 120, 0, 180)
+    frame.Position = UDim2.new(0.5, -60, 0.7, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = screenGui
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    title.Text = "Float Control"
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 14
+    title.Parent = frame
+    
+    local upBtn = Instance.new("TextButton")
+    upBtn.Size = UDim2.new(0.8, 0, 0, 40)
+    upBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+    upBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    upBtn.Text = "UP"
+    upBtn.TextColor3 = Color3.new(1, 1, 1)
+    upBtn.Font = Enum.Font.GothamBold
+    upBtn.TextSize = 16
+    upBtn.Parent = frame
+    
+    local downBtn = Instance.new("TextButton")
+    downBtn.Size = UDim2.new(0.8, 0, 0, 40)
+    downBtn.Position = UDim2.new(0.1, 0, 0.55, 0)
+    downBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+    downBtn.Text = "DOWN"
+    downBtn.TextColor3 = Color3.new(1, 1, 1)
+    downBtn.Font = Enum.Font.GothamBold
+    downBtn.TextSize = 16
+    downBtn.Parent = frame
+    
+    upBtn.MouseButton1Down:Connect(function()
+        Floating.FloatValue = Floating.FloatValue - 1.5
+    end)
+    
+    upBtn.MouseButton1Up:Connect(function()
+        Floating.FloatValue = Floating.FloatValue + 1.5
+    end)
+    
+    downBtn.MouseButton1Down:Connect(function()
+        Floating.FloatValue = Floating.FloatValue + 0.5
+    end)
+    
+    downBtn.MouseButton1Up:Connect(function()
+        Floating.FloatValue = Floating.FloatValue - 0.5
+    end)
+    
+    Floating.FloatGUI = screenGui
+end
+
+function Floating.Enable()
+    if Floating.Enabled then return end
+    
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    Floating.Enabled = true
+    Floating.FloatName = Utils.randomString()
+    Floating.FloatValue = -3.1
+    
+    local Float = Instance.new("Part")
+    Float.Name = Floating.FloatName
+    Float.Parent = char
+    Float.Transparency = 1
+    Float.Size = Vector3.new(2, 0.2, 1.5)
+    Float.Anchored = true
+    Float.CFrame = getRoot(char).CFrame * CFrame.new(0, Floating.FloatValue, 0)
+    
+    Floating.FloatPart = Float
+    
+    createFloatGUI()
+    
+    Utils.AddConnection("FloatDeath", char:WaitForChild("Humanoid").Died:Connect(function()
+        Floating.Disable()
+    end))
+    
+    Utils.AddConnection("FloatLoop", RunService.Heartbeat:Connect(function()
+        if not Floating.Enabled or not Floating.FloatPart or not Floating.FloatPart.Parent then
+            Floating.Disable()
+            return
+        end
+        
+        local char = LocalPlayer.Character
+        local root = getRoot(char)
+        if char and root and Floating.FloatPart then
+            Floating.FloatPart.CFrame = root.CFrame * CFrame.new(0, Floating.FloatValue, 0)
+        end
+    end))
+    
+    Rey:Notify("info", "Float", "Float Enabled", 3)
+end
+
+function Floating.Disable()
+    if not Floating.Enabled then return end
+    
+    Floating.Enabled = false
+    
+    if Floating.FloatPart then
+        Floating.FloatPart:Destroy()
+        Floating.FloatPart = nil
+    end
+    
+    if Floating.FloatGUI then
+        Floating.FloatGUI:Destroy()
+        Floating.FloatGUI = nil
+    end
+    
+    Utils.Disconnect("FloatDeath")
+    Utils.Disconnect("FloatLoop")
+    
+    Rey:Notify("info", "Float", "Float Disabled", 3)
+end
+
+function Floating.Toggle(state)
+    if state == nil then
+        state = not Floating.Enabled
+    end
+    
+    if state then
+        Floating.Enable()
+    else
+        Floating.Disable()
+    end
+end
+
 -- Character Mod Function
 local Noclip = {}
 
 function Noclip.Toggle(state)
+	task.wait(0.5)
 	State.Noclip = state
 	Utils.Disconnect("Noclip")
 	
-	if state then
+	if State.Noclip then
 		Utils.AddConnection("Noclip", RunService.Stepped:Connect(function()
 			local char = LocalPlayer.Character
 			if char then
 				for _, part in ipairs(char:GetDescendants()) do
-					if part:IsA("BasePart") then
+					if part:IsA("BasePart") and part.CanCollide == true and part.Name ~= Floating.FloatName then
 						part.CanCollide = false
 					end
 				end
 			end
 		end))
+	else
+		task.wait(0.3)
+		local char = LocalPlayer.Character
+		if char then
+			for _, part in ipairs(char:GetDescendants()) do
+				if part:IsA("BasePart") and part.CanCollide == false then
+					part.CanCollide = true
+				end
+			end
+		end
 	end
 end
 
@@ -552,9 +758,44 @@ function InfiniteJump.Toggle(state)
 	end
 end
 
+local ProximityP = {
+	originalDurations = {}
+}
+
+function ProximityP.Instant(state)
+	State.AutoProximity = state
+	Utils.Disconnect("AutoProximityInstant")
+	
+	if State.AutoProximity then
+		Utils.AddConnection("AutoProximityInstant", game:GetService("ProximityPromptService").PromptShown:Connect(function(p)
+			if not ProximityP.originalDurations[p] then
+				ProximityP.originalDurations[p] = p.HoldDuration
+			end
+			p.HoldDuration = 0
+		end))
+	else
+		for prompt, originalDuration in pairs(ProximityP.originalDurations) do
+			if prompt and prompt.Parent then
+				prompt.HoldDuration = originalDuration
+			end
+		end
+		table.clear(ProximityP.originalDurations)
+	end
+end
+
+function ProximityP.Shown(state)
+	State.AutoProximity = state
+	Utils.Disconnect("AutoProximityShown")
+	
+	if State.AutoProximity then
+		Utils.AddConnection("AutoProximityShown", game:GetService("ProximityPromptService").PromptShown:Connect(function(p)
+			fireproximityprompt(p)
+		end))
+	end
+end
+
 -- Kill Function
 local KillAll = {}
-
 function KillAll.CreateButton(name, desc, positionY, killFunc)
 	local buttonName = name .. " [BUTTON]"
 	
@@ -613,9 +854,9 @@ local function KILLV4(state)
 			end))
 		end
 		
-		for _, descendant in ipairs(workspace:GetDescendants()) do
-			if descendant:IsA("Humanoid") then
-				hookHumanoid(descendant)
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v:IsA("Humanoid") then
+				hookHumanoid(v)
 			end
 		end
 		
@@ -798,6 +1039,11 @@ Rey:CreateToggle(UtilityTab, "Auto Grab Items", "Collect dropped items", AutoGra
 
 Rey:CreateToggle(UtilityTab, "Equip All Tools", "Equip all tools from backpack", EquipAllTools.Toggle)
 
+Rey:CreateToggle(UtilityTab, "Instant Proximity", "Instant proximity prompts", ProximityP.Instant)
+
+Rey:CreateToggle(UtilityTab, "Auto Proximity", "Auto trigger proximity prompts shown", ProximityP.Shown)
+
+
 Rey:CreateToggle(UtilityTab, "1 Hit Kill", "Kill enemies with one hit", function(state)
 	State.OneHit = state
 end)
@@ -818,7 +1064,7 @@ end)
 
 KillAll.CreateButton("KILL ALL V2", "if Health < Max Health (BreakJoints)", 30, function()
 	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid") then
+		if obj:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") then
 			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
 				obj:BreakJoints()
 			end
@@ -897,9 +1143,7 @@ Rey:CreateButton(MiscTab, "[FE] Rewind", "Rewind to previous position", "Load", 
 end)
 
 Rey:CreateToggle(MiscTab, "Player ESP", "See other players through walls", function(state)
-	if state then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
-	end
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
 end)
 
 Rey:CreateToggle(MiscTab, "Full Bright", "Brighten the entire map", Brightness.Toggle)
@@ -913,6 +1157,11 @@ Rey:CreateToggle(MiscTab, "Noclip", "Walk through objects", Noclip.Toggle)
 Rey:CreateToggle(MiscTab, "Edge Jump", "Auto jump at edges", EdgeJump.Toggle)
 
 Rey:CreateToggle(MiscTab, "Infinite Jump", "Jump infinitely", InfiniteJump.Toggle)
+
+Rey:CreateToggle(MiscTab, "XRay", "See through walls", XRay.Toggle)
+
+Rey:CreateToggle(MiscTab, "Float Platform", "Create movable platform", Floating.Toggle)
+
 
 -- Settings Tab
 Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
