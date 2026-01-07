@@ -2424,7 +2424,7 @@ end]], connectionVarName, connectionVarName, connectionVarName, connectionVarNam
 	TextLabel.Text = "RunService loop copied! Variable: _G." .. varName
 end, Color3.fromRGB(0, 191, 255)) -- Deep Sky Blue (Performance Loop)
 
-newButton("ForLoop", function()
+newButton("For Loop", function()
 	return "Copy for loop"
 end, function()
 	if not selected then
