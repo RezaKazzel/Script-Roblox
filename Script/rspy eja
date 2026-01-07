@@ -2397,7 +2397,7 @@ end, function()
 _G.%s = not _G.%s
 while _G.%s do task.wait()
 	%s
-end]], varName, varName, selected.GenScript)
+end]], varName, varName, varName, selected.GenScript)
 	
 	setclipboard(loopCode)
 	TextLabel.Text = "While loop copied! Variable: _G." .. varName
@@ -2428,7 +2428,7 @@ end]], connectionVarName, connectionVarName, connectionVarName, connectionVarNam
 	TextLabel.Text = "RunService loop copied! Variable: _G." .. varName
 end)
 
-newButton("CopyForLoop", function()
+newButton("ForLoop", function()
 	return "Copy for loop"
 end, function()
 	if not selected then
