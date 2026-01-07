@@ -10,6 +10,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 
 -- Variable
+local UIS = UserInputService
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
@@ -211,12 +212,12 @@ function Utils.getTargetCFrame(targetRoot)
 end
 
 function Utils.randomString()
-    local length = math.random(10,20)
-    local array = {}
-    for i = 1, length do
-        array[i] = string.char(math.random(32, 126))
-    end
-    return table.concat(array)
+	local length = math.random(10,20)
+	local array = {}
+	for i = 1, length do
+		array[i] = string.char(math.random(32, 126))
+	end
+	return table.concat(array)
 end
 
 -- AutoFarm Function
@@ -472,179 +473,191 @@ function EquipAllTools.Toggle(state)
 end
 
 local XRay = {
-    Stored = {}
+	Stored = {}
 }
 
 function XRay.Toggle(state)
-    State.XRay = state
-    
-    if State.XRay then
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
-                XRay.Stored[v] = v.LocalTransparencyModifier
-                v.LocalTransparencyModifier = 0.5
-            end
-        end
-        Utils.AddConnection("XRayAdd", workspace.DescendantAdded:Connect(function(v)
-            if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
-                v.LocalTransparencyModifier = 0.5
-            end
-        end))
-        State.XRay = true
-    else
-        for part, value in pairs(XRay.Stored) do
-            if part and part.Parent then
-                part.LocalTransparencyModifier = value
-            end
-        end
-        Utils.Disconnect("XRayAdd")
-        table.clear(XRay.Stored)
-        State.XRay = false
-    end
+	State.XRay = state
+	
+	if State.XRay then
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+				XRay.Stored[v] = v.LocalTransparencyModifier
+				v.LocalTransparencyModifier = 0.5
+			end
+		end
+		Utils.AddConnection("XRayAdd", workspace.DescendantAdded:Connect(function(v)
+			if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+				v.LocalTransparencyModifier = 0.5
+			end
+		end))
+		State.XRay = true
+	else
+		for part, value in pairs(XRay.Stored) do
+			if part and part.Parent then
+				part.LocalTransparencyModifier = value
+			end
+		end
+		Utils.Disconnect("XRayAdd")
+		table.clear(XRay.Stored)
+		State.XRay = false
+	end
 end
 
 local Floating = {
-    Enabled = false,
-    FloatPart = nil,
-    FloatValue = -3.1,
-    FloatName = "",
-    FloatGUI = nil
+	Enabled = false,
+	FloatPart = nil,
+	FloatValue = -3.1,
+	FloatName = "",
+	FloatGUI = nil
 }
 
 local function getRoot(char)
-    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso"))
+	return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso"))
 end
 
 local function createFloatGUI()
-    if Floating.FloatGUI then
-        Floating.FloatGUI:Destroy()
-    end
-    
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "FloatControlGUI"
-    screenGui.Parent = CoreGui
-    screenGui.ResetOnSpawn = false
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 120, 0, 180)
-    frame.Position = UDim2.new(0.5, -60, 0.7, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.Active = true
-    frame.Draggable = true
-    frame.Parent = screenGui
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    title.Text = "Float Control"
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 14
-    title.Parent = frame
-    
-    local upBtn = Instance.new("TextButton")
-    upBtn.Size = UDim2.new(0.8, 0, 0, 40)
-    upBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
-    upBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-    upBtn.Text = "UP"
-    upBtn.TextColor3 = Color3.new(1, 1, 1)
-    upBtn.Font = Enum.Font.GothamBold
-    upBtn.TextSize = 16
-    upBtn.Parent = frame
-    
-    local downBtn = Instance.new("TextButton")
-    downBtn.Size = UDim2.new(0.8, 0, 0, 40)
-    downBtn.Position = UDim2.new(0.1, 0, 0.55, 0)
-    downBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-    downBtn.Text = "DOWN"
-    downBtn.TextColor3 = Color3.new(1, 1, 1)
-    downBtn.Font = Enum.Font.GothamBold
-    downBtn.TextSize = 16
-    downBtn.Parent = frame
-    
-    upBtn.MouseButton1Down:Connect(function()
-        Floating.FloatValue = Floating.FloatValue - 1.5
-    end)
-    
-    upBtn.MouseButton1Up:Connect(function()
-        Floating.FloatValue = Floating.FloatValue + 1.5
-    end)
-    
-    downBtn.MouseButton1Down:Connect(function()
-        Floating.FloatValue = Floating.FloatValue + 0.5
-    end)
-    
-    downBtn.MouseButton1Up:Connect(function()
-        Floating.FloatValue = Floating.FloatValue - 0.5
-    end)
-    
-    Floating.FloatGUI = screenGui
+	if Floating.FloatGUI then
+		Floating.FloatGUI:Destroy()
+	end
+	
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "FloatControlGUI"
+	screenGui.Parent = CoreGui
+	screenGui.ResetOnSpawn = false
+	
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 80, 0, 100)
+	frame.Position = UDim2.new(0.8, 0, 0.7, 0)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	frame.BorderSizePixel = 1
+	frame.BorderColor3 = Color3.fromRGB(100, 100, 100)
+	frame.Active = true
+	frame.Draggable = true
+	frame.Parent = screenGui
+	
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 20)
+	title.Position = UDim2.new(0, 0, 0, 0)
+	title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	title.Text = "Float"
+	title.TextColor3 = Color3.new(1, 1, 1)
+	title.Font = Enum.Font.Gotham
+	title.TextSize = 12
+	title.Parent = frame
+	
+	local upBtn = Instance.new("TextButton")
+	upBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	upBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
+	upBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+	upBtn.Text = "↑"
+	upBtn.TextColor3 = Color3.new(1, 1, 1)
+	upBtn.Font = Enum.Font.GothamBold
+	upBtn.TextSize = 16
+	upBtn.Parent = frame
+	
+	local downBtn = Instance.new("TextButton")
+	downBtn.Size = UDim2.new(0.8, 0, 0, 30)
+	downBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+	downBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+	downBtn.Text = "↓"
+	downBtn.TextColor3 = Color3.new(1, 1, 1)
+	downBtn.Font = Enum.Font.GothamBold
+	downBtn.TextSize = 16
+	downBtn.Parent = frame
+	
+	local holdingUp = false
+	local holdingDown = false
+	
+	upBtn.MouseButton1Down:Connect(function()
+		holdingUp = true
+		Floating.FloatValue += 1
+	end)
+	
+	downBtn.MouseButton1Down:Connect(function()
+		holdingDown = true
+		Floating.FloatValue -= 0.5
+	end)
+	
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+			if holdingUp then
+				Floating.FloatValue -= 1
+				holdingUp = false
+			end
+			if holdingDown then
+				Floating.FloatValue += 0.5
+				holdingDown = false
+			end
+		end
+	end)
+	
+	Floating.FloatGUI = screenGui
 end
 
 function Floating.Enable()
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    Floating.FloatName = Utils.randomString()
-    Floating.FloatValue = -3.1
-    
-    local Float = Instance.new("Part")
-    Float.Name = Floating.FloatName
-    Float.Parent = char
-    Float.Transparency = 1
-    Float.Size = Vector3.new(2, 0.2, 1.5)
-    Float.Anchored = true
-    Float.CFrame = getRoot(char).CFrame * CFrame.new(0, Floating.FloatValue, 0)
-    
-    Floating.FloatPart = Float
-    
-    createFloatGUI()
-    
-    Utils.AddConnection("FloatDeath", char:WaitForChild("Humanoid").Died:Connect(function()
-        Floating.Disable()
-    end))
-    
-    Utils.AddConnection("FloatLoop", RunService.Heartbeat:Connect(function()
-        if not Floating.Enabled or not Floating.FloatPart or not Floating.FloatPart.Parent then
-            Floating.Disable()
-            return
-        end
-        
-        local char = LocalPlayer.Character
-        local root = getRoot(char)
-        if char and root and Floating.FloatPart then
-            Floating.FloatPart.CFrame = root.CFrame * CFrame.new(0, Floating.FloatValue, 0)
-        end
-    end))
+	local char = LocalPlayer.Character
+	if not char then return end
+	
+	Floating.FloatName = Utils.randomString()
+	Floating.FloatValue = -3.1
+	
+	local Float = Instance.new("Part")
+	Float.Name = Floating.FloatName
+	Float.Parent = char
+	Float.Transparency = 1
+	Float.Size = Vector3.new(2, 0.2, 1.5)
+	Float.Anchored = true
+	Float.CFrame = getRoot(char).CFrame * CFrame.new(0, Floating.FloatValue, 0)
+	
+	Floating.FloatPart = Float
+	
+	createFloatGUI()
+	
+	Utils.AddConnection("FloatDeath", char:WaitForChild("Humanoid").Died:Connect(function()
+		Floating.Disable()
+	end))
+	
+	Utils.AddConnection("FloatLoop", RunService.Heartbeat:Connect(function()
+		if not Floating.Enabled or not Floating.FloatPart or not Floating.FloatPart.Parent then
+			Floating.Disable()
+			return
+		end
+		
+		local char = LocalPlayer.Character
+		local root = getRoot(char)
+		if char and root and Floating.FloatPart then
+			Floating.FloatPart.CFrame = root.CFrame * CFrame.new(0, Floating.FloatValue, 0)
+		end
+	end))
 end
 
 function Floating.Disable()
-    if Floating.FloatPart then
-        Floating.FloatPart:Destroy()
-        Floating.FloatPart = nil
-    end
-    
-    if Floating.FloatGUI then
-        Floating.FloatGUI:Destroy()
-        Floating.FloatGUI = nil
-    end
-    
-    Utils.Disconnect("FloatDeath")
-    Utils.Disconnect("FloatLoop")
+	if Floating.FloatPart then
+		Floating.FloatPart:Destroy()
+		Floating.FloatPart = nil
+	end
+	
+	if Floating.FloatGUI then
+		Floating.FloatGUI:Destroy()
+		Floating.FloatGUI = nil
+	end
+	
+	Utils.Disconnect("FloatDeath")
+	Utils.Disconnect("FloatLoop")
 end
 
 function Floating.Toggle(state)
 	Floating.Enabled = state
-    
-    if Floating.Enabled then
-        Floating.Enable()
-        Rey:Notify("info", "Float", "Float Enabled", 3)
-    else
-        Floating.Disable()
-        Rey:Notify("info", "Float", "Float Disabled", 3)
-    end
+	
+	if Floating.Enabled then
+		Floating.Enable()
+		Rey:Notify("info", "Float", "Float Enabled", 3)
+	else
+		Floating.Disable()
+		Rey:Notify("info", "Float", "Float Disabled", 3)
+	end
 end
 
 -- Character Mod Function
