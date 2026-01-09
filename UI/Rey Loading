@@ -1,0 +1,323 @@
+local player = game:GetService("Players").LocalPlayer
+local TweenService = game:GetService("TweenService")
+
+if player.PlayerGui:FindFirstChild("ReyHubLoading") then
+    player.PlayerGui.ReyHubLoading:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ReyHubLoading"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
+
+local background = Instance.new("Frame")
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+background.BackgroundTransparency = 0.3
+background.Parent = screenGui
+
+local container = Instance.new("Frame")
+container.AnchorPoint = Vector2.new(0.5, 0.5)
+container.Size = UDim2.new(0, 0, 0, 0)
+container.Position = UDim2.new(0.5, 0, 0.5, 0)
+container.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+container.BackgroundTransparency = 0.1
+container.ClipsDescendants = true
+container.Parent = background
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = container
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(148, 0, 211)
+stroke.Thickness = 2
+stroke.Transparency = 1
+stroke.Parent = container
+
+local logo = Instance.new("ImageLabel")
+logo.Size = UDim2.new(0, 80, 0, 80)
+logo.Position = UDim2.new(0.5, -40, 0.3, -40)
+logo.BackgroundTransparency = 1
+logo.Image = "rbxassetid://10888339605"
+logo.ImageColor3 = Color3.fromRGB(148, 0, 211)
+logo.ImageTransparency = 1
+logo.Parent = container
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Position = UDim2.new(0, 0, 0.55, 0)
+title.BackgroundTransparency = 1
+title.Text = "ReyHub"
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 32
+title.TextTransparency = 1
+title.Parent = container
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 20)
+subtitle.Position = UDim2.new(0, 0, 0.65, 0)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "Loading Script..."
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+subtitle.TextSize = 16
+subtitle.TextTransparency = 1
+subtitle.Parent = container
+
+local barBg = Instance.new("Frame")
+barBg.Size = UDim2.new(0.7, 0, 0, 8)
+barBg.Position = UDim2.new(0.15, 0, 0.8, 0)
+barBg.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+barBg.BackgroundTransparency = 1
+barBg.Parent = container
+
+local barBgCorner = Instance.new("UICorner")
+barBgCorner.CornerRadius = UDim.new(1, 0)
+barBgCorner.Parent = barBg
+
+local barFill = Instance.new("Frame")
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.BackgroundColor3 = Color3.fromRGB(148, 0, 211)
+barFill.BackgroundTransparency = 1
+barFill.Parent = barBg
+
+local barFillCorner = Instance.new("UICorner")
+barFillCorner.CornerRadius = UDim.new(1, 0)
+barFillCorner.Parent = barFill
+
+local progressText = Instance.new("TextLabel")
+progressText.Size = UDim2.new(0.7, 0, 0, 20)
+progressText.Position = UDim2.new(0.15, 0, 0.72, 0)
+progressText.BackgroundTransparency = 1
+progressText.Text = "0%"
+progressText.Font = Enum.Font.GothamMedium
+progressText.TextColor3 = Color3.fromRGB(255, 255, 255)
+progressText.TextSize = 14
+progressText.TextTransparency = 1
+progressText.TextXAlignment = Enum.TextXAlignment.Left
+progressText.Parent = container
+
+local statusText = Instance.new("TextLabel")
+statusText.Size = UDim2.new(1, 0, 0, 20)
+statusText.Position = UDim2.new(0, 0, 0.92, 0)
+statusText.BackgroundTransparency = 1
+statusText.Text = "Initializing..."
+statusText.Font = Enum.Font.Gotham
+statusText.TextColor3 = Color3.fromRGB(180, 180, 180)
+statusText.TextSize = 12
+statusText.TextTransparency = 1
+statusText.Parent = container
+
+local function checkModule(moduleName)
+    local success, result = pcall(function()
+        return require(game:GetService("ReplicatedStorage"):FindFirstChild(moduleName) or 
+               game:GetService("ServerStorage"):FindFirstChild(moduleName) or 
+               game:GetService("Workspace"):FindFirstChild(moduleName))
+    end)
+    return success, result
+end
+
+local function checkGameLoaded()
+    return game:IsLoaded() and player.Character ~= nil
+end
+
+local function checkEssentialServices()
+    local services = {
+        "Workspace",
+        "Players",
+        "Lighting",
+        "ReplicatedStorage",
+        "ServerStorage",
+        "StarterGui",
+        "StarterPack",
+        "StarterPlayer"
+    }
+    
+    for _, serviceName in ipairs(services) do
+        local service = game:GetService(serviceName)
+        if not service then
+            return false, "Service " .. serviceName .. " not found"
+        end
+    end
+    return true
+end
+
+local entryTween = TweenService:Create(container, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 400, 0, 300),
+    BackgroundTransparency = 0.1
+})
+
+local strokeFadeIn = TweenService:Create(stroke, TweenInfo.new(0.5), {Transparency = 0})
+local fadeIn = TweenService:Create(logo, TweenInfo.new(0.5), {ImageTransparency = 0})
+local textFadeIn = TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 0})
+local subFadeIn = TweenService:Create(subtitle, TweenInfo.new(0.5), {TextTransparency = 0})
+local barFadeIn = TweenService:Create(barBg, TweenInfo.new(0.5), {BackgroundTransparency = 0})
+local barFillFadeIn = TweenService:Create(barFill, TweenInfo.new(0.5), {BackgroundTransparency = 0})
+local progressFadeIn = TweenService:Create(progressText, TweenInfo.new(0.5), {TextTransparency = 0})
+local statusFadeIn = TweenService:Create(statusText, TweenInfo.new(0.5), {TextTransparency = 0})
+
+entryTween:Play()
+entryTween.Completed:Wait()
+strokeFadeIn:Play()
+fadeIn:Play()
+textFadeIn:Play()
+subFadeIn:Play()
+barFadeIn:Play()
+barFillFadeIn:Play()
+progressFadeIn:Play()
+statusFadeIn:Play()
+
+local loadSteps = {
+    {text = "Checking game state...", func = function()
+        local attempts = 0
+        while attempts < 30 do
+            if checkGameLoaded() then
+                return true, "Game loaded successfully"
+            end
+            attempts += 1
+            task.wait(0.1)
+        end
+        return false, "Game failed to load"
+    end},
+    {text = "Verifying services...", func = function()
+        local success, msg = checkEssentialServices()
+        return success, msg or "All services verified"
+    end},
+    {text = "Checking modules...", func = function()
+        local requiredModules = {"ReyHub_Main", "ReyHub_UI", "ReyHub_Utils"}
+        local found = 0
+        for _, moduleName in ipairs(requiredModules) do
+            local success, _ = checkModule(moduleName)
+            if success then
+                found += 1
+            end
+        end
+        return found > 0, "Found " .. found .. "/" .. #requiredModules .. " modules"
+    end},
+    {text = "Initializing UI...", func = function()
+        if not player:FindFirstChild("PlayerGui") then
+            return false, "PlayerGui not found"
+        end
+        return true, "UI system ready"
+    end},
+    {text = "Preparing features...", func = function()
+        if not player.Character then
+            return false, "Character not found"
+        end
+        return true, "Features prepared"
+    end},
+    {text = "Finalizing...", func = function()
+        return true, "Final checks complete"
+    end}
+}
+
+local totalTime = 5
+local stepTime = totalTime / #loadSteps
+
+local function updatePercentage()
+    local percentage = math.floor((barFill.Size.X.Scale / 1) * 100)
+    progressText.Text = percentage .. "%"
+end
+
+local connection
+connection = barFill:GetPropertyChangedSignal("Size"):Connect(updatePercentage)
+
+for i, step in ipairs(loadSteps) do
+    statusText.Text = step.text
+    
+    local success, result = step.func()
+    
+    if not success then
+        statusText.Text = "ERROR: " .. (result or "Unknown error")
+        statusText.TextColor3 = Color3.fromRGB(255, 50, 50)
+        barFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        break
+    end
+    
+    local targetWidth = (i / #loadSteps) * 1
+    local barTween = TweenService:Create(barFill, TweenInfo.new(stepTime, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(targetWidth, 0, 1, 0)
+    })
+    barTween:Play()
+    
+    local pulseOut = TweenService:Create(logo, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 90, 0, 90),
+        Position = UDim2.new(0.5, -45, 0.3, -45),
+        ImageColor3 = Color3.fromRGB(180, 50, 230)
+    })
+    
+    local pulseIn = TweenService:Create(logo, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 80, 0, 80),
+        Position = UDim2.new(0.5, -40, 0.3, -40),
+        ImageColor3 = Color3.fromRGB(148, 0, 211)
+    })
+    
+    pulseOut:Play()
+    pulseOut.Completed:Wait()
+    pulseIn:Play()
+    
+    task.wait(stepTime - 0.6)
+end
+
+if connection then
+    connection:Disconnect()
+end
+
+statusText.Text = "Ready!"
+progressText.Text = "100%"
+
+TweenService:Create(barFill, TweenInfo.new(0.3), {
+    Size = UDim2.new(1, 0, 1, 0)
+}):Play()
+
+TweenService:Create(barFill, TweenInfo.new(0.5), {
+    BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+}):Play()
+
+TweenService:Create(logo, TweenInfo.new(0.5), {
+    ImageColor3 = Color3.fromRGB(0, 255, 150)
+}):Play()
+
+TweenService:Create(title, TweenInfo.new(0.5), {
+    TextColor3 = Color3.fromRGB(0, 255, 150)
+}):Play()
+
+TweenService:Create(stroke, TweenInfo.new(0.5), {
+    Color = Color3.fromRGB(0, 255, 150)
+}):Play()
+
+task.wait(1)
+
+local exitTween = TweenService:Create(container, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+    Size = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1
+})
+
+local strokeFadeOut = TweenService:Create(stroke, TweenInfo.new(0.5), {Transparency = 1})
+local fadeOut = TweenService:Create(logo, TweenInfo.new(0.5), {ImageTransparency = 1})
+local textFadeOut = TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 1})
+local subFadeOut = TweenService:Create(subtitle, TweenInfo.new(0.5), {TextTransparency = 1})
+local barFadeOut = TweenService:Create(barBg, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+local barFillFadeOut = TweenService:Create(barFill, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+local progressFadeOut = TweenService:Create(progressText, TweenInfo.new(0.5), {TextTransparency = 1})
+local statusFadeOut = TweenService:Create(statusText, TweenInfo.new(0.5), {TextTransparency = 1})
+local bgFadeOut = TweenService:Create(background, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+
+strokeFadeOut:Play()
+fadeOut:Play()
+textFadeOut:Play()
+subFadeOut:Play()
+barFadeOut:Play()
+barFillFadeOut:Play()
+progressFadeOut:Play()
+statusFadeOut:Play()
+bgFadeOut:Play()
+exitTween:Play()
+
+exitTween.Completed:Wait()
+screenGui:Destroy()
+
+return true
