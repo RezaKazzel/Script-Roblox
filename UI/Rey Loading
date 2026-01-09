@@ -1,15 +1,16 @@
 local player = game:GetService("Players").LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 
-if player.PlayerGui:FindFirstChild("ReyHubLoading") then
-    player.PlayerGui.ReyHubLoading:Destroy()
+if CoreGui:FindFirstChild("ReyHubLoading") then
+    CoreGui.ReyHubLoading:Destroy()
 end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ReyHubLoading"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
-screenGui.Parent = player.PlayerGui
+screenGui.Parent = CoreGui
 
 local background = Instance.new("Frame")
 background.Size = UDim2.new(1, 0, 1, 0)
@@ -198,8 +199,8 @@ local loadSteps = {
         return found > 0, "Found " .. found .. "/" .. #requiredModules .. " modules"
     end},
     {text = "Initializing UI...", func = function()
-        if not player:FindFirstChild("PlayerGui") then
-            return false, "PlayerGui not found"
+        if not player:FindFirstChild("CoreGui") then
+            return false, "CoreGui not found"
         end
         return true, "UI system ready"
     end},
