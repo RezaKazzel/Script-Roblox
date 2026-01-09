@@ -1,4 +1,5 @@
-repeat wait() until game:IsLoaded()
+local check = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/UI/Rey%20Loading"))()
+if not check then print("Rey failed to load") return end
 
 local ReyUILib = {}
 
