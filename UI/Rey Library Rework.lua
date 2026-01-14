@@ -2,6 +2,10 @@ local check = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKaz
 if not check then print("Rey failed to load") return end
 
 local ReyUILib = {}
+ReyUILib.__index = ReyUILib
+
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 ReyUILib.CallbackManager = {
 	Toggles = {},
@@ -177,400 +181,570 @@ local function LoadConfig()
 end
 
 function ReyUILib:CreateUI(Name, NoteText, ChatEnabled)
-	local ChatEnabled = ChatEnabled or false
-	local Note = NoteText or false
-	local TweenService = game:GetService("TweenService")
-	local CoreGui = game:GetService("CoreGui")
-	local Players = game:GetService("Players")
-	local Player = Players.LocalPlayer
+    local ChatEnabled = ChatEnabled or false
+    local Note = NoteText or false
+    local TweenService = game:GetService("TweenService")
+    local CoreGui = game:GetService("CoreGui")
+    local Players = game:GetService("Players")
+    local Player = Players.LocalPlayer
+    local UserInputService = game:GetService("UserInputService")
+    
+    if CoreGui:FindFirstChild(Name) then
+        CoreGui:FindFirstChild(Name):Destroy()
+    elseif CoreGui:FindFirstChild("ReyUI") then
+        CoreGui:FindFirstChild("ReyUI"):Destroy()
+    end
+    
+    self.UISettings["Disable Notif"] = self.UISettings["Disable Notif"] or false
+    self.UISettings["Disable Animation"] = self.UISettings["Disable Animation"] or false
+    self.UISettings["Mute Sound Effect"] = self.UISettings["Mute Sound Effect"] or false
+    
+    local screenGui = Create("ScreenGui", {
+        Name = Name or "ReyUI",
+        Parent = CoreGui,
+        ResetOnSpawn = false
+    })
+
+    local ReyBtn = Create("TextButton", {
+        Name = "Rey",
+        Parent = screenGui,
+        Size = UDim2.new(0, 70, 0, 30),
+        Position = UDim2.new(1, -80, 0, 10),
+        BackgroundColor3 = Color3.fromRGB(148, 0, 211),
+        Text = "Rey",
+        TextColor3 = Color3.new(1, 1, 1),
+        BorderSizePixel = 0,
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        Active = true,
+        Draggable = true
+    })
+    
+    Create("UICorner", {
+        Parent = ReyBtn,
+        CornerRadius = UDim.new(0, 8)
+    })
+
+    local panel = Create("Frame", {
+        Parent = screenGui,
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, -1, 0),
+        BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Visible = false,
+        Active = true,
+        ClipsDescendants = true
+    })
+    
+    Create("UICorner", {
+        Parent = panel,
+        CornerRadius = UDim.new(0, 10)
+    })
+
+    local header = Create("TextLabel", {
+        Name = Name or "Rey UI",
+        Parent = panel,
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+        Text = Name or "Rey UI",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Center
+    })
+    
+    Create("UICorner", {
+        Parent = header,
+        CornerRadius = UDim.new(0, 10)
+    })
+
+    local leftFrame = Create("Frame", {
+        Parent = panel,
+        Size = UDim2.new(0, 130, 1, -30),
+        Position = UDim2.new(0, 0, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 50),
+        BorderSizePixel = 0
+    })
+    
+    Create("UICorner", {
+        Parent = leftFrame,
+        CornerRadius = UDim.new(0, 10)
+    })
+
+    local tabContainer = Create("Frame", {
+        Parent = leftFrame,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1
+    })
+
+    Create("UIListLayout", {
+        Parent = tabContainer,
+        FillDirection = Enum.FillDirection.Vertical,
+        Padding = UDim.new(0, 5),
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        SortOrder = Enum.SortOrder.LayoutOrder
+    })
+
+    local rightFrame = Create("Frame", {
+        Parent = panel,
+        Size = UDim2.new(1, -130, 1, -30),
+        Position = UDim2.new(0, 130, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+        BorderSizePixel = 0
+    })
+    
+    Create("UICorner", {
+        Parent = rightFrame,
+        CornerRadius = UDim.new(0, 10)
+    })
+    
+    local startframe = Create("Frame", {
+        Parent = panel,
+        Size = UDim2.new(1, -130, 1, -30),
+        Position = UDim2.new(0, 130, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+        BorderSizePixel = 2,
+        BorderColor3 = Color3.fromRGB(30, 30, 30)
+    })
+
+    Create("UICorner", {
+        Parent = startframe,
+        CornerRadius = UDim.new(0, 10)
+    })
+    
+    if Note then    
+        local sFrame = Create("ScrollingFrame", {
+            Parent = startframe,
+            Size = UDim2.new(1, -25, 0, 0),
+            Position = UDim2.new(0, 20, 0.3, 0),
+            BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+            BorderSizePixel = 0,
+            AutomaticSize = Enum.AutomaticSize.Y,
+            ScrollBarThickness = 6,
+            ClipsDescendants = true,
+            ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
+            CanvasSize = UDim2.new(0, 0, 0, 0)
+        })
+        
+        Create("UICorner", {
+            Parent = sFrame,
+            CornerRadius = UDim.new(0, 8)
+        })
+        
+        Create("UIStroke", {
+            Parent = sFrame,
+            Thickness = 1.5,
+            Color = Color3.fromRGB(255, 255, 255)
+        })
+        
+        local container = Create("Frame", {
+            Parent = sFrame,
+            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1,
+            AutomaticSize = Enum.AutomaticSize.Y
+        })
+        
+        local topPadding = Create("Frame", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 10),
+            BackgroundTransparency = 1,
+            LayoutOrder = 1
+        })
+        
+        local note = Create("TextLabel", {
+            Parent = container,
+            Size = UDim2.new(1, -20, 0, 0),
+            BackgroundTransparency = 1,
+            Text = Note or "-",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.Gotham,
+            TextSize = 14,
+            TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            AutomaticSize = Enum.AutomaticSize.Y,
+            LayoutOrder = 2
+        })
+        
+        local bottomPadding = Create("Frame", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 10),
+            BackgroundTransparency = 1,
+            LayoutOrder = 3
+        })
+        
+        local layout = Create("UIListLayout", {
+            Parent = container,
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            VerticalAlignment = Enum.VerticalAlignment.Top,
+            SortOrder = Enum.SortOrder.LayoutOrder
+        })
+        
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            sFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+        end)
+    end
+    
+    local FTextFrame = Create("Frame", {
+        Parent = startframe,
+        Size = UDim2.new(0.8, -25, 0, 70),
+        Position = UDim2.new(0, 95, 0, 20),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BorderSizePixel = 0
+    })
+
+    Create("UICorner", {
+        Parent = FTextFrame,
+        CornerRadius = UDim.new(0, 8)
+    })
+
+    local AvatarBorder = Create("Frame", {
+        Parent = startframe,
+        Size = UDim2.new(0,70,0,70),
+        Position = UDim2.new(0,20,0,20),
+        BackgroundColor3 = Color3.fromRGB(30,30,30)
+    })
+    
+    Create("UICorner", {
+        Parent = AvatarBorder,
+        CornerRadius = UDim.new(0, 10)
+    })
+    
+    Create("UIStroke", {
+        Parent = AvatarBorder,
+        Thickness = 1.5,
+        Color = Color3.fromRGB(255, 255, 255)
+    })
+    
+    local FGLabel = Create("TextLabel", {
+        Parent = startframe,
+        Size = UDim2.new(1, -50, 0, 40),
+        Position = UDim2.new(0, 100, 0, 35),
+        BackgroundTransparency = 1,
+        Text = "Halo, " .. (Player.DisplayName or "User") .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..(ExternalData["Execute"] or "0"),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.Gotham,
+        TextSize = 17,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local profileImage = Create("ImageLabel", {
+        Parent = startframe,
+        Size = UDim2.new(0, 70, 0, 70),
+        Position = UDim2.new(0, 20, 0, 20),
+        BackgroundTransparency = 1,
+        Image = Players:GetUserThumbnailAsync(
+            Player.UserId,
+            Enum.ThumbnailType.HeadShot,
+            Enum.ThumbnailSize.Size100x100
+        )
+    })
+    
+    Create("UICorner", {
+        Parent = profileImage,
+        CornerRadius = UDim.new(0, 10)
+    })
+
+    Create("UIStroke", {
+        Parent = FTextFrame,
+        Thickness = 1.5,
+        Color = Color3.fromRGB(255, 255, 255)
+    })
+    
+    local SFX = Create("Folder", {
+        Name = "Sound Effect",
+        Parent = screenGui
+    })
+    
+    Create("Sound", {
+        SoundId = "rbxassetid://80843441506433",
+        Name = "Mambo",
+        Parent = SFX
+    })
+    
+    Create("Sound", {
+        SoundId = "rbxassetid://90255863401034",
+        Name = "Wow",
+        Parent = SFX
+    })
+    
+    self.SFX = SFX
+    
+    local showTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -250, 0.5, -200),
+        BackgroundTransparency = 0,
+        Size = UDim2.new(0, 500, 0, 350)
+    })
+
+    local hideTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Position = UDim2.new(0.5, 0, -1, 0),
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 0, 0, 0)
+    })
+    
+    local ReyPosition = ReyBtn.Position
+    local isOpen = false
+    
+    ReyBtn.MouseButton1Click:Connect(function()
+        if ReyBtn.Position ~= ReyPosition then
+            ReyPosition = ReyBtn.Position
+            return
+        end
+        
+        if not isOpen then
+            panel.Visible = true
+            if not self.UISettings["Disable Animation"] then
+                showTween:Play()
+            else
+                panel.Position = UDim2.new(0.5, -250, 0.5, -200)
+                panel.BackgroundTransparency = 0
+                panel.Size = UDim2.new(0, 500, 0, 350)
+            end
+            isOpen = true
+        else
+            if not self.UISettings["Disable Animation"] then
+                hideTween:Play()
+                hideTween.Completed:Wait()
+                panel.Visible = false
+            else
+                panel.Visible = false
+            end
+            isOpen = false
+        end
+    end)
+    
+    -- DRAG SYSTEM
+    local dragging, startPos, dragStart
+    
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+           or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = panel.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+           or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            panel.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    -- RESIZE SYSTEM (MOBILE SUPPORT)
+	local resizing = false
+	local startSize, startInput
 	
-	if CoreGui:FindFirstChild(Name) then
-		CoreGui:FindFirstChild(Name):Destroy()
-	elseif CoreGui:FindFirstChild("ReyUI") then
-		CoreGui:FindFirstChild("ReyUI"):Destroy()
+	-- Resize Handle DI LUAR panel
+	local ResizeHandle = Create("Frame", {
+	    Parent = screenGui, -- PARENT KE SCREENGUI, BUKAN PANEL!
+	    Size = UDim2.new(0, 25, 0, 25),
+	    Position = UDim2.new(1, -40, 1, -40), -- Position absolute di screen
+	    BackgroundColor3 = Color3.fromRGB(85, 0, 255),
+	    BackgroundTransparency = 1,
+	    ZIndex = 100, -- ZINDEX TINGGI AGAR SELALU DI ATAS
+	    BorderSizePixel = 0,
+	    Active = true
+	})
+	
+	Create("UICorner", {
+	    Parent = ResizeHandle,
+	    CornerRadius = UDim.new(0, 8)
+	})
+	-- Fungsi untuk update posisi resize handle
+	local function updateResizeHandlePosition()
+	    local panelAbsPos = panel.AbsolutePosition
+	    local panelAbsSize = panel.AbsoluteSize
+	
+	    ResizeHandle.Position = UDim2.new(
+	        0, panelAbsPos.X + panelAbsSize.X + -15,
+	        0, panelAbsPos.Y + panelAbsSize.Y + -15
+	    )
 	end
 	
-	self.UISettings["Disable Notif"] = self.UISettings["Disable Notif"] or false
-	self.UISettings["Disable Animation"] = self.UISettings["Disable Animation"] or false
-	self.UISettings["Mute Sound Effect"] = self.UISettings["Mute Sound Effect"] or false
-	
-	local screenGui = Create("ScreenGui", {
-		Name = Name or "ReyUI",
-		Parent = CoreGui,
-		ResetOnSpawn = false
-	})
-
-	local ReyBtn = Create("TextButton", {
-		Name = "Rey",
-		Parent = screenGui,
-		Size = UDim2.new(0, 70, 0, 30),
-		Position = UDim2.new(1, -80, 0, 10),
-		BackgroundColor3 = Color3.fromRGB(148, 0, 211),
-		Text = "Rey",
-		TextColor3 = Color3.new(1, 1, 1),
-		BorderSizePixel = 0,
-		Font = Enum.Font.GothamBold,
-		TextSize = 14,
-		Active = true,
-		Draggable = true
-	})
-	
-	Create("UICorner", {
-		Parent = ReyBtn,
-		CornerRadius = UDim.new(0, 8)
-	})
-
-	local panel = Create("Frame", {
-		Parent = screenGui,
-		Size = UDim2.new(0, 0, 0, 0),
-		Position = UDim2.new(0.5, 0, -1, 0),
-		BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Visible = false,
-		Active = true,
-		ClipsDescendants = true,
-		Draggable = true
-	})
-	
-	Create("UICorner", {
-		Parent = panel,
-		CornerRadius = UDim.new(0, 10)
-	})
-
-	local header = Create("TextLabel", {
-		Name = Name or "Rey UI",
-		Parent = panel,
-		Size = UDim2.new(1, 0, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-		Text = Name or "Rey UI",
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		BorderSizePixel = 0,
-		Font = Enum.Font.GothamBold,
-		TextSize = 16,
-		TextXAlignment = Enum.TextXAlignment.Center
-	})
-	
-	Create("UICorner", {
-		Parent = header,
-		CornerRadius = UDim.new(0, 10)
-	})
-
-	local leftFrame = Create("Frame", {
-		Parent = panel,
-		Size = UDim2.new(0, 130, 1, -30),
-		Position = UDim2.new(0, 0, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(35, 35, 50),
-		BorderSizePixel = 0
-	})
-	
-	Create("UICorner", {
-		Parent = leftFrame,
-		CornerRadius = UDim.new(0, 10)
-	})
-
-	local tabContainer = Create("Frame", {
-		Parent = leftFrame,
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1
-	})
-
-	Create("UIListLayout", {
-		Parent = tabContainer,
-		FillDirection = Enum.FillDirection.Vertical,
-		Padding = UDim.new(0, 5),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		VerticalAlignment = Enum.VerticalAlignment.Top,
-		SortOrder = Enum.SortOrder.LayoutOrder
-	})
-
-	local rightFrame = Create("Frame", {
-		Parent = panel,
-		Size = UDim2.new(1, -130, 1, -30),
-		Position = UDim2.new(0, 130, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-		BorderSizePixel = 0
-	})
-	
-	Create("UICorner", {
-		Parent = rightFrame,
-		CornerRadius = UDim.new(0, 10)
-	})
-	
-	local startframe = Create("Frame", {
-		Parent = panel,
-		Size = UDim2.new(1, -130, 1, -30),
-		Position = UDim2.new(0, 130, 0, 30),
-		BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-		BorderSizePixel = 2,
-		BorderColor3 = Color3.fromRGB(30, 30, 30)
-	})
-
-	Create("UICorner", {
-		Parent = startframe,
-		CornerRadius = UDim.new(0, 10)
-	})
-	
-	if Note then	
-		local sFrame = Create("ScrollingFrame", {
-			Parent = startframe,
-			Size = UDim2.new(1, -25, 0, 0),
-			Position = UDim2.new(0, 20, 0.3, 0),
-			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-			BorderSizePixel = 0,
-			AutomaticSize = Enum.AutomaticSize.Y,
-			ScrollBarThickness = 6,
-			ClipsDescendants = true,
-			ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100),
-			CanvasSize = UDim2.new(0, 0, 0, 0)
-		})
-		
-		Create("UICorner", {
-			Parent = sFrame,
-			CornerRadius = UDim.new(0, 8)
-		})
-		
-		Create("UIStroke", {
-			Parent = sFrame,
-			Thickness = 1.5,
-			Color = Color3.fromRGB(255, 255, 255)
-		})
-		
-		local container = Create("Frame", {
-			Parent = sFrame,
-			Size = UDim2.new(1, 0, 0, 0),
-			BackgroundTransparency = 1,
-			AutomaticSize = Enum.AutomaticSize.Y
-		})
-		
-		local topPadding = Create("Frame", {
-			Parent = container,
-			Size = UDim2.new(1, 0, 0, 10),
-			BackgroundTransparency = 1,
-			LayoutOrder = 1
-		})
-		
-		local note = Create("TextLabel", {
-			Parent = container,
-			Size = UDim2.new(1, -20, 0, 0),
-			BackgroundTransparency = 1,
-			Text = Note or "-",
-			TextColor3 = Color3.fromRGB(255, 255, 255),
-			Font = Enum.Font.Gotham,
-			TextSize = 14,
-			TextWrapped = true,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
-			AutomaticSize = Enum.AutomaticSize.Y,
-			LayoutOrder = 2
-		})
-		
-		local bottomPadding = Create("Frame", {
-			Parent = container,
-			Size = UDim2.new(1, 0, 0, 10),
-			BackgroundTransparency = 1,
-			LayoutOrder = 3
-		})
-		
-		local layout = Create("UIListLayout", {
-			Parent = container,
-			FillDirection = Enum.FillDirection.Vertical,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			VerticalAlignment = Enum.VerticalAlignment.Top,
-			SortOrder = Enum.SortOrder.LayoutOrder
-		})
-		
-		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			sFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
-		end)
+	-- Update posisi saat panel berpindah atau di-resize
+	local function onPanelPositionChanged()
+	    if panel.Visible then
+	        updateResizeHandlePosition()
+	    else
+	        ResizeHandle.Visible = false
+	    end
 	end
 	
-	local FTextFrame = Create("Frame", {
-		Parent = startframe,
-		Size = UDim2.new(0.8, -25, 0, 70),
-		Position = UDim2.new(0, 95, 0, 20),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-		BorderSizePixel = 0
-	})
-
-	Create("UICorner", {
-		Parent = FTextFrame,
-		CornerRadius = UDim.new(0, 8)
-	})
-
-	local AvatarBorder = Create("Frame", {
-		Parent = startframe,
-		Size = UDim2.new(0,70,0,70),
-		Position = UDim2.new(0,20,0,20),
-		BackgroundColor3 = Color3.fromRGB(30,30,30)
-	})
-	
-	Create("UICorner", {
-		Parent = AvatarBorder,
-		CornerRadius = UDim.new(0, 10)
-	})
-	
-	Create("UIStroke", {
-		Parent = AvatarBorder,
-		Thickness = 1.5,
-		Color = Color3.fromRGB(255, 255, 255)
-	})
-	
-	local FGLabel = Create("TextLabel", {
-		Parent = startframe,
-		Size = UDim2.new(1, -50, 0, 40),
-		Position = UDim2.new(0, 100, 0, 35),
-		BackgroundTransparency = 1,
-		Text = "Halo, " .. Player.DisplayName .. "!\n\nKamu Telah menggunakan Rey UI\nsebanyak: "..(ExternalData["Execute"] or 0),
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		Font = Enum.Font.Gotham,
-		TextSize = 17,
-		TextXAlignment = Enum.TextXAlignment.Left
-	})
-
-	local profileImage = Create("ImageLabel", {
-		Parent = startframe,
-		Size = UDim2.new(0, 70, 0, 70),
-		Position = UDim2.new(0, 20, 0, 20),
-		BackgroundTransparency = 1,
-		Image = Players:GetUserThumbnailAsync(
-			Player.UserId,
-			Enum.ThumbnailType.HeadShot,
-			Enum.ThumbnailSize.Size100x100
-		)
-	})
-	
-	Create("UICorner", {
-		Parent = profileImage,
-		CornerRadius = UDim.new(0, 10)
-	})
-
-	Create("UIStroke", {
-		Parent = FTextFrame,
-		Thickness = 1.5,
-		Color = Color3.fromRGB(255, 255, 255)
-	})
-	
-	local SFX = Create("Folder", {
-		Name = "Sound Effect",
-		Parent = screenGui
-	})
-	
-	Create("Sound", {
-		SoundId = "rbxassetid://80843441506433",
-		Name = "Mambo",
-		Parent = SFX
-	})
-	
-	Create("Sound", {
-		SoundId = "rbxassetid://90255863401034",
-		Name = "Wow",
-		Parent = SFX
-	})
-	
-	self.SFX = SFX
-	
-	local showTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -250, 0.5, -200),
-		BackgroundTransparency = 0,
-		Size = UDim2.new(0, 500, 0, 350)
-	})
-
-	local hideTween = TweenService:Create(panel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, 0, -1, 0),
-		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 0, 0, 0)
-	})
-	
-	local ReyPosition = ReyBtn.Position
-	local isOpen = false
-	
-	ReyBtn.MouseButton1Click:Connect(function()
-		if ReyBtn.Position ~= ReyPosition then
-			ReyPosition = ReyBtn.Position
-			return
-		end
-		
-		if not isOpen then
-			panel.Visible = true
-			if not self.UISettings["Disable Animation"] then
-				showTween:Play()
-			else
-				panel.Position = UDim2.new(0.5, -250, 0.5, -200)
-				panel.BackgroundTransparency = 0
-				panel.Size = UDim2.new(0, 500, 0, 350)
-			end
-			isOpen = true
-		else
-			if not self.UISettings["Disable Animation"] then
-				hideTween:Play()
-				hideTween.Completed:Wait()
-				panel.Visible = false
-			else
-				panel.Visible = false
-			end
-			isOpen = false
-		end
+	-- Tampilkan/sembunyikan resize handle sesuai panel
+	panel:GetPropertyChangedSignal("Visible"):Connect(function()
+	    ResizeHandle.Visible = panel.Visible
+	    if panel.Visible then
+	        updateResizeHandlePosition()
+	    end
 	end)
 	
-	local settingsTabContent = self:CreateTab({
-		ScreenGui = screenGui,
-		Panel = panel,
-		LeftFrame = leftFrame,
-		RightFrame = rightFrame,
-		StartFrame = startframe,
-		TabContainer = tabContainer,
-		SFX = SFX
-	}, "Settings")
+	-- Update posisi saat panel di-move
+	panel:GetPropertyChangedSignal("AbsolutePosition"):Connect(onPanelPositionChanged)
+	panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(onPanelPositionChanged)
 	
-	local configManager = self:CreateConfigManager(settingsTabContent)
-	self:CreateNote(settingsTabContent, "💾 Save named configs\n📂 Load saved configs\n🗑️ Delete configs\n🔄 Refresh list")
-	
-	local disableOptions = {"Disable Notif", "Disable Animation", "Mute Sound Effect"}
-	self:CreateMultipleDropdown(settingsTabContent, "Disable Features", disableOptions, function(selected)
-		self.UISettings["Disable Notif"] = false
-		self.UISettings["Disable Animation"] = false
-		self.UISettings["Mute Sound Effect"] = false
-		
-		for _, feature in ipairs(selected) do
-			if feature == "Disable Notif" then
-				self.UISettings["Disable Notif"] = true
-			elseif feature == "Disable Animation" then
-				self.UISettings["Disable Animation"] = true
-			elseif feature == "Mute Sound Effect" then
-				self.UISettings["Mute Sound Effect"] = true
-			end
-		end
-		
-		self:ApplyFeatureSettings()
+	-- Resize handle events
+	ResizeHandle.InputBegan:Connect(function(input)
+	    if input.UserInputType == Enum.UserInputType.MouseButton1 
+	       or input.UserInputType == Enum.UserInputType.Touch then
+	        resizing = true
+	        startSize = panel.Size
+	        startInput = input.Position
+	        
+	        -- Visual feedback
+	        ResizeHandle.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+	        
+	        input.Changed:Connect(function()
+	            if input.UserInputState == Enum.UserInputState.End then
+	                resizing = false
+	                ResizeHandle.BackgroundColor3 = Color3.fromRGB(85, 0, 255)
+	            end
+	        end)
+	    end
 	end)
 	
-	self:CreateButton(settingsTabContent, "Load Extension", "Advance Feature", "Load", function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
+	UserInputService.InputChanged:Connect(function(input)
+	    if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement
+	       or input.UserInputType == Enum.UserInputType.Touch) then
+	        local delta = input.Position - startInput
+	        
+	        local newWidth = math.clamp(startSize.X.Offset + delta.X, 300, 1000)
+	        local newHeight = math.clamp(startSize.Y.Offset + delta.Y, 200, 800)
+	        
+	        panel.Size = UDim2.new(0, newWidth, 0, newHeight)
+	        
+	        -- Update posisi resize handle
+	        updateResizeHandlePosition()
+	        
+	        -- Update internal frames
+	        if rightFrame then
+	            rightFrame.Size = UDim2.new(1, -130, 1, -30)
+	        end
+	        
+	        if startframe then
+	            startframe.Size = UDim2.new(1, -130, 1, -30)
+	        end
+	    end
 	end)
 	
-	task.spawn(function()
-		wait(0.5)
-		self:Notify("success", "Rey UI", "Library loaded successfully!", 3)
+	-- Juga perlu update posisi saat tween animation selesai
+	showTween.Completed:Connect(function()
+	    updateResizeHandlePosition()
 	end)
-	
-	self:MonitorUIDeletion(screenGui)
-	if ChatEnabled then
-		self:EnableChatCommands()
-	end
-	
-	local UI = {
-		ScreenGui = screenGui,
-		Panel = panel,
-		LeftFrame = leftFrame,
-		RightFrame = rightFrame,
-		StartFrame = startframe,
-		TabContainer = tabContainer,
-		SFX = SFX,
-		SettingsTab = settingsTabContent
-	}
-	self.MainUI = UI
-	return UI
+    
+    -- Responsive text size
+    local function updateTextSize()
+        local width = panel.AbsoluteSize.X
+        local scaleFactor = math.clamp(width / 500, 0.8, 1.2)
+        
+        header.TextSize = math.floor(16 * scaleFactor)
+        
+        if tabContainer then
+            for _, btn in ipairs(tabContainer:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.TextSize = math.floor(14 * scaleFactor)
+                end
+            end
+        end
+        
+        if rightFrame then
+            for _, item in ipairs(rightFrame:GetChildren()) do
+                if item:IsA("TextLabel") then
+                    item.TextSize = math.floor(14 * scaleFactor)
+                elseif item:IsA("TextButton") then
+                    item.TextSize = math.floor(14 * scaleFactor)
+                elseif item:IsA("Frame") then
+                    for _, subItem in ipairs(item:GetChildren()) do
+                        if subItem:IsA("TextLabel") or subItem:IsA("TextButton") then
+                            subItem.TextSize = math.floor(14 * scaleFactor)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    panel:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTextSize)
+    
+    task.spawn(function()
+        wait(0.1)
+        updateTextSize()
+    end)
+    
+    local settingsTabContent = self:CreateTab({
+        ScreenGui = screenGui,
+        Panel = panel,
+        LeftFrame = leftFrame,
+        RightFrame = rightFrame,
+        StartFrame = startframe,
+        TabContainer = tabContainer,
+        SFX = SFX
+    }, "Settings")
+    
+    local configManager = self:CreateConfigManager(settingsTabContent)
+    self:CreateNote(settingsTabContent, "💾 Save named configs\n📂 Load saved configs\n🗑️ Delete configs\n🔄 Refresh list")
+    
+    local disableOptions = {"Disable Notif", "Disable Animation", "Mute Sound Effect"}
+    self:CreateMultipleDropdown(settingsTabContent, "Disable Features", disableOptions, function(selected)
+        self.UISettings["Disable Notif"] = false
+        self.UISettings["Disable Animation"] = false
+        self.UISettings["Mute Sound Effect"] = false
+        
+        for _, feature in ipairs(selected) do
+            if feature == "Disable Notif" then
+                self.UISettings["Disable Notif"] = true
+            elseif feature == "Disable Animation" then
+                self.UISettings["Disable Animation"] = true
+            elseif feature == "Mute Sound Effect" then
+                self.UISettings["Mute Sound Effect"] = true
+            end
+        end
+        
+        self:ApplyFeatureSettings()
+    end)
+    
+    self:CreateButton(settingsTabContent, "Load Extension", "Advance Feature", "Load", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Extension/Extensions.lua"))()
+    end)
+    
+    task.spawn(function()
+        wait(0.5)
+        self:Notify("success", "Rey UI", "Library loaded successfully!", 3)
+    end)
+    
+    self:MonitorUIDeletion(screenGui)
+    if ChatEnabled then
+        self:EnableChatCommands()
+    end
+    
+    local UI = {
+        ScreenGui = screenGui,
+        Panel = panel,
+        LeftFrame = leftFrame,
+        RightFrame = rightFrame,
+        StartFrame = startframe,
+        TabContainer = tabContainer,
+        SFX = SFX,
+        SettingsTab = settingsTabContent
+    }
+    self.MainUI = UI
+    return UI
 end
 
 function ReyUILib:CreateTab(UI, Name)
