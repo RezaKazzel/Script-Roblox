@@ -114,11 +114,7 @@ function Utils.randomString()
 end
 
 if not success or not WindUI then
-	StarterGui:SetCore("SendNotification", {
-		Title = "Error",
-		Text = "Failed to load WindUI",
-		Duration = 3
-	})
+	warn("Failed to load WindUI")
 	return
 end
 
