@@ -1656,13 +1656,13 @@ local ThemeSection = SettingsTab:Section({
     Opened = false
 })
 
-local themes = {"Dark", "Light", "Rose", "Plant", "Red", "Indigo", "Sky", "Violet", "Amber", "Emerald", "Midnight", "Crimson", "MonokaiPro", "CottonCandy"}
+local themes = {"Dark", "Light", "Rose", "Plant", "Red", "Indigo", "Sky", "Crimson", "Amber", "Emerald", "Midnight", "Crimson", "MonokaiPro", "CottonCandy"}
 
 ThemeSection:Dropdown({
     Title = "Theme Color",
     Desc = "Change UI color scheme",
     Values = themes,
-    Value = "Violet",
+    Value = "Crimson",
     Multi = false,
     Flag = "UITheme",
     Callback = function(theme)
