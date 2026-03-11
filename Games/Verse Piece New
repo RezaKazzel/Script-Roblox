@@ -457,6 +457,33 @@ Rey:CreateButton(Exclusive, "Auto Goblet [Manual Click]", "farm diamond cik", "S
 	for i = 1, 2000 do pressKey("E") end
 end)
 
+--[[
+while AutoSell do
+    task.wait()
+    
+    local success, gui = pcall(function()
+        return game:GetService("Players").LocalPlayer.PlayerGui["Adventure Store"]
+    end)
+    
+    if success then
+        local success2, button = pcall(function()
+            return gui.Main.Iinv.Material["6 Goblet"].Button
+        end)
+        
+        if success2 then
+            local GuiService = game:GetService("GuiService")
+            local VIM = game:GetService("VirtualInputManager")
+            
+            GuiService.SelectedObject = button
+            VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+            VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            task.wait()
+            GuiService.SelectedObject = nil
+        end
+    end
+end
+]]
+
 -- Auto Buy Black Merchant (Slow)
 Rey:CreateToggle(Exclusive, "Auto Buy Black Merchant (Slow)", "Auto TP, Auto Buy", function(state)
 	_G.AutoBM1 = state
