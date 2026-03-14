@@ -1815,6 +1815,10 @@ removeConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
 	end
 end)
 
+Window:OnDestroy(function()
+    CleanupAll()
+end)
+
 Window:SelectTab(1)
 
 -- Welcome notification
