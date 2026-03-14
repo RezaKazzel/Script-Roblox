@@ -25,95 +25,95 @@ local ActiveConnections = {}
 local Utils = {}
 
 function Utils.Disconnect(key)
-    local conn = ActiveConnections[key]
-    if not conn then return end
-    if typeof(conn) == "RBXScriptConnection" then
-        conn:Disconnect()
-    elseif type(conn) == "thread" then
-        coroutine.close(conn)
-    end
-    ActiveConnections[key] = nil
+	local conn = ActiveConnections[key]
+	if not conn then return end
+	if typeof(conn) == "RBXScriptConnection" then
+		conn:Disconnect()
+	elseif type(conn) == "thread" then
+		coroutine.close(conn)
+	end
+	ActiveConnections[key] = nil
 end
 
 function Utils.AddConnection(key, conn)
-    Utils.Disconnect(key)
-    ActiveConnections[key] = conn
+	Utils.Disconnect(key)
+	ActiveConnections[key] = conn
 end
 
 function Utils.StartThread(key, func)
-    Utils.Disconnect(key)
-    local thread = coroutine.create(func)
-    ActiveConnections[key] = thread
-    coroutine.resume(thread)
+	Utils.Disconnect(key)
+	local thread = coroutine.create(func)
+	ActiveConnections[key] = thread
+	coroutine.resume(thread)
 end
 
 -- State management
 local State = {
-    Distance = 10,
-    FarmPosition = "Above",
-    SelectedFolder = workspace,
-    NPCFolder = workspace,
-    Range = 100,
-    OneHitHealth = 0.9,
-    SelectedMob = nil,
-    SelectedTool = nil,
-    XRay = false,
-    InfJumpDebounce = false,
-    TeleportCheck = false,
-    OneHit = false,
-    AutoClick = false,
-    AutoGrab = false,
-    AutoProximityShown = false,
-    AutoProximityInstant = false,
-    AutoFarm = false,
-    RestrictAutoFarm = false,
-    RestrictedParent = false,
-    Noclip = false,
-    FloatEnabled = false,
-    EdgeJumpEnabled = false
+	Distance = 10,
+	FarmPosition = "Above",
+	SelectedFolder = workspace,
+	NPCFolder = workspace,
+	Range = 100,
+	OneHitHealth = 0.9,
+	SelectedMob = {},
+	SelectedTool = nil,
+	XRay = false,
+	InfJumpDebounce = false,
+	TeleportCheck = false,
+	OneHit = false,
+	AutoClick = false,
+	AutoGrab = false,
+	AutoProximityShown = false,
+	AutoProximityInstant = false,
+	AutoFarm = false,
+	RestrictAutoFarm = false,
+	RestrictedParent = false,
+	Noclip = false,
+	FloatEnabled = false,
+	EdgeJumpEnabled = false
 }
 
 -- Helper Functions
 local function GetService(name)
-    return game:GetService(name)
+	return game:GetService(name)
 end
 
 local function getRoot(char)
-    if not char then return nil end
-    return char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
+	if not char then return nil end
+	return char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
 end
 
 local function SetG(path, value)
-    local keys = path:split(".")
-    local target = getgenv()
-    
-    for i = 1, #keys - 1 do
-        if not target[keys[i]] then
-            target[keys[i]] = {}
-        end
-        target = target[keys[i]]
-    end
-    target[keys[#keys]] = value
+	local keys = path:split(".")
+	local target = getgenv()
+	
+	for i = 1, #keys - 1 do
+		if not target[keys[i]] then
+			target[keys[i]] = {}
+		end
+		target = target[keys[i]]
+	end
+	target[keys[#keys]] = value
 end
 
 local function GetG(path)
-    local keys = path:split(".")
-    local target = getgenv()
-    
-    for i = 1, #keys do
-        target = target[keys[i]]
-        if not target then return nil end
-    end
-    return target
+	local keys = path:split(".")
+	local target = getgenv()
+	
+	for i = 1, #keys do
+		target = target[keys[i]]
+		if not target then return nil end
+	end
+	return target
 end
 
 function Utils.randomString()
-    local length = math.random(10,20)
-    local array = {}
-    for i = 1, length do
-        array[i] = string.char(math.random(32, 126))
-    end
-    return table.concat(array)
+	local length = math.random(10,20)
+	local array = {}
+	for i = 1, length do
+		array[i] = string.char(math.random(32, 126))
+	end
+	return table.concat(array)
 end
 
 local Window = WindUI:CreateWindow({
@@ -156,1137 +156,1236 @@ local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
 -- Mob Selection Functions
 local function GetMonsterList()
-    local monsters = {}
-    for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-        if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-            if not table.find(monsters, obj.Name) then
-                table.insert(monsters, obj.Name)
-            end
-        end
-    end
-    return monsters
+	local monsters = {}
+	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+			if not table.find(monsters, obj.Name) then
+				table.insert(monsters, obj.Name)
+			end
+		end
+	end
+	return monsters
 end
 
 local function GetBackpackTools()
-    local tools = {}
-    for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            table.insert(tools, item.Name)
-        end
-    end
-    return tools
+	local tools = {}
+	for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
+		if item:IsA("Tool") then
+			table.insert(tools, item.Name)
+		end
+	end
+	return tools
 end
 
 local function GetMobFolder(modelName)
-    for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-        if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
-            local currentObj = obj
-            while currentObj and not currentObj:IsA("Folder") do
-                if currentObj.Parent and currentObj.Parent:IsA("Folder") then
-                    return currentObj.Parent
-                end
-                currentObj = currentObj.Parent
-            end
-        end
-    end
-    return nil
+	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
+			local currentObj = obj
+			while currentObj and not currentObj:IsA("Folder") do
+				if currentObj.Parent and currentObj.Parent:IsA("Folder") then
+					return currentObj.Parent
+				end
+				currentObj = currentObj.Parent
+			end
+		end
+	end
+	return nil
 end
 
 local function GetNearbyEnemies(range)
-    local enemies = {}
-    local Character = LocalPlayer.Character
-    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
-    local rootPart = Character.HumanoidRootPart
-    
-    for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-        if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-            local humanoid = obj.Humanoid
-            local enemyRootPart = obj.HumanoidRootPart
-            local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
-            
-            if humanoid and humanoid.Health > 0 and distance <= range then
-                table.insert(enemies, obj)
-            end
-        end
-    end
-    
-    table.sort(enemies, function(a, b)
-        return a.Humanoid.Health < b.Humanoid.Health
-    end)
-    
-    return enemies
+	local enemies = {}
+	local Character = LocalPlayer.Character
+	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
+	local rootPart = Character.HumanoidRootPart
+	
+	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+			local humanoid = obj.Humanoid
+			local enemyRootPart = obj.HumanoidRootPart
+			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
+			
+			if humanoid and humanoid.Health > 0 and distance <= range then
+				table.insert(enemies, obj)
+			end
+		end
+	end
+	
+	table.sort(enemies, function(a, b)
+		return a.Humanoid.Health < b.Humanoid.Health
+	end)
+	
+	return enemies
 end
 
 local function ApplyOneHit(object)
-    task.spawn(function()
-        pcall(function()
-            local beforeHealth = object.Humanoid.Health
-            if object and object.Humanoid.Health > 0 and object.Humanoid.Health / math.max(object.Humanoid.MaxHealth, 1) < State.OneHitHealth then
-                object.Humanoid.Health = 0
-            end
-            task.wait(1.5)
-            if object then
-                object.Humanoid.Health = beforeHealth
-            end
-        end)
-    end)
+	task.spawn(function()
+		pcall(function()
+			local beforeHealth = object.Humanoid.Health
+			if object and object.Humanoid.Health > 0 and object.Humanoid.Health / math.max(object.Humanoid.MaxHealth, 1) < State.OneHitHealth then
+				object.Humanoid.Health = 0
+			end
+			task.wait(1.5)
+			if object then
+				object.Humanoid.Health = beforeHealth
+			end
+		end)
+	end)
 end
 
 local function SetupBodyVelocity()
-    local Character = LocalPlayer.Character
-    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
-    if torso and not torso:FindFirstChild("BodyVelocity") then
-        local bv = Instance.new("BodyVelocity", torso)
-        bv.Velocity = Vector3.new(0, 0.1, 0)
-        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    end
+	local Character = LocalPlayer.Character
+	local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+	if torso and not torso:FindFirstChild("BodyVelocity") then
+		local bv = Instance.new("BodyVelocity", torso)
+		bv.Velocity = Vector3.new(0, 0.1, 0)
+		bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	end
 end
 
 local function RemoveBodyVelocity()
-    local Character = LocalPlayer.Character
-    local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
-    if torso and torso:FindFirstChild("BodyVelocity") then
-        torso.BodyVelocity:Destroy()
-    end
+	local Character = LocalPlayer.Character
+	local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+	if torso and torso:FindFirstChild("BodyVelocity") then
+		torso.BodyVelocity:Destroy()
+	end
 end
 
 local function Attack(char)
-    local tool = char and char:FindFirstChildOfClass("Tool")
-    if tool then
-        tool:Activate()
-    end
+	local tool = char and char:FindFirstChildOfClass("Tool")
+	if tool then
+		tool:Activate()
+	end
 end
 
 local function getTargetCFrame(targetRoot)
-    local offset
-    if State.FarmPosition == "Above" then
-        offset = Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
-    elseif State.FarmPosition == "Behind" then
-        offset = -targetRoot.CFrame.LookVector * State.Distance + Vector3.new(0, 2, 0)
-    elseif State.FarmPosition == "Down" then
-        offset = Vector3.new(0, -(targetRoot.Size.Y / 2 + State.Distance), 0)
-    else
-        offset = Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
-    end
-    local pos = targetRoot.Position + offset
-    return CFrame.new(pos, targetRoot.Position)
+	local offset
+	if State.FarmPosition == "Above" then
+		offset = Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
+	elseif State.FarmPosition == "Behind" then
+		offset = -targetRoot.CFrame.LookVector * State.Distance + Vector3.new(0, 2, 0)
+	elseif State.FarmPosition == "Down" then
+		offset = Vector3.new(0, -(targetRoot.Size.Y / 2 + State.Distance), 0)
+	else
+		offset = Vector3.new(0, targetRoot.Size.Y / 2 + State.Distance, 0)
+	end
+	local pos = targetRoot.Position + offset
+	return CFrame.new(pos, targetRoot.Position)
 end
 
 -- AutoFarm Functions
 local AutoFarmSection = AutoFarmTab:Section({
-    Title = "Auto Farm Controls",
-    Desc = "Configure mob farming settings",
-    Icon = "target",
-    Box = true,
-    BoxBorder = true,
-    Opened = true
+	Title = "Auto Farm Controls",
+	Desc = "Configure mob farming settings",
+	Icon = "target",
+	Box = true,
+	BoxBorder = true,
+	Opened = true
 })
 
 -- Mob Dropdown
 local mobDropdown = AutoFarmSection:Dropdown({
-    Title = "Select Mob",
-    Desc = "Choose mob to farm",
-    Values = GetMonsterList(),
-    Multi = false,
-    Flag = "SelectedMob",
-    Callback = function(value)
-        State.SelectedMob = value
-        WindUI:Notify({
-            Title = "Auto Farm",
-            Content = "Selected Mob: " .. value,
-            Duration = 2,
-            Icon = "target"
-        })
-    end
+	Title = "Select Mobs",
+	Desc = "Choose mobs to farm",
+	Values = GetMonsterList(),
+	Multi = true,
+	SearchBarEnabled = true,
+	Flag = "SelectedMobs",
+	Callback = function(values)
+		State.SelectedMobs = values
+		if values and #values > 0 then
+			WindUI:Notify({
+				Title = "Auto Farm",
+				Content = "Selected " .. #values .. " mob(s)",
+				Duration = 2,
+				Icon = "target"
+			})
+		end
+	end
 })
 
 -- Refresh mob list button
 AutoFarmSection:Button({
-    Title = "Refresh Mob List",
-    Icon = "refresh-cw",
-    Callback = function()
-        mobDropdown:Refresh(GetMonsterList())
-        WindUI:Notify({
-            Title = "Mob List",
-            Content = "Mob list refreshed",
-            Duration = 2,
-            Icon = "refresh-cw"
-        })
-    end
+	Title = "Refresh Mob List",
+	Icon = "refresh-cw",
+	Callback = function()
+		mobDropdown:Refresh(GetMonsterList())
+		WindUI:Notify({
+			Title = "Mob List",
+			Content = "Mob list refreshed",
+			Duration = 2,
+			Icon = "refresh-cw"
+		})
+	end
 })
 
 -- Distance slider
 AutoFarmSection:Slider({
-    Title = "Distance from Mob",
-    Desc = "How far to stand from mob",
-    Value = {Default = 11, Min = 1, Max = 20},
-    Flag = "FarmDistance",
-    Callback = function(value)
-        State.Distance = value
-    end
+	Title = "Distance from Mob",
+	Desc = "How far to stand from mob",
+	Value = {Default = 11, Min = 1, Max = 20},
+	Flag = "FarmDistance",
+	Callback = function(value)
+		State.Distance = value
+	end
 })
 
 -- Farm position dropdown
 AutoFarmSection:Dropdown({
-    Title = "Farm Position",
-    Desc = "Position relative to mob",
-    Values = {"Above", "Behind", "Down"},
-    Value = "Above",
-    Multi = false,
-    Flag = "FarmPosition",
-    Callback = function(value)
-        State.FarmPosition = value
-    end
+	Title = "Farm Position",
+	Desc = "Position relative to mob",
+	Values = {"Above", "Behind", "Down"},
+	Value = "Above",
+	Multi = false,
+	Flag = "FarmPosition",
+	Callback = function(value)
+		State.FarmPosition = value
+	end
 })
 
 -- Tool dropdown
 local toolDropdown = AutoFarmSection:Dropdown({
-    Title = "Select Tool",
-    Desc = "Choose tool to equip",
-    Values = GetBackpackTools(),
-    Multi = false,
-    Flag = "SelectedTool",
-    Callback = function(value)
-        State.SelectedTool = value
-        WindUI:Notify({
-            Title = "Auto Equip",
-            Content = "Selected Tool: " .. value,
-            Duration = 2,
-            Icon = "tool"
-        })
-    end
+	Title = "Select Tool",
+	Desc = "Choose tool to equip",
+	Values = GetBackpackTools(),
+	Multi = false,
+	SearchBarEnabled = true,
+	Flag = "SelectedTool",
+	Callback = function(value)
+		State.SelectedTool = value
+		WindUI:Notify({
+			Title = "Auto Equip",
+			Content = "Selected Tool: " .. value,
+			Duration = 2,
+			Icon = "tool"
+		})
+	end
 })
 
 AutoFarmSection:Button({
-    Title = "Refresh Tools",
-    Icon = "refresh-cw",
-    Callback = function()
-        toolDropdown:Refresh(GetBackpackTools())
-    end
+	Title = "Refresh Tools",
+	Icon = "refresh-cw",
+	Callback = function()
+		toolDropdown:Refresh(GetBackpackTools())
+	end
 })
 
 -- Auto Equip Toggle
 AutoFarmSection:Toggle({
-    Title = "Auto Equip Selected Tool",
-    Desc = "Equip selected tool automatically",
-    Value = false,
-    Flag = "AutoEquip",
-    Callback = function(state)
-        Utils.Disconnect("AutoEquip")
-        
-        if state and State.SelectedTool then
-            Utils.AddConnection("AutoEquip", RunService.RenderStepped:Connect(function()
-                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                    if tool:IsA("Tool") and tool.Name == State.SelectedTool then
-                        tool.Parent = LocalPlayer.Character
-                    end
-                end
-            end))
-        end
-    end
+	Title = "Auto Equip Selected Tool",
+	Desc = "Equip selected tool automatically",
+	Value = false,
+	Flag = "AutoEquip",
+	Callback = function(state)
+		Utils.Disconnect("AutoEquip")
+		
+		if state and State.SelectedTool then
+			Utils.AddConnection("AutoEquip", RunService.RenderStepped:Connect(function()
+				for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+					if tool:IsA("Tool") and tool.Name == State.SelectedTool then
+						tool.Parent = LocalPlayer.Character
+					end
+				end
+			end))
+		end
+	end
 })
 
 -- Farm Toggles
 AutoFarmSection:Toggle({
-    Title = "AutoFarm V1 (Selected Mob)",
-    Desc = "Farm selected mob",
-    Value = false,
-    Flag = "AutoFarmV1",
-    Callback = function(state)
-        Utils.Disconnect("AutoFarm")
-        RemoveBodyVelocity()
-        
-        if not state or not State.SelectedMob then return end
-        
-        local char = LocalPlayer.Character
-        local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-        if not playerRoot then return end
-        
-        local mobFolder = GetMobFolder(State.SelectedMob)
-        if not mobFolder then
-            WindUI:Notify({
-                Title = "Error",
-                Content = "Mob folder not found",
-                Duration = 3,
-                Icon = "alert-circle"
-            })
-            return
-        end
-        
-        SetupBodyVelocity()
-        local currentTarget
-        
-        Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-            if not playerRoot then return end
-            
-            if not currentTarget or not currentTarget.Parent then
-                currentTarget = nil
-                for _, mob in ipairs(mobFolder:GetChildren()) do
-                    if mob:IsA("Model") and mob.Name == State.SelectedMob then
-                        local hum = mob:FindFirstChildWhichIsA("Humanoid")
-                        local root = mob:FindFirstChild("HumanoidRootPart")
-                        if hum and root and hum.Health > 0 then
-                            currentTarget = mob
-                            break
-                        end
-                    end
-                end
-            end
-            
-            if not currentTarget then return end
-            
-            local hum = currentTarget:FindFirstChildWhichIsA("Humanoid")
-            local root = currentTarget:FindFirstChild("HumanoidRootPart")
-            if not hum or not root or hum.Health <= 0 then
-                currentTarget = nil
-                return
-            end
-            
-            if State.OneHit then
-                ApplyOneHit(currentTarget)
-            end
-            
-            playerRoot.CFrame = getTargetCFrame(root)
-            Attack(char)
-        end))
-    end
+	Title = "AutoFarm V1 (Multi-Mob)",
+	Desc = "Farm selected mobs (cycles through all)",
+	Value = false,
+	Flag = "AutoFarmV1",
+	Callback = function(state)
+		Utils.Disconnect("AutoFarm")
+		RemoveBodyVelocity()
+		
+		if not state or not State.SelectedMobs or #State.SelectedMobs == 0 then 
+			if state then
+				WindUI:Notify({
+					Title = "Error",
+					Content = "Select at least one mob first",
+					Duration = 3,
+					Icon = "alert-circle"
+				})
+			end
+			return 
+		end
+		
+		local char = LocalPlayer.Character
+		local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+		if not playerRoot then return end
+		
+		-- Get folders for each selected mob
+		local mobFolders = {}
+		for _, mobName in ipairs(State.SelectedMobs) do
+			local folder = GetMobFolder(mobName)
+			if folder then
+				if not mobFolders[folder] then
+					mobFolders[folder] = {}
+				end
+				table.insert(mobFolders[folder], mobName)
+			end
+		end
+		
+		if not next(mobFolders) then
+			WindUI:Notify({
+				Title = "Error",
+				Content = "Mob folders not found",
+				Duration = 3,
+				Icon = "alert-circle"
+			})
+			return
+		end
+		
+		SetupBodyVelocity()
+		local currentTarget = nil
+		local currentMobIndex = 1
+		local allMobs = {}
+		
+		-- Collect all mob instances
+		for folder, mobNames in pairs(mobFolders) do
+			for _, mobName in ipairs(mobNames) do
+				for _, mob in ipairs(folder:GetChildren()) do
+					if mob:IsA("Model") and mob.Name == mobName then
+						local hum = mob:FindFirstChildWhichIsA("Humanoid")
+						local root = mob:FindFirstChild("HumanoidRootPart")
+						if hum and root and hum.Health > 0 then
+							table.insert(allMobs, mob)
+						end
+					end
+				end
+			end
+		end
+		
+		Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
+			local char = LocalPlayer.Character
+			local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+			if not playerRoot then return end
+			
+			-- Check if current target is still valid
+			if not currentTarget or not currentTarget.Parent then
+				currentTarget = nil
+				-- Find next valid mob
+				for i = currentMobIndex, #allMobs do
+					local mob = allMobs[i]
+					if mob and mob.Parent then
+						local hum = mob:FindFirstChildWhichIsA("Humanoid")
+						local root = mob:FindFirstChild("HumanoidRootPart")
+						if hum and root and hum.Health > 0 then
+							currentTarget = mob
+							currentMobIndex = i + 1
+							if currentMobIndex > #allMobs then
+								currentMobIndex = 1
+							end
+							break
+						end
+					end
+				end
+				
+				-- If no valid mob found, refresh the list
+				if not currentTarget then
+					allMobs = {}
+					for folder, mobNames in pairs(mobFolders) do
+						for _, mobName in ipairs(mobNames) do
+							for _, mob in ipairs(folder:GetChildren()) do
+								if mob:IsA("Model") and mob.Name == mobName then
+									local hum = mob:FindFirstChildWhichIsA("Humanoid")
+									local root = mob:FindFirstChild("HumanoidRootPart")
+									if hum and root and hum.Health > 0 then
+										table.insert(allMobs, mob)
+									end
+								end
+							end
+						end
+					end
+					currentMobIndex = 1
+					return
+				end
+			end
+			
+			if not currentTarget then return end
+			
+			local hum = currentTarget:FindFirstChildWhichIsA("Humanoid")
+			local root = currentTarget:FindFirstChild("HumanoidRootPart")
+			if not hum or not root or hum.Health <= 0 then
+				currentTarget = nil
+				return
+			end
+			
+			if State.OneHit then
+				ApplyOneHit(currentTarget)
+			end
+			
+			playerRoot.CFrame = getTargetCFrame(root)
+			Attack(char)
+		end))
+	end
+})
+
+-- UPDATED: AutoFarm V2 (Multi-Mob, Thread-based)
+AutoFarmSection:Toggle({
+	Title = "AutoFarm V2 (Multi-Mob)",
+	Desc = "Farm selected mobs V2 (thread-based)",
+	Value = false,
+	Flag = "AutoFarmV2",
+	Callback = function(state)
+		State.AutoFarm = state
+		Utils.Disconnect("AutoFarm")
+		Utils.Disconnect("AutoFarmLogic")
+		RemoveBodyVelocity()
+		
+		if not state then return end
+		if not State.SelectedMobs or #State.SelectedMobs == 0 then 
+			WindUI:Notify({
+				Title = "Error",
+				Content = "Select at least one mob first",
+				Duration = 3,
+				Icon = "alert-circle"
+			})
+			return 
+		end
+		
+		local char = LocalPlayer.Character
+		local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+		if not playerRoot then return end
+		
+		-- Get folders for each selected mob
+		local mobFolders = {}
+		for _, mobName in ipairs(State.SelectedMobs) do
+			local folder = GetMobFolder(mobName)
+			if folder then
+				if not mobFolders[folder] then
+					mobFolders[folder] = {}
+				end
+				table.insert(mobFolders[folder], mobName)
+			end
+		end
+		
+		if not next(mobFolders) then
+			WindUI:Notify({
+				Title = "Error",
+				Content = "Mob folders not found",
+				Duration = 3,
+				Icon = "alert-circle"
+			})
+			return
+		end
+		
+		SetupBodyVelocity()
+		local currentTarget = nil
+		local currentMobIndex = 1
+		local allMobs = {}
+		
+		Utils.StartThread("AutoFarmLogic", function()
+			while State.AutoFarm do
+				-- Refresh mob list periodically
+				allMobs = {}
+				for folder, mobNames in pairs(mobFolders) do
+					for _, mobName in ipairs(mobNames) do
+						for _, mob in ipairs(folder:GetChildren()) do
+							if mob:IsA("Model") and mob.Name == mobName then
+								local hum = mob:FindFirstChildWhichIsA("Humanoid")
+								local root = mob:FindFirstChild("HumanoidRootPart")
+								if hum and root and hum.Health > 0 then
+									table.insert(allMobs, mob)
+								end
+							end
+						end
+					end
+				end
+				
+				if #allMobs > 0 then
+					-- Cycle through mobs
+					currentTarget = allMobs[currentMobIndex]
+					currentMobIndex = currentMobIndex + 1
+					if currentMobIndex > #allMobs then
+						currentMobIndex = 1
+					end
+					
+					if currentTarget then
+						if State.OneHit then
+							ApplyOneHit(currentTarget)
+						end
+						Attack(LocalPlayer.Character)
+					end
+					task.wait(0.08)
+				else
+					task.wait(0.4)
+				end
+			end
+			currentTarget = nil
+		end)
+		
+		Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
+			if not State.AutoFarm then return end
+			if not currentTarget or not currentTarget.Parent then return end
+			
+			local char = LocalPlayer.Character
+			local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+			local root = currentTarget:FindFirstChild("HumanoidRootPart")
+			if not playerRoot or not root then return end
+			
+			playerRoot.CFrame = getTargetCFrame(root)
+		end))
+	end
 })
 
 AutoFarmSection:Toggle({
-    Title = "AutoFarm V2 (Improved V1)",
-    Desc = "Farm selected mob V2",
-    Value = false,
-    Flag = "AutoFarmV2",
-    Callback = function(state)
-        State.AutoFarm = state
-        Utils.Disconnect("AutoFarm")
-        Utils.Disconnect("AutoFarmLogic")
-        RemoveBodyVelocity()
-        
-        if not state then return end
-        if not State.SelectedMob then return end
-        
-        local char = LocalPlayer.Character
-        local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-        if not playerRoot then return end
-        
-        local mobFolder = GetMobFolder(State.SelectedMob)
-        if not mobFolder then
-            WindUI:Notify({
-                Title = "Error",
-                Content = "Mob folder not found",
-                Duration = 3,
-                Icon = "alert-circle"
-            })
-            return
-        end
-        
-        SetupBodyVelocity()
-        local currentTarget
-        
-        Utils.StartThread("AutoFarmLogic", function()
-            while State.AutoFarm do
-                currentTarget = nil
-                for _, mob in ipairs(mobFolder:GetChildren()) do
-                    if not State.AutoFarm then break end
-                    if mob:IsA("Model") and mob.Name == State.SelectedMob then
-                        local hum = mob:FindFirstChildWhichIsA("Humanoid")
-                        local root = mob:FindFirstChild("HumanoidRootPart")
-                        if hum and root and hum.Health > 0 then
-                            currentTarget = mob
-                            break
-                        end
-                    end
-                end
-                
-                if currentTarget then
-                    if State.OneHit then
-                        ApplyOneHit(currentTarget)
-                    end
-                    Attack(LocalPlayer.Character)
-                    task.wait(0.08)
-                else
-                    task.wait(0.4)
-                end
-            end
-            currentTarget = nil
-        end)
-        
-        Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
-            if not State.AutoFarm then return end
-            if not currentTarget or not currentTarget.Parent then return end
-            
-            local char = LocalPlayer.Character
-            local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-            local root = currentTarget:FindFirstChild("HumanoidRootPart")
-            if not playerRoot or not root then return end
-            
-            playerRoot.CFrame = getTargetCFrame(root)
-        end))
-    end
-})
-
-AutoFarmSection:Toggle({
-    Title = "AutoFarm V3 (Nearby)",
-    Desc = "Farm nearby enemies",
-    Value = false,
-    Flag = "AutoFarmV3",
-    Callback = function(state)
-        Utils.Disconnect("AutoFarmNearby")
-        RemoveBodyVelocity()
-        if not state then return end
-        
-        local char = LocalPlayer.Character
-        local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-        if not playerRoot then return end
-        
-        SetupBodyVelocity()
-        local target
-        local checkDelay = 0.3
-        local timer = 0
-        
-        Utils.AddConnection("AutoFarmNearby", RunService.Heartbeat:Connect(function(dt)
-            local char = LocalPlayer.Character
-            local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-            if not playerRoot then return end
-            
-            timer = timer + dt
-            if timer >= checkDelay then
-                timer = 0
-                local nearby = GetNearbyEnemies(State.Range)
-                target = nearby and nearby[1]
-            end
-            
-            if not target or not target.Parent then
-                target = nil
-                return
-            end
-            
-            local hum = target:FindFirstChildWhichIsA("Humanoid")
-            local root = target:FindFirstChild("HumanoidRootPart")
-            if not hum or not root or hum.Health <= 0 then
-                target = nil
-                return
-            end
-            
-            if State.OneHit then
-                ApplyOneHit(target)
-            end
-            
-            playerRoot.CFrame = getTargetCFrame(root)
-            Attack(char)
-        end))
-    end
+	Title = "AutoFarm V3 (Nearby)",
+	Desc = "Farm nearby enemies",
+	Value = false,
+	Flag = "AutoFarmV3",
+	Callback = function(state)
+		Utils.Disconnect("AutoFarmNearby")
+		RemoveBodyVelocity()
+		if not state then return end
+		
+		local char = LocalPlayer.Character
+		local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+		if not playerRoot then return end
+		
+		SetupBodyVelocity()
+		local target
+		local checkDelay = 0.3
+		local timer = 0
+		
+		Utils.AddConnection("AutoFarmNearby", RunService.Heartbeat:Connect(function(dt)
+			local char = LocalPlayer.Character
+			local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
+			if not playerRoot then return end
+			
+			timer = timer + dt
+			if timer >= checkDelay then
+				timer = 0
+				local nearby = GetNearbyEnemies(State.Range)
+				target = nearby and nearby[1]
+			end
+			
+			if not target or not target.Parent then
+				target = nil
+				return
+			end
+			
+			local hum = target:FindFirstChildWhichIsA("Humanoid")
+			local root = target:FindFirstChild("HumanoidRootPart")
+			if not hum or not root or hum.Health <= 0 then
+				target = nil
+				return
+			end
+			
+			if State.OneHit then
+				ApplyOneHit(target)
+			end
+			
+			playerRoot.CFrame = getTargetCFrame(root)
+			Attack(char)
+		end))
+	end
 })
 
 AutoFarmSection:Slider({
-    Title = "Nearby Distance",
-    Desc = "Range to detect nearby enemies",
-    Value = {Default = 10, Min = 1, Max = 10},
-    Step = 1,
-    Flag = "NearbyRange",
-    Callback = function(value)
-        State.Range = value * 10
-    end
+	Title = "Nearby Distance",
+	Desc = "Range to detect nearby enemies",
+	Value = {Default = 10, Min = 1, Max = 10},
+	Step = 1,
+	Flag = "NearbyRange",
+	Callback = function(value)
+		State.Range = value * 10
+	end
 })
 
 -- =============== UTILITY TAB ===============
 
 local UtilitySection = UtilityTab:Section({
-    Title = "Utility Controls",
-    Desc = "Various utility features",
-    Icon = "settings",
-    Box = true,
-    BoxBorder = true,
-    Opened = true
+	Title = "Utility Controls",
+	Desc = "Various utility features",
+	Icon = "settings",
+	Box = true,
+	BoxBorder = true,
+	Opened = true
 })
 
 UtilitySection:Toggle({
-    Title = "Auto Click/Attack",
-    Desc = "Attack automatically",
-    Value = false,
-    Flag = "AutoClick",
-    Callback = function(state)
-        State.AutoClick = state
-        Utils.Disconnect("AutoClick")
-        
-        if State.AutoClick then
-            Utils.StartThread("AutoClick", function()
-                while State.AutoClick do
-                    task.wait()
-                    local char = LocalPlayer.Character
-                    local x = pcall(Attack, char)
-                    if not x then
-                        VirtualUser:CaptureController()
-                        VirtualUser:Button1Down(Vector2.new(0, 0))
-                        VirtualUser:Button1Up(Vector2.new(0, 0))
-                    end
-                end
-            end)
-        end
-    end
+	Title = "Auto Click/Attack",
+	Desc = "Attack automatically",
+	Value = false,
+	Flag = "AutoClick",
+	Callback = function(state)
+		State.AutoClick = state
+		Utils.Disconnect("AutoClick")
+		
+		if State.AutoClick then
+			Utils.StartThread("AutoClick", function()
+				while State.AutoClick do
+					task.wait()
+					local char = LocalPlayer.Character
+					local x = pcall(Attack, char)
+					if not x then
+						VirtualUser:CaptureController()
+						VirtualUser:Button1Down(Vector2.new(0, 0))
+						VirtualUser:Button1Up(Vector2.new(0, 0))
+					end
+				end
+			end)
+		end
+	end
 })
 
 UtilitySection:Toggle({
-    Title = "Auto Grab Items",
-    Desc = "Collect dropped items",
-    Value = false,
-    Flag = "AutoGrab",
-    Callback = function(state)
-        State.AutoGrab = state
-        Utils.Disconnect("AutoGrab")
-        
-        if State.AutoGrab then
-            Utils.StartThread("AutoGrab", function()
-                while State.AutoGrab do
-                    task.wait(0.2)
-                    local Character = LocalPlayer.Character
-                    local playerRoot = Character and Character.HumanoidRootPart
-                    if playerRoot then
-                        for _, item in ipairs(workspace:GetDescendants()) do
-                            if item:IsA("Tool") then
-                                local handle = item:FindFirstChild("Handle")
-                                if handle then
-                                    handle.CFrame = playerRoot.CFrame
-                                elseif item:FindFirstChild("CFrame") then
-                                    item.CFrame = playerRoot.CFrame
-                                elseif item:FindFirstChild("handler") then
-                                    item.handler.CFrame = playerRoot.CFrame
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
+	Title = "Auto Grab Items",
+	Desc = "Collect dropped items",
+	Value = false,
+	Flag = "AutoGrab",
+	Callback = function(state)
+		State.AutoGrab = state
+		Utils.Disconnect("AutoGrab")
+		
+		if State.AutoGrab then
+			Utils.StartThread("AutoGrab", function()
+				while State.AutoGrab do
+					task.wait(0.2)
+					local Character = LocalPlayer.Character
+					local playerRoot = Character and Character.HumanoidRootPart
+					if playerRoot then
+						for _, item in ipairs(workspace:GetDescendants()) do
+							if item:IsA("Tool") then
+								local handle = item:FindFirstChild("Handle")
+								if handle then
+									handle.CFrame = playerRoot.CFrame
+								elseif item:FindFirstChild("CFrame") then
+									item.CFrame = playerRoot.CFrame
+								elseif item:FindFirstChild("handler") then
+									item.handler.CFrame = playerRoot.CFrame
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
 })
 
 UtilitySection:Toggle({
-    Title = "Equip All Tools",
-    Desc = "Equip all tools from backpack",
-    Value = false,
-    Flag = "EquipAllTools",
-    Callback = function(state)
-        Utils.Disconnect("EquipAllTools")
-        
-        if state then
-            Utils.AddConnection("EquipAllTools", RunService.RenderStepped:Connect(function()
-                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                    if tool:IsA("Tool") then
-                        tool.Parent = LocalPlayer.Character
-                    end
-                end
-            end))
-        end
-    end
+	Title = "Equip All Tools",
+	Desc = "Equip all tools from backpack",
+	Value = false,
+	Flag = "EquipAllTools",
+	Callback = function(state)
+		Utils.Disconnect("EquipAllTools")
+		
+		if state then
+			Utils.AddConnection("EquipAllTools", RunService.RenderStepped:Connect(function()
+				for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+					if tool:IsA("Tool") then
+						tool.Parent = LocalPlayer.Character
+					end
+				end
+			end))
+		end
+	end
 })
 
 -- Proximity Section
 local ProximitySection = UtilityTab:Section({
-    Title = "Proximity Controls",
-    Desc = "Proximity prompt settings",
-    Icon = "hand",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Proximity Controls",
+	Desc = "Proximity prompt settings",
+	Icon = "hand",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 local originalDurations = {}
 
 ProximitySection:Toggle({
-    Title = "Instant Proximity",
-    Desc = "Instant proximity prompts",
-    Value = false,
-    Flag = "InstantProximity",
-    Callback = function(state)
-        State.AutoProximityInstant = state
-        Utils.Disconnect("AutoProximityInstant")
-        
-        if State.AutoProximityInstant then
-            Utils.AddConnection("AutoProximityInstant", ProximityPromptService.PromptShown:Connect(function(p)
-                if not originalDurations[p] then
-                    originalDurations[p] = p.HoldDuration
-                end
-                p.HoldDuration = 0
-            end))
-        else
-            for prompt, originalDuration in pairs(originalDurations) do
-                if prompt and prompt.Parent then
-                    prompt.HoldDuration = originalDuration
-                end
-            end
-            table.clear(originalDurations)
-        end
-    end
+	Title = "Instant Proximity",
+	Desc = "Instant proximity prompts",
+	Value = false,
+	Flag = "InstantProximity",
+	Callback = function(state)
+		State.AutoProximityInstant = state
+		Utils.Disconnect("AutoProximityInstant")
+		
+		if State.AutoProximityInstant then
+			Utils.AddConnection("AutoProximityInstant", ProximityPromptService.PromptShown:Connect(function(p)
+				if not originalDurations[p] then
+					originalDurations[p] = p.HoldDuration
+				end
+				p.HoldDuration = 0
+			end))
+		else
+			for prompt, originalDuration in pairs(originalDurations) do
+				if prompt and prompt.Parent then
+					prompt.HoldDuration = originalDuration
+				end
+			end
+			table.clear(originalDurations)
+		end
+	end
 })
 
 ProximitySection:Toggle({
-    Title = "Auto Proximity",
-    Desc = "Auto trigger proximity prompts",
-    Value = false,
-    Flag = "AutoProximity",
-    Callback = function(state)
-        State.AutoProximityShown = state
-        Utils.Disconnect("AutoProximityShown")
-        
-        if State.AutoProximityShown then
-            Utils.AddConnection("AutoProximityShown", ProximityPromptService.PromptShown:Connect(function(p)
-                fireproximityprompt(p)
-            end))
-        end
-    end
+	Title = "Auto Proximity",
+	Desc = "Auto trigger proximity prompts",
+	Value = false,
+	Flag = "AutoProximity",
+	Callback = function(state)
+		State.AutoProximityShown = state
+		Utils.Disconnect("AutoProximityShown")
+		
+		if State.AutoProximityShown then
+			Utils.AddConnection("AutoProximityShown", ProximityPromptService.PromptShown:Connect(function(p)
+				fireproximityprompt(p)
+			end))
+		end
+	end
 })
 
 -- Kill Section
 local KillSection = UtilityTab:Section({
-    Title = "Kill Features",
-    Desc = "One hit kill and kill all",
-    Icon = "skull",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Kill Features",
+	Desc = "One hit kill and kill all",
+	Icon = "skull",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 KillSection:Toggle({
-    Title = "1 Hit Kill",
-    Desc = "Kill enemies with one hit",
-    Value = false,
-    Flag = "OneHitKill",
-    Callback = function(state)
-        State.OneHit = state
-    end
+	Title = "1 Hit Kill",
+	Desc = "Kill enemies with one hit",
+	Value = false,
+	Flag = "OneHitKill",
+	Callback = function(state)
+		State.OneHit = state
+	end
 })
 
 KillSection:Slider({
-    Title = "Kill Health Threshold (%)",
-    Desc = "Health percentage to trigger kill",
-    Value = {Default = 90, Min = 1, Max = 100},
-    Flag = "OneHitHealth",
-    Callback = function(value)
-        State.OneHitHealth = math.clamp(value / 100, 0, 1)
-    end
+	Title = "Kill Health Threshold (%)",
+	Desc = "Health percentage to trigger kill",
+	Value = {Default = 90, Min = 1, Max = 100},
+	Flag = "OneHitHealth",
+	Callback = function(value)
+		State.OneHitHealth = math.clamp(value / 100, 0, 1)
+	end
 })
 
 -- Kill All Buttons
 local function createKillButton(name, desc, positionY, killFunc)
-    return KillSection:Button({
-        Title = name,
-        Desc = desc,
-        Icon = "zap",
-        Callback = function()
-            local coreGui = CoreGui:FindFirstChild(name .. "_BUTTON")
-            
-            if coreGui then coreGui:Destroy() end
-            
-            local screenGui = Instance.new("ScreenGui")
-            screenGui.Name = name .. "_BUTTON"
-            screenGui.Parent = CoreGui
-            screenGui.ResetOnSpawn = false
-            
-            local killBtn = Instance.new("TextButton")
-            killBtn.Size = UDim2.new(0, 70, 0, 30)
-            killBtn.Position = UDim2.new(1, -130, 0, positionY)
-            killBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            killBtn.Text = name:gsub("KILL ALL ", "")
-            killBtn.TextColor3 = Color3.new(1, 0, 0)
-            killBtn.BorderSizePixel = 0
-            killBtn.Font = Enum.Font.GothamBold
-            killBtn.TextSize = 14
-            killBtn.Parent = screenGui
-            killBtn.Active = true
-            killBtn.Draggable = true
-            
-            killBtn.MouseButton1Click:Connect(function()
-                sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
-                sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
-                killFunc()
-                WindUI:Notify({
-                    Title = name,
-                    Content = "Executed",
-                    Duration = 2,
-                    Icon = "zap"
-                })
-            end)
-        end
-    })
+	return KillSection:Button({
+		Title = name,
+		Desc = desc,
+		Icon = "zap",
+		Callback = function()
+			local coreGui = CoreGui:FindFirstChild(name .. "_BUTTON")
+			
+			if coreGui then coreGui:Destroy() return end
+			
+			local screenGui = Instance.new("ScreenGui")
+			screenGui.Name = name .. "_BUTTON"
+			screenGui.Parent = CoreGui
+			screenGui.ResetOnSpawn = false
+			
+			local killBtn = Instance.new("TextButton")
+			killBtn.Size = UDim2.new(0, 70, 0, 30)
+			killBtn.Position = UDim2.new(1, -130, 0, positionY)
+			killBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			killBtn.Text = name:gsub("KILL ALL ", "")
+			killBtn.TextColor3 = Color3.new(1, 0, 0)
+			killBtn.BorderSizePixel = 0
+			killBtn.Font = Enum.Font.GothamBold
+			killBtn.TextSize = 14
+			killBtn.Parent = screenGui
+			killBtn.Active = true
+			killBtn.Draggable = true
+			
+			killBtn.MouseButton1Click:Connect(function()
+				sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
+				sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
+				killFunc()
+			end)
+		end
+	})
 end
 
 createKillButton("KILL ALL V1", "if Health < Max Health", -10, function()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
-            if obj.Health < obj.MaxHealth then
-                obj.Health = 0
-            end
-        end
-    end
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
+			if obj.Health < obj.MaxHealth then
+				obj.Health = 0
+			end
+		end
+	end
 end)
 
 createKillButton("KILL ALL V2", "if Health < Max Health (BreakJoints)", 30, function()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") then
-            if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
-                obj:BreakJoints()
-            end
-        end
-    end
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") then
+			if obj.Humanoid.Health < obj.Humanoid.MaxHealth then
+				obj:BreakJoints()
+			end
+		end
+	end
 end)
 
 createKillButton("KILL ALL V3", "KILL ALL WITHOUT HESITATE", 10, function()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
-            obj.Health = 0
-        end
-    end
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("Humanoid") and obj.Parent.Name ~= LocalPlayer.Name then
+			obj.Health = 0
+		end
+	end
 end)
 
 KillSection:Toggle({
-    Title = "KILL ALL V4",
-    Desc = "AUTO KILL BY PERCENTAGE (OP!)",
-    Value = false,
-    Flag = "KillAllV4",
-    Callback = function(state)
-        if state then
-            local hooked = {}
-            
-            local function hookHumanoid(humanoid)
-                if hooked[humanoid] then return end
-                hooked[humanoid] = true
-                
-                Utils.AddConnection("KILLV4_" .. tostring(humanoid), humanoid.HealthChanged:Connect(function()
-                    if humanoid.Parent and humanoid.Parent.Name ~= LocalPlayer.Name and humanoid.Health > 0 then
-                        if humanoid.Health / math.max(humanoid.MaxHealth, 1) < State.OneHitHealth then
-                            humanoid.Health = 0
-                            if humanoid.Parent and humanoid.Parent:IsA("Model") then
-                                humanoid.Parent:BreakJoints()
-                            end
-                        end
-                    end
-                end))
-            end
-            
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Humanoid") then
-                    hookHumanoid(v)
-                end
-            end
-            
-            Utils.AddConnection("KILLV4_ADD", workspace.DescendantAdded:Connect(function(obj)
-                if obj:IsA("Humanoid") then
-                    task.wait()
-                    hookHumanoid(obj)
-                end
-            end))
-        else
-            Utils.Disconnect("KILLV4_ADD")
-            for key, _ in pairs(ActiveConnections or {}) do
-                if string.find(tostring(key), "KILLV4_") then
-                    Utils.Disconnect(key)
-                end
-            end
-        end
-    end
+	Title = "KILL ALL V4",
+	Desc = "AUTO KILL BY PERCENTAGE (OP!)",
+	Value = false,
+	Flag = "KillAllV4",
+	Callback = function(state)
+		if state then
+			local hooked = {}
+			
+			local function hookHumanoid(humanoid)
+				if hooked[humanoid] then return end
+				hooked[humanoid] = true
+				
+				Utils.AddConnection("KILLV4_" .. tostring(humanoid), humanoid.HealthChanged:Connect(function()
+					if humanoid.Parent and humanoid.Parent.Name ~= LocalPlayer.Name and humanoid.Health > 0 then
+						if humanoid.Health / math.max(humanoid.MaxHealth, 1) < State.OneHitHealth then
+							humanoid.Health = 0
+							if humanoid.Parent and humanoid.Parent:IsA("Model") then
+								humanoid.Parent:BreakJoints()
+							end
+						end
+					end
+				end))
+			end
+			
+			for _, v in ipairs(workspace:GetDescendants()) do
+				if v:IsA("Humanoid") then
+					hookHumanoid(v)
+				end
+			end
+			
+			Utils.AddConnection("KILLV4_ADD", workspace.DescendantAdded:Connect(function(obj)
+				if obj:IsA("Humanoid") then
+					task.wait()
+					hookHumanoid(obj)
+				end
+			end))
+		else
+			Utils.Disconnect("KILLV4_ADD")
+			for key, _ in pairs(ActiveConnections or {}) do
+				if string.find(tostring(key), "KILLV4_") then
+					Utils.Disconnect(key)
+				end
+			end
+		end
+	end
 })
 
 -- =============== MISC TAB ===============
 
 -- Teleport Section
 local TeleportSection = MiscTab:Section({
-    Title = "Teleport",
-    Desc = "Teleport to players/NPCs",
-    Icon = "navigation",
-    Box = true,
-    BoxBorder = true,
-    Opened = true
+	Title = "Teleport",
+	Desc = "Teleport to players/NPCs",
+	Icon = "navigation",
+	Box = true,
+	BoxBorder = true,
+	Opened = true
 })
 
 -- Player list function
 local function GetPlayerList()
-    local players = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(players, player.Name)
-        end
-    end
-    return players
+	local players = {}
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			table.insert(players, player.Name)
+		end
+	end
+	return players
 end
 
 local playerDropdown = TeleportSection:Dropdown({
-    Title = "Teleport to Player",
-    Desc = "Select player to teleport to",
-    Values = GetPlayerList(),
-    Multi = false,
-    Flag = "TeleportPlayer",
-    Callback = function(playerName)
-        local target = Players:FindFirstChild(playerName)
-        local Character = LocalPlayer.Character
-        local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-        
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
-            local targetPos = target.Character.HumanoidRootPart.Position
-            playerRoot.CFrame = CFrame.new(targetPos)
-            WindUI:Notify({
-                Title = "Teleport",
-                Content = "Teleported to " .. playerName,
-                Duration = 2,
-                Icon = "navigation"
-            })
-        end
-    end
+	Title = "Teleport to Player",
+	Desc = "Select player to teleport to",
+	Values = GetPlayerList(),
+	Multi = false,
+	SearchBarEnabled = true,
+	Flag = "TeleportPlayer",
+	Callback = function(playerName)
+		local target = Players:FindFirstChild(playerName)
+		local Character = LocalPlayer.Character
+		local playerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+		
+		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and playerRoot then
+			local targetPos = target.Character.HumanoidRootPart.Position
+			playerRoot.CFrame = CFrame.new(targetPos)
+			WindUI:Notify({
+				Title = "Teleport",
+				Content = "Teleported to " .. playerName,
+				Duration = 2,
+				Icon = "navigation"
+			})
+		end
+	end
 })
 
 TeleportSection:Button({
-    Title = "Refresh Player List",
-    Icon = "refresh-cw",
-    Callback = function()
-        playerDropdown:Refresh(GetPlayerList())
-    end
+	Title = "Refresh Player List",
+	Icon = "refresh-cw",
+	Callback = function()
+		playerDropdown:Refresh(GetPlayerList())
+	end
 })
 
 -- NPC Teleport
 local NPCCache = {}
 local function GetNPCList()
-    local npcs = {}
-    NPCCache = {}
-    
-    for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
-        if obj:IsA("Model") and obj.Parent ~= LocalPlayer.Character then
-            if obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart then
-                if not table.find(npcs, obj.Name) then 
-                    table.insert(npcs, obj.Name)
-                    NPCCache[obj.Name] = obj
-                end
-            end
-        end
-    end
-    return npcs
+	local npcs = {}
+	NPCCache = {}
+	
+	for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
+		if obj:IsA("Model") and obj.Parent ~= LocalPlayer.Character then
+			if obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart then
+				if not table.find(npcs, obj.Name) then 
+					table.insert(npcs, obj.Name)
+					NPCCache[obj.Name] = obj
+				end
+			end
+		end
+	end
+	return npcs
 end
 
 local npcDropdown = TeleportSection:Dropdown({
-    Title = "Teleport to NPC",
-    Desc = "Select NPC to teleport to",
-    Values = GetNPCList(),
-    Multi = false,
-    Flag = "TeleportNPC",
-    Callback = function(npcName)
-        local playerRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        local npc = NPCCache[npcName]
-        
-        if not npc or npc.Parent == nil then
-            npc = nil
-            for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
-                if obj.Name == npcName and obj:IsA("Model") and (obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart) then
-                    npc = obj
-                    NPCCache[npcName] = npc
-                    break
-                end
-            end
-        end
-        
-        if npc and playerRoot then
-            local targetCFrame = nil
-            if npc:FindFirstChild("HumanoidRootPart") then
-                targetCFrame = npc.HumanoidRootPart.CFrame
-            elseif npc.PrimaryPart then
-                targetCFrame = npc.PrimaryPart.CFrame
-            else
-                for _, part in ipairs(npc:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        targetCFrame = part.CFrame
-                        break
-                    end
-                end
-            end
-            
-            if targetCFrame then
-                playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-                WindUI:Notify({
-                    Title = "Teleport",
-                    Content = "Teleported to " .. npcName,
-                    Duration = 2,
-                    Icon = "navigation"
-                })
-            end
-        end
-    end
+	Title = "Teleport to NPC",
+	Desc = "Select NPC to teleport to",
+	Values = GetNPCList(),
+	Multi = false,
+	SearchBarEnabled = true,
+	Flag = "TeleportNPC",
+	Callback = function(npcName)
+		local playerRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		local npc = NPCCache[npcName]
+		
+		if not npc or npc.Parent == nil then
+			npc = nil
+			for _, obj in ipairs(State.NPCFolder:GetDescendants()) do
+				if obj.Name == npcName and obj:IsA("Model") and (obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart) then
+					npc = obj
+					NPCCache[npcName] = npc
+					break
+				end
+			end
+		end
+		
+		if npc and playerRoot then
+			local targetCFrame = nil
+			if npc:FindFirstChild("HumanoidRootPart") then
+				targetCFrame = npc.HumanoidRootPart.CFrame
+			elseif npc.PrimaryPart then
+				targetCFrame = npc.PrimaryPart.CFrame
+			else
+				for _, part in ipairs(npc:GetChildren()) do
+					if part:IsA("BasePart") then
+						targetCFrame = part.CFrame
+						break
+					end
+				end
+			end
+			
+			if targetCFrame then
+				playerRoot.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+				WindUI:Notify({
+					Title = "Teleport",
+					Content = "Teleported to " .. npcName,
+					Duration = 2,
+					Icon = "navigation"
+				})
+			end
+		end
+	end
 })
 
 TeleportSection:Button({
-    Title = "Refresh NPC List",
-    Icon = "refresh-cw",
-    Callback = function()
-        npcDropdown:Refresh(GetNPCList())
-    end
+	Title = "Refresh NPC List",
+	Icon = "refresh-cw",
+	Callback = function()
+		npcDropdown:Refresh(GetNPCList())
+	end
 })
 
 -- Scripts Section
 local ScriptsSection = MiscTab:Section({
-    Title = "Scripts",
-    Desc = "Load various scripts",
-    Icon = "code",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Scripts",
+	Desc = "Load various scripts",
+	Icon = "code",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 ScriptsSection:Button({
-    Title = "Fly Gui",
-    Desc = "Dark theme fly script",
-    Icon = "bird",
-    Callback = function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
-        WindUI:Notify({
-            Title = "Fly Gui",
-            Content = "Loaded",
-            Duration = 2,
-            Icon = "check"
-        })
-    end
+	Title = "Fly Gui",
+	Desc = "Dark theme fly script",
+	Icon = "bird",
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Fly%20GUI%20Dark%20Theme'))()
+		WindUI:Notify({
+			Title = "Fly Gui",
+			Content = "Loaded",
+			Duration = 2,
+			Icon = "check"
+		})
+	end
 })
 
 ScriptsSection:Button({
-    Title = "[FE] Invisible",
-    Desc = "Become invisible",
-    Icon = "eye-off",
-    Callback = function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Invisible'))()
-        WindUI:Notify({
-            Title = "Invisible",
-            Content = "Loaded",
-            Duration = 2,
-            Icon = "check"
-        })
-    end
+	Title = "[FE] Invisible",
+	Desc = "Become invisible",
+	Icon = "eye-off",
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Invisible'))()
+		WindUI:Notify({
+			Title = "Invisible",
+			Content = "Loaded",
+			Duration = 2,
+			Icon = "check"
+		})
+	end
 })
 
 ScriptsSection:Button({
-    Title = "[FE] Rewind",
-    Desc = "Rewind to previous position",
-    Icon = "rotate-ccw",
-    Callback = function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Rewind'))()
-        WindUI:Notify({
-            Title = "Rewind",
-            Content = "Loaded",
-            Duration = 2,
-            Icon = "check"
-        })
-    end
+	Title = "[FE] Rewind",
+	Desc = "Rewind to previous position",
+	Icon = "rotate-ccw",
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Rewind'))()
+		WindUI:Notify({
+			Title = "Rewind",
+			Content = "Loaded",
+			Duration = 2,
+			Icon = "check"
+		})
+	end
 })
 
 ScriptsSection:Button({
-    Title = "Auto Clicker",
-    Desc = "Chisato version auto clicker",
-    Icon = "mouse-pointer-click",
-    Callback = function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Auto%20Clicker%20Chisato'))()
-        WindUI:Notify({
-            Title = "Auto Clicker",
-            Content = "Loaded",
-            Duration = 2,
-            Icon = "check"
-        })
-    end
+	Title = "Auto Clicker",
+	Desc = "Chisato version auto clicker",
+	Icon = "mouse-pointer-click",
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Auto%20Clicker%20Chisato'))()
+		WindUI:Notify({
+			Title = "Auto Clicker",
+			Content = "Loaded",
+			Duration = 2,
+			Icon = "check"
+		})
+	end
 })
 
 -- Visual Section
 local VisualSection = MiscTab:Section({
-    Title = "Visual",
-    Desc = "Visual enhancements",
-    Icon = "eye",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Visual",
+	Desc = "Visual enhancements",
+	Icon = "eye",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 VisualSection:Toggle({
-    Title = "Player ESP",
-    Desc = "See other players through walls",
-    Value = false,
-    Flag = "PlayerESP",
-    Callback = function(state)
-        local esp = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
-        esp(state)
-    end
+	Title = "Player ESP",
+	Desc = "See other players through walls",
+	Value = false,
+	Flag = "PlayerESP",
+	Callback = function(state)
+		local esp = loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/Esp2.lua"))()
+		esp(state)
+	end
 })
 
 local originalLighting = {
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    FogEnd = Lighting.FogEnd,
-    GlobalShadows = Lighting.GlobalShadows,
-    OutdoorAmbient = Lighting.OutdoorAmbient
+	Brightness = Lighting.Brightness,
+	ClockTime = Lighting.ClockTime,
+	FogEnd = Lighting.FogEnd,
+	GlobalShadows = Lighting.GlobalShadows,
+	OutdoorAmbient = Lighting.OutdoorAmbient
 }
 
 VisualSection:Toggle({
-    Title = "Full Bright",
-    Desc = "Brighten the entire map",
-    Value = false,
-    Flag = "FullBright",
-    Callback = function(state)
-        if state then
-            Utils.AddConnection("FullBright", RunService.RenderStepped:Connect(function()
-                Lighting.Brightness = 2
-                Lighting.ClockTime = 14
-                Lighting.FogEnd = 100000
-                Lighting.GlobalShadows = false
-                Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-            end))
-        else
-            Utils.Disconnect("FullBright")
-            Lighting.Brightness = originalLighting.Brightness
-            Lighting.ClockTime = originalLighting.ClockTime
-            Lighting.FogEnd = originalLighting.FogEnd
-            Lighting.GlobalShadows = originalLighting.GlobalShadows
-            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-        end
-    end
+	Title = "Full Bright",
+	Desc = "Brighten the entire map",
+	Value = false,
+	Flag = "FullBright",
+	Callback = function(state)
+		if state then
+			Utils.AddConnection("FullBright", RunService.RenderStepped:Connect(function()
+				Lighting.Brightness = 2
+				Lighting.ClockTime = 14
+				Lighting.FogEnd = 100000
+				Lighting.GlobalShadows = false
+				Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+			end))
+		else
+			Utils.Disconnect("FullBright")
+			Lighting.Brightness = originalLighting.Brightness
+			Lighting.ClockTime = originalLighting.ClockTime
+			Lighting.FogEnd = originalLighting.FogEnd
+			Lighting.GlobalShadows = originalLighting.GlobalShadows
+			Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+		end
+	end
 })
 
 -- Movement Section
 local MovementSection = MiscTab:Section({
-    Title = "Movement",
-    Desc = "Movement modifications",
-    Icon = "move",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Movement",
+	Desc = "Movement modifications",
+	Icon = "move",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 MovementSection:Toggle({
-    Title = "Noclip",
-    Desc = "Walk through objects",
-    Value = false,
-    Flag = "Noclip",
-    Callback = function(state)
-        State.Noclip = state
-        Utils.Disconnect("Noclip")
-        
-        if State.Noclip then
-            Utils.AddConnection("Noclip", RunService.Stepped:Connect(function()
-                local char = LocalPlayer.Character
-                if char then
-                    for _, part in ipairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") and part.CanCollide == true and part.Name ~= (State.FloatPartName or "") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end))
-        else
-            task.wait(0.3)
-            local char = LocalPlayer.Character
-            if char then
-                for _, part in ipairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") and part.CanCollide == false then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-    end
+	Title = "Noclip",
+	Desc = "Walk through objects",
+	Value = false,
+	Flag = "Noclip",
+	Callback = function(state)
+		State.Noclip = state
+		Utils.Disconnect("Noclip")
+		
+		if State.Noclip then
+			Utils.AddConnection("Noclip", RunService.Stepped:Connect(function()
+				local char = LocalPlayer.Character
+				if char then
+					for _, part in ipairs(char:GetDescendants()) do
+						if part:IsA("BasePart") and part.CanCollide == true and part.Name ~= (State.FloatPartName or "") then
+							part.CanCollide = false
+						end
+					end
+				end
+			end))
+		else
+			task.wait(0.3)
+			local char = LocalPlayer.Character
+			if char then
+				for _, part in ipairs(char:GetDescendants()) do
+					if part:IsA("BasePart") and part.CanCollide == false then
+						part.CanCollide = true
+					end
+				end
+			end
+		end
+	end
 })
 
 MovementSection:Toggle({
-    Title = "Edge Jump",
-    Desc = "Auto jump at edges",
-    Value = false,
-    Flag = "EdgeJump",
-    Callback = function(state)
-        State.EdgeJumpEnabled = state
-        Utils.Disconnect("EdgeJump")
-        Utils.Disconnect("EdgeJumpChar")
-        
-        if state then
-            local char = LocalPlayer.Character
-            local humanoid = char and char:FindFirstChildWhichIsA("Humanoid")
-            local lastState, lastCFrame
-            
-            local function EdgeJumpFunc()
-                if char and humanoid and HumanoidRootPart then
-                    local currentState = humanoid:GetState()
-                    
-                    if lastState ~= currentState and currentState == Enum.HumanoidStateType.Freefall then
-                        HumanoidRootPart.CFrame = lastCFrame
-                        HumanoidRootPart.Velocity = Vector3.new(HumanoidRootPart.Velocity.X, humanoid.JumpPower, HumanoidRootPart.Velocity.Z)
-                    end
-                    lastState = currentState
-                    lastCFrame = HumanoidRootPart.CFrame
-                end
-            end
-            
-            EdgeJumpFunc()
-            Utils.AddConnection("EdgeJump", RunService.RenderStepped:Connect(EdgeJumpFunc))
-            Utils.AddConnection("EdgeJumpChar", LocalPlayer.CharacterAdded:Connect(function(newChar)
-                char = newChar
-                humanoid = newChar:WaitForChild("Humanoid")
-                HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-                
-                Utils.Disconnect("EdgeJump")
-                EdgeJumpFunc()
-                Utils.AddConnection("EdgeJump", RunService.RenderStepped:Connect(EdgeJumpFunc))
-            end))
-        end
-    end
+	Title = "Edge Jump",
+	Desc = "Auto jump at edges",
+	Value = false,
+	Flag = "EdgeJump",
+	Callback = function(state)
+		State.EdgeJumpEnabled = state
+		Utils.Disconnect("EdgeJump")
+		Utils.Disconnect("EdgeJumpChar")
+		
+		if state then
+			local char = LocalPlayer.Character
+			local humanoid = char and char:FindFirstChildWhichIsA("Humanoid")
+			local lastState, lastCFrame
+			
+			local function EdgeJumpFunc()
+				if char and humanoid and HumanoidRootPart then
+					local currentState = humanoid:GetState()
+					
+					if lastState ~= currentState and currentState == Enum.HumanoidStateType.Freefall then
+						HumanoidRootPart.CFrame = lastCFrame
+						HumanoidRootPart.Velocity = Vector3.new(HumanoidRootPart.Velocity.X, humanoid.JumpPower, HumanoidRootPart.Velocity.Z)
+					end
+					lastState = currentState
+					lastCFrame = HumanoidRootPart.CFrame
+				end
+			end
+			
+			EdgeJumpFunc()
+			Utils.AddConnection("EdgeJump", RunService.RenderStepped:Connect(EdgeJumpFunc))
+			Utils.AddConnection("EdgeJumpChar", LocalPlayer.CharacterAdded:Connect(function(newChar)
+				char = newChar
+				humanoid = newChar:WaitForChild("Humanoid")
+				HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+				
+				Utils.Disconnect("EdgeJump")
+				EdgeJumpFunc()
+				Utils.AddConnection("EdgeJump", RunService.RenderStepped:Connect(EdgeJumpFunc))
+			end))
+		end
+	end
 })
 
 MovementSection:Toggle({
-    Title = "Infinite Jump",
-    Desc = "Jump infinitely",
-    Value = false,
-    Flag = "InfiniteJump",
-    Callback = function(state)
-        Utils.Disconnect("InfiniteJump")
-        
-        if state then
-            Utils.AddConnection("InfiniteJump", UserInputService.JumpRequest:Connect(function()
-                if not State.InfJumpDebounce then
-                    State.InfJumpDebounce = true
-                    local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then
-                        humanoid:ChangeState("Jumping")
-                    end
-                    task.wait()
-                    State.InfJumpDebounce = false
-                end
-            end))
-        end
-    end
+	Title = "Infinite Jump",
+	Desc = "Jump infinitely",
+	Value = false,
+	Flag = "InfiniteJump",
+	Callback = function(state)
+		Utils.Disconnect("InfiniteJump")
+		
+		if state then
+			Utils.AddConnection("InfiniteJump", UserInputService.JumpRequest:Connect(function()
+				if not State.InfJumpDebounce then
+					State.InfJumpDebounce = true
+					local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					if humanoid then
+						humanoid:ChangeState("Jumping")
+					end
+					task.wait()
+					State.InfJumpDebounce = false
+				end
+			end))
+		end
+	end
 })
 
 MovementSection:Toggle({
-    Title = "XRay",
-    Desc = "See through walls",
-    Value = false,
-    Flag = "XRay",
-    Callback = function(state)
-        State.XRay = state
-        local XRayStored = {}
-        
-        if State.XRay then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
-                    XRayStored[v] = v.LocalTransparencyModifier
-                    v.LocalTransparencyModifier = 0.5
-                end
-            end
-            Utils.AddConnection("XRayAdd", workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
-                    v.LocalTransparencyModifier = 0.5
-                end
-            end))
-        else
-            for part, value in pairs(XRayStored) do
-                if part and part.Parent then
-                    part.LocalTransparencyModifier = value
-                end
-            end
-            Utils.Disconnect("XRayAdd")
-            table.clear(XRayStored)
-        end
-    end
+	Title = "XRay",
+	Desc = "See through walls",
+	Value = false,
+	Flag = "XRay",
+	Callback = function(state)
+		State.XRay = state
+		local XRayStored = {}
+		
+		if State.XRay then
+			for _, v in ipairs(workspace:GetDescendants()) do
+				if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+					XRayStored[v] = v.LocalTransparencyModifier
+					v.LocalTransparencyModifier = 0.5
+				end
+			end
+			Utils.AddConnection("XRayAdd", workspace.DescendantAdded:Connect(function(v)
+				if v:IsA("BasePart") and not v.Parent:FindFirstChildWhichIsA("Humanoid") then
+					v.LocalTransparencyModifier = 0.5
+				end
+			end))
+		else
+			for part, value in pairs(XRayStored) do
+				if part and part.Parent then
+					part.LocalTransparencyModifier = value
+				end
+			end
+			Utils.Disconnect("XRayAdd")
+			table.clear(XRayStored)
+		end
+	end
 })
 
 -- Float Platform
@@ -1296,422 +1395,424 @@ local FloatValue = -3.1
 local FloatPartName = ""
 
 MovementSection:Toggle({
-    Title = "Float Platform",
-    Desc = "Create movable platform",
-    Value = false,
-    Flag = "FloatPlatform",
-    Callback = function(state)
-        State.FloatEnabled = state
-        
-        if State.FloatEnabled then
-            local char = LocalPlayer.Character
-            if not char then return end
-            
-            FloatPartName = Utils.randomString()
-            State.FloatPartName = FloatPartName
-            FloatValue = -3.1
-            
-            local Float = Instance.new("Part")
-            Float.Name = FloatPartName
-            Float.Parent = char
-            Float.Transparency = 1
-            Float.Size = Vector3.new(2, 0.2, 1.5)
-            Float.Anchored = true
-            Float.CFrame = getRoot(char).CFrame * CFrame.new(0, FloatValue, 0)
-            
-            FloatPart = Float
-            
-            -- Create GUI controls
-            if FloatGUI then FloatGUI:Destroy() end
-            
-            local screenGui = Instance.new("ScreenGui")
-            screenGui.Name = "FloatControlGUI"
-            screenGui.Parent = CoreGui
-            screenGui.ResetOnSpawn = false
-            
-            local frame = Instance.new("Frame")
-            frame.Size = UDim2.new(0, 80, 0, 100)
-            frame.Position = UDim2.new(0.8, 0, 0.7, 0)
-            frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            frame.BorderSizePixel = 1
-            frame.BorderColor3 = Color3.fromRGB(100, 100, 100)
-            frame.Active = true
-            frame.Draggable = true
-            frame.Parent = screenGui
-            
-            local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, 0, 0, 20)
-            title.Position = UDim2.new(0, 0, 0, 0)
-            title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            title.Text = "Float"
-            title.TextColor3 = Color3.new(1, 1, 1)
-            title.Font = Enum.Font.Gotham
-            title.TextSize = 12
-            title.Parent = frame
-            
-            local upBtn = Instance.new("TextButton")
-            upBtn.Size = UDim2.new(0.8, 0, 0, 30)
-            upBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
-            upBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-            upBtn.Text = "↑"
-            upBtn.TextColor3 = Color3.new(1, 1, 1)
-            upBtn.Font = Enum.Font.GothamBold
-            upBtn.TextSize = 16
-            upBtn.Parent = frame
-            
-            local downBtn = Instance.new("TextButton")
-            downBtn.Size = UDim2.new(0.8, 0, 0, 30)
-            downBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
-            downBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-            downBtn.Text = "↓"
-            downBtn.TextColor3 = Color3.new(1, 1, 1)
-            downBtn.Font = Enum.Font.GothamBold
-            downBtn.TextSize = 16
-            downBtn.Parent = frame
-            
-            local holdingUp = false
-            local holdingDown = false
-            
-            upBtn.MouseButton1Down:Connect(function()
-                holdingUp = true
-                FloatValue = FloatValue + 1
-            end)
-            
-            downBtn.MouseButton1Down:Connect(function()
-                holdingDown = true
-                FloatValue = FloatValue - 0.5
-            end)
-            
-            UIS.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    if holdingUp then
-                        FloatValue = FloatValue - 1
-                        holdingUp = false
-                    end
-                    if holdingDown then
-                        FloatValue = FloatValue + 0.5
-                        holdingDown = false
-                    end
-                end
-            end)
-            
-            FloatGUI = screenGui
-            
-            Utils.AddConnection("FloatDeath", char:WaitForChild("Humanoid").Died:Connect(function()
-                if FloatPart then FloatPart:Destroy() end
-                if FloatGUI then FloatGUI:Destroy() end
-                FloatPart = nil
-                FloatGUI = nil
-                Utils.Disconnect("FloatLoop")
-            end))
-            
-            Utils.AddConnection("FloatLoop", RunService.Heartbeat:Connect(function()
-                if not State.FloatEnabled or not FloatPart or not FloatPart.Parent then
-                    if FloatPart then FloatPart:Destroy() end
-                    if FloatGUI then FloatGUI:Destroy() end
-                    FloatPart = nil
-                    FloatGUI = nil
-                    return
-                end
-                
-                local char = LocalPlayer.Character
-                local root = getRoot(char)
-                if char and root and FloatPart then
-                    FloatPart.CFrame = root.CFrame * CFrame.new(0, FloatValue, 0)
-                end
-            end))
-            
-            WindUI:Notify({
-                Title = "Float",
-                Content = "Float Enabled",
-                Duration = 2,
-                Icon = "move"
-            })
-        else
-            if FloatPart then
-                FloatPart:Destroy()
-                FloatPart = nil
-            end
-            if FloatGUI then
-                FloatGUI:Destroy()
-                FloatGUI = nil
-            end
-            Utils.Disconnect("FloatDeath")
-            Utils.Disconnect("FloatLoop")
-            
-            WindUI:Notify({
-                Title = "Float",
-                Content = "Float Disabled",
-                Duration = 2,
-                Icon = "move"
-            })
-        end
-    end
+	Title = "Float Platform",
+	Desc = "Create movable platform",
+	Value = false,
+	Flag = "FloatPlatform",
+	Callback = function(state)
+		State.FloatEnabled = state
+		
+		if State.FloatEnabled then
+			local char = LocalPlayer.Character
+			if not char then return end
+			
+			FloatPartName = Utils.randomString()
+			State.FloatPartName = FloatPartName
+			FloatValue = -3.1
+			
+			local Float = Instance.new("Part")
+			Float.Name = FloatPartName
+			Float.Parent = char
+			Float.Transparency = 1
+			Float.Size = Vector3.new(2, 0.2, 1.5)
+			Float.Anchored = true
+			Float.CFrame = getRoot(char).CFrame * CFrame.new(0, FloatValue, 0)
+			
+			FloatPart = Float
+			
+			-- Create GUI controls
+			if FloatGUI then FloatGUI:Destroy() end
+			
+			local screenGui = Instance.new("ScreenGui")
+			screenGui.Name = "FloatControlGUI"
+			screenGui.Parent = CoreGui
+			screenGui.ResetOnSpawn = false
+			
+			local frame = Instance.new("Frame")
+			frame.Size = UDim2.new(0, 80, 0, 100)
+			frame.Position = UDim2.new(0.8, 0, 0.7, 0)
+			frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+			frame.BorderSizePixel = 1
+			frame.BorderColor3 = Color3.fromRGB(100, 100, 100)
+			frame.Active = true
+			frame.Draggable = true
+			frame.Parent = screenGui
+			
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, 0, 0, 20)
+			title.Position = UDim2.new(0, 0, 0, 0)
+			title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			title.Text = "Float"
+			title.TextColor3 = Color3.new(1, 1, 1)
+			title.Font = Enum.Font.Gotham
+			title.TextSize = 12
+			title.Parent = frame
+			
+			local upBtn = Instance.new("TextButton")
+			upBtn.Size = UDim2.new(0.8, 0, 0, 30)
+			upBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
+			upBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+			upBtn.Text = "↑"
+			upBtn.TextColor3 = Color3.new(1, 1, 1)
+			upBtn.Font = Enum.Font.GothamBold
+			upBtn.TextSize = 16
+			upBtn.Parent = frame
+			
+			local downBtn = Instance.new("TextButton")
+			downBtn.Size = UDim2.new(0.8, 0, 0, 30)
+			downBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+			downBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+			downBtn.Text = "↓"
+			downBtn.TextColor3 = Color3.new(1, 1, 1)
+			downBtn.Font = Enum.Font.GothamBold
+			downBtn.TextSize = 16
+			downBtn.Parent = frame
+			
+			local holdingUp = false
+			local holdingDown = false
+			
+			upBtn.MouseButton1Down:Connect(function()
+				holdingUp = true
+				FloatValue = FloatValue + 1
+			end)
+			
+			downBtn.MouseButton1Down:Connect(function()
+				holdingDown = true
+				FloatValue = FloatValue - 0.5
+			end)
+			
+			UIS.InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if holdingUp then
+						FloatValue = FloatValue - 1
+						holdingUp = false
+					end
+					if holdingDown then
+						FloatValue = FloatValue + 0.5
+						holdingDown = false
+					end
+				end
+			end)
+			
+			FloatGUI = screenGui
+			
+			Utils.AddConnection("FloatDeath", char:WaitForChild("Humanoid").Died:Connect(function()
+				if FloatPart then FloatPart:Destroy() end
+				if FloatGUI then FloatGUI:Destroy() end
+				FloatPart = nil
+				FloatGUI = nil
+				Utils.Disconnect("FloatLoop")
+			end))
+			
+			Utils.AddConnection("FloatLoop", RunService.Heartbeat:Connect(function()
+				if not State.FloatEnabled or not FloatPart or not FloatPart.Parent then
+					if FloatPart then FloatPart:Destroy() end
+					if FloatGUI then FloatGUI:Destroy() end
+					FloatPart = nil
+					FloatGUI = nil
+					return
+				end
+				
+				local char = LocalPlayer.Character
+				local root = getRoot(char)
+				if char and root and FloatPart then
+					FloatPart.CFrame = root.CFrame * CFrame.new(0, FloatValue, 0)
+				end
+			end))
+			
+			WindUI:Notify({
+				Title = "Float",
+				Content = "Float Enabled",
+				Duration = 2,
+				Icon = "move"
+			})
+		else
+			if FloatPart then
+				FloatPart:Destroy()
+				FloatPart = nil
+			end
+			if FloatGUI then
+				FloatGUI:Destroy()
+				FloatGUI = nil
+			end
+			Utils.Disconnect("FloatDeath")
+			Utils.Disconnect("FloatLoop")
+			
+			WindUI:Notify({
+				Title = "Float",
+				Content = "Float Disabled",
+				Duration = 2,
+				Icon = "move"
+			})
+		end
+	end
 })
 
 -- =============== SETTINGS TAB ===============
 
 -- Folder Selection Section
 local FolderSection = SettingsTab:Section({
-    Title = "Folder Selection",
-    Desc = "Select folders for features",
-    Icon = "folder",
-    Box = true,
-    BoxBorder = true,
-    Opened = true
+	Title = "Folder Selection",
+	Desc = "Select folders for features",
+	Icon = "folder",
+	Box = true,
+	BoxBorder = true,
+	Opened = true
 })
 
 local function GetFolders()
-    local folders = {"workspace"}
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("Folder") then
-            table.insert(folders, v:GetFullName())
-        end
-    end
-    return folders
+	local folders = {"workspace"}
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("Folder") then
+			table.insert(folders, v:GetFullName())
+		end
+	end
+	return folders
 end
 
 local farmFolderDropdown = FolderSection:Dropdown({
-    Title = "Select AutoFarm Folder",
-    Desc = "Folder containing mobs",
-    Values = GetFolders(),
-    Value = "workspace",
-    Multi = false,
-    Flag = "FarmFolder",
-    Callback = function(folder)
-        State.SelectedFolder = folder == "workspace" and workspace or workspace:FindFirstChild(folder, true)
-    end
+	Title = "Select AutoFarm Folder",
+	Desc = "Folder containing mobs",
+	Values = GetFolders(),
+	Value = "workspace",
+	Multi = false,
+	SearchBarEnabled = true,
+	Flag = "FarmFolder",
+	Callback = function(folder)
+		State.SelectedFolder = folder == "workspace" and workspace or workspace:FindFirstChild(folder, true)
+	end
 })
 
 local npcFolderDropdown = FolderSection:Dropdown({
-    Title = "Select NPC Folder",
-    Desc = "Folder containing NPCs",
-    Values = GetFolders(),
-    Value = "workspace",
-    Multi = false,
-    Flag = "NPCFolder",
-    Callback = function(folder)
-        State.NPCFolder = folder == "workspace" and workspace or workspace:FindFirstChild(folder, true)
-    end
+	Title = "Select NPC Folder",
+	Desc = "Folder containing NPCs",
+	Values = GetFolders(),
+	Value = "workspace",
+	Multi = false,
+	SearchBarEnabled = true,
+	Flag = "NPCFolder",
+	Callback = function(folder)
+		State.NPCFolder = folder == "workspace" and workspace or workspace:FindFirstChild(folder, true)
+	end
 })
 
 FolderSection:Button({
-    Title = "Refresh Folders",
-    Icon = "refresh-cw",
-    Callback = function()
-        farmFolderDropdown:Refresh(GetFolders())
-        npcFolderDropdown:Refresh(GetFolders())
-        WindUI:Notify({
-            Title = "Folders",
-            Content = "Folder list refreshed",
-            Duration = 2,
-            Icon = "refresh-cw"
-        })
-    end
+	Title = "Refresh Folders",
+	Icon = "refresh-cw",
+	Callback = function()
+		farmFolderDropdown:Refresh(GetFolders())
+		npcFolderDropdown:Refresh(GetFolders())
+		WindUI:Notify({
+			Title = "Folders",
+			Content = "Folder list refreshed",
+			Duration = 2,
+			Icon = "refresh-cw"
+		})
+	end
 })
 
 -- AutoFarm Settings
 local FarmSettingsSection = SettingsTab:Section({
-    Title = "AutoFarm Settings",
-    Desc = "Additional farm configurations",
-    Icon = "settings",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "AutoFarm Settings",
+	Desc = "Additional farm configurations",
+	Icon = "settings",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 FarmSettingsSection:Toggle({
-    Title = "Remove AutoFarm Restriction",
-    Desc = "Farm multiple mobs at once",
-    Value = false,
-    Flag = "RemoveRestriction",
-    Callback = function(state)
-        State.RestrictAutoFarm = state
-    end
+	Title = "Remove AutoFarm Restriction",
+	Desc = "Farm multiple mobs at once",
+	Value = false,
+	Flag = "RemoveRestriction",
+	Callback = function(state)
+		State.RestrictAutoFarm = state
+	end
 })
 
 FarmSettingsSection:Toggle({
-    Title = "AutoFarmV2 Extension",
-    Desc = "Check parent, not health",
-    Value = false,
-    Flag = "FarmExtension",
-    Callback = function(state)
-        State.RestrictedParent = state
-    end
+	Title = "AutoFarmV2 Extension",
+	Desc = "Check parent, not health",
+	Value = false,
+	Flag = "FarmExtension",
+	Callback = function(state)
+		State.RestrictedParent = state
+	end
 })
 
 FarmSettingsSection:Paragraph({
-    Title = "Note",
-    Desc = "Enabled: AutoFarm will TP to all mobs repeatedly\nDisabled: AutoFarm will lock onto 1 mob"
+	Title = "Note",
+	Desc = "Enabled: AutoFarm will TP to all mobs repeatedly\nDisabled: AutoFarm will lock onto 1 mob"
 })
 
 -- Server Section
 local ServerSection = SettingsTab:Section({
-    Title = "Server",
-    Desc = "Server management",
-    Icon = "server",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Server",
+	Desc = "Server management",
+	Icon = "server",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 ServerSection:Button({
-    Title = "Boost FPS",
-    Desc = "Improve performance and FPS",
-    Icon = "zap",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
-        WindUI:Notify({
-            Title = "Boost FPS",
-            Content = "Loaded",
-            Duration = 2,
-            Icon = "check"
-        })
-    end
+	Title = "Boost FPS",
+	Desc = "Improve performance and FPS",
+	Icon = "zap",
+	Callback = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/meobeo8/elgato/a/BoostFPS.lua"))()
+		WindUI:Notify({
+			Title = "Boost FPS",
+			Content = "Loaded",
+			Duration = 2,
+			Icon = "check"
+		})
+	end
 })
 
 ServerSection:Toggle({
-    Title = "Auto Load on Server Hop",
-    Desc = "Automatically load script after server hop",
-    Value = false,
-    Flag = "AutoLoadHop",
-    Callback = function(state)
-        State.TeleportCheck = state
-        if state then
-            local queueTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
-            
-            LocalPlayer.OnTeleport:Connect(function()
-                if not State.TeleportCheck and queueTeleport then
-                    State.TeleportCheck = true
-                    queueTeleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader'))()")
-                end
-            end)
-        end
-    end
+	Title = "Auto Load on Server Hop",
+	Desc = "Automatically load script after server hop",
+	Value = false,
+	Flag = "AutoLoadHop",
+	Callback = function(state)
+		State.TeleportCheck = state
+		if state then
+			local queueTeleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+			
+			LocalPlayer.OnTeleport:Connect(function()
+				if not State.TeleportCheck and queueTeleport then
+					State.TeleportCheck = true
+					queueTeleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Rey%20Loader'))()")
+				end
+			end)
+		end
+	end
 })
 
 ServerSection:Button({
-    Title = "Hop Server",
-    Desc = "Join another public server",
-    Icon = "shuffle",
-    Callback = function()
-        local http = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-        local placeId, currentJobId = game.PlaceId, game.JobId
-        
-        if http then
-            local servers = {}
-            local response = http({
-                Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", placeId)
-            })
-            
-            local data = game:GetService("HttpService"):JSONDecode(response.Body)
-            
-            if data and data.data then
-                for _, server in next, data.data do
-                    if type(server) == "table" and tonumber(server.playing) and tonumber(server.maxPlayers) then
-                        if server.playing < server.maxPlayers and server.id ~= currentJobId then
-                            table.insert(servers, 1, server.id)
-                        end
-                    end
-                end
-            end
-            
-            if #servers > 0 then
-                TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
-            else
-                WindUI:Notify({
-                    Title = "Server Hop",
-                    Content = "No suitable server found",
-                    Duration = 3,
-                    Icon = "alert-circle"
-                })
-            end
-        else
-            WindUI:Notify({
-                Title = "Server Hop",
-                Content = "Executor not compatible",
-                Duration = 3,
-                Icon = "alert-circle"
-            })
-        end
-    end
+	Title = "Hop Server",
+	Desc = "Join another public server",
+	Icon = "shuffle",
+	Callback = function()
+		local http = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+		local placeId, currentJobId = game.PlaceId, game.JobId
+		
+		if http then
+			local servers = {}
+			local response = http({
+				Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true", placeId)
+			})
+			
+			local data = game:GetService("HttpService"):JSONDecode(response.Body)
+			
+			if data and data.data then
+				for _, server in next, data.data do
+					if type(server) == "table" and tonumber(server.playing) and tonumber(server.maxPlayers) then
+						if server.playing < server.maxPlayers and server.id ~= currentJobId then
+							table.insert(servers, 1, server.id)
+						end
+					end
+				end
+			end
+			
+			if #servers > 0 then
+				TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+			else
+				WindUI:Notify({
+					Title = "Server Hop",
+					Content = "No suitable server found",
+					Duration = 3,
+					Icon = "alert-circle"
+				})
+			end
+		else
+			WindUI:Notify({
+				Title = "Server Hop",
+				Content = "Executor not compatible",
+				Duration = 3,
+				Icon = "alert-circle"
+			})
+		end
+	end
 })
 
 ServerSection:Button({
-    Title = "Rejoin",
-    Desc = "Rejoin current server",
-    Icon = "refresh-cw",
-    Callback = function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-    end
+	Title = "Rejoin",
+	Desc = "Rejoin current server",
+	Icon = "refresh-cw",
+	Callback = function()
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+	end
 })
 
 -- Theme Section
 local ThemeSection = SettingsTab:Section({
-    Title = "Theme",
-    Desc = "Change UI theme",
-    Icon = "palette",
-    Box = true,
-    BoxBorder = true,
-    Opened = false
+	Title = "Theme",
+	Desc = "Change UI theme",
+	Icon = "palette",
+	Box = true,
+	BoxBorder = true,
+	Opened = false
 })
 
 local themes = {"Dark", "Light", "Rose", "Plant", "Red", "Indigo", "Sky", "Crimson", "Amber", "Emerald", "Midnight", "Crimson", "MonokaiPro", "CottonCandy"}
 
 ThemeSection:Dropdown({
-    Title = "Theme Color",
-    Desc = "Change UI color scheme",
-    Values = themes,
-    Value = "Crimson",
-    Multi = false,
-    Flag = "UITheme",
-    Callback = function(theme)
-        WindUI:SetTheme(theme)
-        WindUI:Notify({
-            Title = "Theme",
-            Content = "Theme changed to " .. theme,
-            Duration = 2,
-            Icon = "palette"
-        })
-    end
+	Title = "Theme Color",
+	Desc = "Change UI color scheme",
+	Values = themes,
+	Value = "Crimson",
+	Multi = false,
+	Flag = "UITheme",
+	Callback = function(theme)
+		WindUI:SetTheme(theme)
+		WindUI:Notify({
+			Title = "Theme",
+			Content = "Theme changed to " .. theme,
+			Duration = 2,
+			Icon = "palette"
+		})
+	end
 })
 
 -- Cleanup function
 local function CleanupAll()
-    for key, conn in pairs(ActiveConnections) do
-        if typeof(conn) == "RBXScriptConnection" then
-            conn:Disconnect()
-        elseif type(conn) == "thread" then
-            coroutine.close(conn)
-        end
-    end
-    table.clear(ActiveConnections)
-    
-    RemoveBodyVelocity()
-    
-    if FloatPart then
-        FloatPart:Destroy()
-        FloatPart = nil
-    end
-    if FloatGUI then
-        FloatGUI:Destroy()
-        FloatGUI = nil
-    end
-    
-    for key, _ in pairs(State) do
-        if type(State[key]) == "boolean" then
-            State[key] = false
-        end
-    end
+	for key, conn in pairs(ActiveConnections) do
+		if typeof(conn) == "RBXScriptConnection" then
+			conn:Disconnect()
+		elseif type(conn) == "thread" then
+			coroutine.close(conn)
+		end
+	end
+	table.clear(ActiveConnections)
+	
+	RemoveBodyVelocity()
+	
+	if FloatPart then
+		FloatPart:Destroy()
+		FloatPart = nil
+	end
+	if FloatGUI then
+		FloatGUI:Destroy()
+		FloatGUI = nil
+	end
+	
+	for key, _ in pairs(State) do
+		if type(State[key]) == "boolean" then
+			State[key] = false
+		end
+	end
 end
 
 -- Cleanup events
 local removeConn
 removeConn = Players.PlayerRemoving:Connect(function(leavingPlayer)
-    if leavingPlayer == LocalPlayer then
-        removeConn:Disconnect()
-        CleanupAll()
-    end
+	if leavingPlayer == LocalPlayer then
+		removeConn:Disconnect()
+		CleanupAll()
+	end
 end)
 
 Window:SelectTab(1)
@@ -1719,8 +1820,8 @@ Window:SelectTab(1)
 -- Welcome notification
 task.wait(1)
 WindUI:Notify({
-    Title = "Rey Hub Loaded",
-    Content = "Script loaded successfully!",
-    Duration = 3,
-    Icon = "check"
+	Title = "Rey Hub Loaded",
+	Content = "Script loaded successfully!",
+	Duration = 3,
+	Icon = "check"
 })
