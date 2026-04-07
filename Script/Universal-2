@@ -173,10 +173,26 @@ end
 
 function Utils.SetupBodyVelocity()
 	local Character = LocalPlayer.Character
-	local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso"))
+	local torso = Character and (Character:FindFirstChild("Torso") or Character:FindFirstChild("LowerTorso") or Character:FindFirstChild("UpperTorso"))
 	if torso and not torso:FindFirstChild("BodyVelocity") then
 		local bv = Instance.new("BodyVelocity", torso)
-		bv.Velocity = Vector3.new(0, 0.1, 0)
+		local lookVector = torso.CFrame.LookVector
+		local upVector = torso.CFrame.UpVector
+		local forwardSpeed = 0.1
+		local upwardSpeed = 0.1
+		local velocity = Vector3.new(
+			lookVector.X * forwardSpeed,
+			upVector.Y * upwardSpeed,
+			lookVector.Z * forwardSpeed
+		)
+		if upVector.Y < 0 then
+			velocity = Vector3.new(
+				lookVector.X * forwardSpeed,
+				upVector.Y * math.abs(upwardSpeed * 2),
+				lookVector.Z * forwardSpeed
+			)
+		end
+		bv.Velocity = velocity
 		bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 	end
 end
@@ -317,12 +333,31 @@ function AutoFarm.ToggleFarmV2(state)
 	Utils.StartThread("AutoFarmLogic", function()
 		while State.AutoFarm do
 			currentTarget = nil
-			for _, mob in ipairs(mobFolder:GetChildren()) do
-				if not State.AutoFarm then break end
-				if mob:IsA("Model") and mob.Name == State.SelectedMob then
-					local hum = mob:FindFirstChildWhichIsA("Humanoid")
-					local root = mob:FindFirstChild("HumanoidRootPart")
-					if hum and root and hum.Health > 0 then
+			
+			local function checkMob(mob)
+				local hum = mob:FindFirstChildWhichIsA("Humanoid")
+				local root = mob:FindFirstChild("HumanoidRootPart")
+				if not hum or not root or hum.Health <= 0 then
+					return false
+				end
+				if State.RestrictedParent and mob.Parent ~= mobFolder then
+					return false
+				end
+				return true
+			end
+			
+			if State.RestrictAutoFarm then
+				for _, mob in ipairs(mobFolder:GetChildren()) do
+					if not State.AutoFarm then break end
+					if mob:IsA("Model") and mob.Name == State.SelectedMob and checkMob(mob) then
+						currentTarget = mob
+						break
+					end
+				end
+			else
+				for _, mob in ipairs(mobFolder:GetDescendants()) do
+					if not State.AutoFarm then break end
+					if mob:IsA("Model") and mob.Name == State.SelectedMob and checkMob(mob) then
 						currentTarget = mob
 						break
 					end
