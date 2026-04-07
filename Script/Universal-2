@@ -916,6 +916,79 @@ local function KILLV4(state)
 	end
 end
 
+local KillV5 = {
+	Active = false,
+	Humanoids = {},
+	Connection = nil,
+	LoopThread = nil
+}
+
+function KillV5.Toggle(state)
+	KillV5.Active = state
+	
+	if state then
+		KillV5.Humanoids = {}
+		
+		-- Hook existing humanoids from workspace children only
+		for _, v in ipairs(workspace:GetChildren()) do
+			if v:IsA("Model") then
+				local hum = v:FindFirstChildWhichIsA("Humanoid")
+				if hum and hum.Parent and hum.Parent.Name ~= LocalPlayer.Name then
+					KillV5.Humanoids[hum] = hum
+				end
+			end
+		end
+		
+		-- Watch for new humanoids
+		KillV5.Connection = workspace.DescendantAdded:Connect(function(obj)
+			if not KillV5.Active then return end
+			
+			local hum = obj:IsA("Humanoid") and obj or obj:FindFirstChildWhichIsA("Humanoid")
+			if hum and hum:IsA("Humanoid") then
+				local model = hum.Parent
+				if model and model:IsA("Model") and model.Name ~= LocalPlayer.Name then
+					KillV5.Humanoids[hum] = hum
+				end
+			end
+		end)
+		
+		-- Kill loop
+		KillV5.LoopThread = task.spawn(function()
+			while KillV5.Active do
+				-- Remove dead humanoids
+				for hum in pairs(KillV5.Humanoids) do
+					if not hum or not hum.Parent or hum.Health <= 0 then
+						KillV5.Humanoids[hum] = nil
+					end
+				end
+				
+				-- Kill based on threshold
+				for hum in pairs(KillV5.Humanoids) do
+					if hum and hum.Parent and hum.Health > 0 then
+						if hum.Health / math.max(hum.MaxHealth, 1) < State.OneHitHealth then
+							hum.Health = 0
+						end
+					end
+				end
+				
+				task.wait(0.1)
+			end
+		end)
+	else
+		if KillV5.Connection then
+			KillV5.Connection:Disconnect()
+			KillV5.Connection = nil
+		end
+		
+		if KillV5.LoopThread then
+			coroutine.close(KillV5.LoopThread)
+			KillV5.LoopThread = nil
+		end
+		
+		KillV5.Humanoids = {}
+	end
+end
+
 -- NPC Function
 local function GetNPCList()
 	local npcs = {}
@@ -1120,7 +1193,7 @@ KillAll.CreateButton("KILL ALL V3", "KILL ALL WITHOUT HESITATE", 10, function()
 end)
 
 Rey:CreateToggle(UtilityTab, "KILL ALL V4", "AUTO KILL SESUAI PERSEN (OP!)", KILLV4)
-
+Rey:CreateToggle(UtilityTab, "KILL ALL V5", "AUTO KILL SESUAI PERSEN (EFISIEN!)", KillV5.Toggle)
 -- Misc Tab
 Rey:CreateDropdown(MiscTab, "Teleport to Player", Utils.GetPlayerList, function(playerName)
 	local target = Players:FindFirstChild(playerName)
