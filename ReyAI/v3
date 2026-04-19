@@ -288,7 +288,7 @@ function Utils.TeleportToObject(name, useTween, tweenSpeed)
                 pos = target:GetPivot().Position
             end
         end
-    elseif target:GetPivot then
+    elseif target:GetPivot() then
         pos = target:GetPivot().Position
     end
     
