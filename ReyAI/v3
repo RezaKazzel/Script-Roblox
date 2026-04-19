@@ -154,7 +154,8 @@ function Utils.GetDate()
     }
 end
 
-function Utils.TeleportTo(target)
+function Utils.TeleportTo(target, useTween)
+    useTween = useTween or false
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
     
@@ -162,17 +163,183 @@ function Utils.TeleportTo(target)
     if type(target) == "table" and target.x and target.y and target.z then
         pos = Vector3.new(target.x, target.y, target.z)
     elseif typeof(target) == "Instance" then
-        pos = Utils.GetPosition(target)
-        if pos then
-            pos = Vector3.new(pos.x, pos.y, pos.z)
+        if target:IsA("Player") then
+            local targetChar = target.Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                pos = targetChar.HumanoidRootPart.Position
+            end
+        elseif target:IsA("BasePart") then
+            pos = target.Position
+        elseif target:IsA("Model") and target.PrimaryPart then
+            pos = target.PrimaryPart.Position
         end
     end
     
-    if pos then
-        char.HumanoidRootPart.CFrame = CFrame.new(pos)
-        return true
+    if not pos then return false end
+    
+    local hrp = char.HumanoidRootPart
+    
+    if useTween then
+        local TweenService = game:GetService("TweenService")
+        local dist = (hrp.Position - pos).Magnitude
+        local tweenInfo = TweenInfo.new(
+            math.clamp(dist / 100, 0.3, 3),
+            Enum.EasingStyle.Quad,
+            Enum.EasingDirection.Out
+        )
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+        tween:Play()
+        tween.Completed:Wait()
+    else
+        hrp.CFrame = CFrame.new(pos)
     end
-    return false
+    
+    return true
+end
+
+function Utils.TeleportToPath(path, useTween)
+    local success, obj = pcall(function()
+        return loadstring("return " .. path)()
+    end)
+    
+    if not success or not obj then
+        local parts = {}
+        for part in string.gmatch(path, "[^%.]+") do
+            table.insert(parts, part)
+        end
+        
+        obj = workspace
+        for _, name in ipairs(parts) do
+            if obj then
+                obj = obj:FindFirstChild(name)
+            end
+        end
+    end
+    
+    if not obj then return false, "Path not found" end
+    
+    local pos = nil
+    if obj:IsA("BasePart") then
+        pos = obj.Position
+    elseif obj:IsA("Model") then
+        local primary = obj.PrimaryPart
+        if primary then
+            pos = primary.Position
+        elseif obj:FindFirstChild("HumanoidRootPart") then
+            pos = obj.HumanoidRootPart.Position
+        else
+            pos = obj:GetPivot().Position
+        end
+    end
+    
+    if not pos then return false, "Cannot get position" end
+    
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then 
+        return false, "Character not ready" 
+    end
+    
+    local hrp = char.HumanoidRootPart
+    
+    if useTween then
+        local TweenService = game:GetService("TweenService")
+        local dist = (hrp.Position - pos).Magnitude
+        local tweenInfo = TweenInfo.new(
+            math.clamp(dist / 100, 0.3, 3),
+            Enum.EasingStyle.Quad,
+            Enum.EasingDirection.Out
+        )
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+        tween:Play()
+        tween.Completed:Wait()
+    else
+        hrp.CFrame = CFrame.new(pos)
+    end
+    
+    return true, obj.Name, pos
+end
+
+function Utils.TeleportToObject(name, useTween)
+    local matches = Utils.FindInWorkspace(name)
+    if #matches == 0 then return false, "Object not found" end
+    
+    local target = matches[1].Instance
+    local pos = nil
+    
+    if target:IsA("BasePart") then
+        pos = target.Position
+    elseif target:IsA("Model") then
+        local primary = target.PrimaryPart
+        if primary then
+            pos = primary.Position
+        else
+            local hum = target:FindFirstChild("Humanoid")
+            if hum and hum.RootPart then
+                pos = hum.RootPart.Position
+            else
+                pos = target:GetPivot().Position
+            end
+        end
+    elseif target:GetPivot then
+        pos = target:GetPivot().Position
+    end
+    
+    if not pos then return false, "Cannot get position" end
+    
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then 
+        return false, "Character not ready" 
+    end
+    
+    local hrp = char.HumanoidRootPart
+    
+    if useTween then
+        local TweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(
+            (hrp.Position - pos).Magnitude / 100,
+            Enum.EasingStyle.Linear,
+            Enum.EasingDirection.Out
+        )
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+        tween:Play()
+        tween.Completed:Wait()
+    else
+        hrp.CFrame = CFrame.new(pos)
+    end
+    
+    return true, target.Name, pos
+end
+
+function Utils.TeleportToNearest(name, useTween)
+    local nearest, dist = Utils.GetNearestObject(name)
+    if not nearest then return false, "Object not found" end
+    
+    local pos = nearest.Position
+    if not pos then return false, "Cannot get position" end
+    
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then 
+        return false, "Character not ready" 
+    end
+    
+    local hrp = char.HumanoidRootPart
+    local targetPos = Vector3.new(pos.x, pos.y, pos.z)
+    
+    if useTween then
+        local TweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(
+            math.clamp(dist / 100, 0.5, 3),
+            Enum.EasingStyle.Quad,
+            Enum.EasingDirection.Out
+        )
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos)})
+        tween:Play()
+        tween.Completed:Wait()
+    else
+        hrp.CFrame = CFrame.new(targetPos)
+    end
+    
+    return true, nearest.Name, targetPos, dist
 end
 
 function Utils.GetNearestObject(name)
@@ -692,30 +859,33 @@ INTERNAL EXEC:
 [/REY_INTERNAL:EXEC]
 
 ===== UTILS (ALWAYS USE THESE) =====
-Utils.FindPlayer(name)
-Utils.FindInWorkspace(name)
-Utils.GetPosition(obj)
-Utils.GetNearestPlayer()
-Utils.GetAllPlayers()
-Utils.GetCurrency()
-Utils.GetGameName()
-Utils.GetTime()
-Utils.GetDate()
-Utils.TeleportTo(player/position)
-Utils.GetNearestObject(name)
-Utils.GetPlayersInRadius(radius)
-Utils.GetHealth()
-Utils.SetWalkSpeed(speed)
-Utils.SetJumpPower(power)
-Utils.GetInventory()
-Utils.EquipTool(name)
-Utils.Respawn()
-Utils.Rejoin()
-Utils.ServerHop()
-Utils.Kick(reason)
-Utils.Notification(title, text, duration)
-Utils.Fly(enable) -- true to fly, false to stop
-Utils.FlySpeed(speed) -- set fly speed (default 1)
+Utils.FindPlayer(name: string) -> Player or {UserId, Name}
+Utils.FindInWorkspace(name: string) -> array of {Name, Class, Position, Instance}
+Utils.GetPosition(obj: Player/Instance/table) -> {x, y, z}
+Utils.GetNearestPlayer() -> Player, distance
+Utils.GetAllPlayers() -> array of {Name, DisplayName, UserId}
+Utils.GetCurrency() -> table {StatName = Value}
+Utils.GetGameName() -> string
+Utils.GetTime() -> {hour, min, sec}
+Utils.GetDate() -> {day, month, monthName, year, weekday, dateString}
+Utils.TeleportTo(target: Player/table, useTween: bool) -> bool
+Utils.GetNearestObject(name: string) -> object, distance
+Utils.GetPlayersInRadius(radius: number) -> array of {Name, DisplayName, Distance}
+Utils.GetHealth() -> {Health, MaxHealth}
+Utils.SetWalkSpeed(speed: number) -> bool
+Utils.SetJumpPower(power: number) -> bool
+Utils.GetInventory() -> array of {Name, Type, Equipped}
+Utils.EquipTool(name: string) -> bool
+Utils.Respawn() -> bool
+Utils.Rejoin() -> void
+Utils.ServerHop() -> void
+Utils.Kick(reason: string) -> void
+Utils.Notification(title: string, text: string, duration: number) -> void
+Utils.Fly(enable: bool) -> bool
+Utils.FlySpeed(speed: number) -> void
+Utils.TeleportToObject(name: string, useTween: bool) -> bool, name, position
+Utils.TeleportToNearest(name: string, useTween: bool) -> bool, name, position, distance
+Utils.TeleportToPath(path: string, useTween: bool) -> bool, name, position
 
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
@@ -744,19 +914,26 @@ User: "kick me"
 Utils.Kick("Goodbye from Rey")
 ```
 
-User: "teleport to oui"
+User: "tp to oui" / "teleport to oui"
 [Rey]: [REY_INTERNAL:EXEC]
 local target = Utils.FindPlayer("oui")
 if not target then return {success=false, error="Player not found"} end
 if type(target) == "table" and target.UserId then
     return {success=false, error="Player not in server", name=target.Name}
 end
-local pos = Utils.GetPosition(target)
-if pos then
-    Utils.TeleportTo(pos)
-    return {success=true, target=target.Name, position=pos}
+local success = Utils.TeleportTo(target, false)
+return {success=success, target=target.Name}
+[/REY_INTERNAL:EXEC]
+
+User: "tween to oui"
+[Rey]: [REY_INTERNAL:EXEC]
+local target = Utils.FindPlayer("oui")
+if not target then return {success=false, error="Player not found"} end
+if type(target) == "table" and target.UserId then
+    return {success=false, error="Player not in server", name=target.Name}
 end
-return {success=false, error="Cannot get position"}
+local success = Utils.TeleportTo(target, true)
+return {success=success, target=target.Name}
 [/REY_INTERNAL:EXEC]
 
 User: "infinite jump"
@@ -908,6 +1085,39 @@ User: "stop fly" / "unfly"
 -- Script by ReyAI | ReyHub
 Utils.Fly(false)
 ```
+
+User: "tp to chest" / "teleport to chest"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToObject("chest", false)
+return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
+
+User: "tween to door" / "tween to shop"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToNearest("door", true)
+return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
+
+User: "go to shop"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToObject("shop", false)
+if not success then
+    success, name, pos = Utils.TeleportToObject("store", false)
+end
+return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
+
+User: "tp to Workspace.NPC.SwordSeller"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToPath("Workspace.NPC.SwordSeller", false)
+return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
+
+User: "tween to Workspace.Shops.WeaponShop"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToPath("Workspace.Shops.WeaponShop", true)
+return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
 
 ===== END =====
 [Rey]: Ready.
