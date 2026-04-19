@@ -154,8 +154,10 @@ function Utils.GetDate()
     }
 end
 
-function Utils.TeleportTo(target, useTween)
+function Utils.TeleportTo(target, useTween, tweenSpeed)
     useTween = useTween or false
+    tweenSpeed = tweenSpeed or 100
+    
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
     
@@ -183,7 +185,7 @@ function Utils.TeleportTo(target, useTween)
         local TweenService = game:GetService("TweenService")
         local dist = (hrp.Position - pos).Magnitude
         local tweenInfo = TweenInfo.new(
-            math.clamp(dist / 100, 0.3, 3),
+            math.clamp(dist / tweenSpeed, 0.3, 5),
             Enum.EasingStyle.Quad,
             Enum.EasingDirection.Out
         )
@@ -197,7 +199,10 @@ function Utils.TeleportTo(target, useTween)
     return true
 end
 
-function Utils.TeleportToPath(path, useTween)
+function Utils.TeleportToPath(path, useTween, tweenSpeed)
+    useTween = useTween or false
+    tweenSpeed = tweenSpeed or 100
+    
     local success, obj = pcall(function()
         return loadstring("return " .. path)()
     end)
@@ -245,7 +250,7 @@ function Utils.TeleportToPath(path, useTween)
         local TweenService = game:GetService("TweenService")
         local dist = (hrp.Position - pos).Magnitude
         local tweenInfo = TweenInfo.new(
-            math.clamp(dist / 100, 0.3, 3),
+            math.clamp(dist / tweenSpeed, 0.3, 5),
             Enum.EasingStyle.Quad,
             Enum.EasingDirection.Out
         )
@@ -259,7 +264,10 @@ function Utils.TeleportToPath(path, useTween)
     return true, obj.Name, pos
 end
 
-function Utils.TeleportToObject(name, useTween)
+function Utils.TeleportToObject(name, useTween, tweenSpeed)
+    useTween = useTween or false
+    tweenSpeed = tweenSpeed or 100
+    
     local matches = Utils.FindInWorkspace(name)
     if #matches == 0 then return false, "Object not found" end
     
@@ -295,9 +303,10 @@ function Utils.TeleportToObject(name, useTween)
     
     if useTween then
         local TweenService = game:GetService("TweenService")
+        local dist = (hrp.Position - pos).Magnitude
         local tweenInfo = TweenInfo.new(
-            (hrp.Position - pos).Magnitude / 100,
-            Enum.EasingStyle.Linear,
+            math.clamp(dist / tweenSpeed, 0.3, 5),
+            Enum.EasingStyle.Quad,
             Enum.EasingDirection.Out
         )
         local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
@@ -310,7 +319,10 @@ function Utils.TeleportToObject(name, useTween)
     return true, target.Name, pos
 end
 
-function Utils.TeleportToNearest(name, useTween)
+function Utils.TeleportToNearest(name, useTween, tweenSpeed)
+    useTween = useTween or false
+    tweenSpeed = tweenSpeed or 100
+    
     local nearest, dist = Utils.GetNearestObject(name)
     if not nearest then return false, "Object not found" end
     
@@ -328,7 +340,7 @@ function Utils.TeleportToNearest(name, useTween)
     if useTween then
         local TweenService = game:GetService("TweenService")
         local tweenInfo = TweenInfo.new(
-            math.clamp(dist / 100, 0.5, 3),
+            math.clamp(dist / tweenSpeed, 0.3, 5),
             Enum.EasingStyle.Quad,
             Enum.EasingDirection.Out
         )
@@ -868,7 +880,7 @@ Utils.GetCurrency() -> table {StatName = Value}
 Utils.GetGameName() -> string
 Utils.GetTime() -> {hour, min, sec}
 Utils.GetDate() -> {day, month, monthName, year, weekday, dateString}
-Utils.TeleportTo(target: Player/table, useTween: bool) -> bool
+Utils.TeleportTo(target: Player/table, useTween: bool?, tweenSpeed: number?) -> bool
 Utils.GetNearestObject(name: string) -> object, distance
 Utils.GetPlayersInRadius(radius: number) -> array of {Name, DisplayName, Distance}
 Utils.GetHealth() -> {Health, MaxHealth}
@@ -879,13 +891,13 @@ Utils.EquipTool(name: string) -> bool
 Utils.Respawn() -> bool
 Utils.Rejoin() -> void
 Utils.ServerHop() -> void
-Utils.Kick(reason: string) -> void
-Utils.Notification(title: string, text: string, duration: number) -> void
+Utils.Kick(reason: string?) -> void
+Utils.Notification(title: string, text: string, duration: number?) -> void
 Utils.Fly(enable: bool) -> bool
 Utils.FlySpeed(speed: number) -> void
-Utils.TeleportToObject(name: string, useTween: bool) -> bool, name, position
-Utils.TeleportToNearest(name: string, useTween: bool) -> bool, name, position, distance
-Utils.TeleportToPath(path: string, useTween: bool) -> bool, name, position
+Utils.TeleportToObject(name: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position
+Utils.TeleportToNearest(name: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position, distance
+Utils.TeleportToPath(path: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position
 
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
@@ -933,6 +945,15 @@ if type(target) == "table" and target.UserId then
     return {success=false, error="Player not in server", name=target.Name}
 end
 local success = Utils.TeleportTo(target, true)
+return {success=success, target=target.Name}
+[/REY_INTERNAL:EXEC]
+
+User: "tween to alex speed 200"
+[Rey]: [REY_INTERNAL:EXEC]
+local target = Utils.FindPlayer("alex")
+if not target then return {success=false, error="Player not found"} end
+if type(target) == "table" then return {success=false, error="Player offline", name=target.Name} end
+local success = Utils.TeleportTo(target, true, 200)
 return {success=success, target=target.Name}
 [/REY_INTERNAL:EXEC]
 
@@ -1096,6 +1117,12 @@ User: "tween to door" / "tween to shop"
 [Rey]: [REY_INTERNAL:EXEC]
 local success, name, pos = Utils.TeleportToNearest("door", true)
 return {success = success, name = name, position = pos}
+[/REY_INTERNAL:EXEC]
+
+User: "tween to chest speed 150"
+[Rey]: [REY_INTERNAL:EXEC]
+local success, name, pos = Utils.TeleportToObject("chest", true, 150)
+return {success=success, name=name, position=pos}
 [/REY_INTERNAL:EXEC]
 
 User: "go to shop"
