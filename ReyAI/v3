@@ -1,0 +1,1564 @@
+local game = game
+local request = rawget(getgenv(), "request") or rawget(getgenv(), "http_request")
+local ReyHttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local Utils = {}
+
+function Utils.FindPlayer(name)
+    if not name or name == "" then return nil end
+    local searchName = name:lower()
+    local foundPlayer = nil
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Name:lower() == searchName or player.DisplayName:lower() == searchName then
+            return player
+        end
+        if player.Name:lower():sub(1, #searchName) == searchName or 
+           player.DisplayName:lower():sub(1, #searchName) == searchName then
+            foundPlayer = player
+        end
+    end
+    
+    if not foundPlayer then
+        local success, userId = pcall(function()
+            return Players:GetUserIdFromNameAsync(searchName)
+        end)
+        if success and userId then
+            return {UserId = userId, Name = name}
+        end
+    end
+    
+    return foundPlayer
+end
+
+function Utils.FindInWorkspace(name)
+    if not name or name == "" then return {} end
+    local searchName = name:lower()
+    local matches = {}
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name:lower():find(searchName, 1, true) then
+            local pos = nil
+            if obj:IsA("BasePart") then
+                pos = obj.Position
+            elseif obj:IsA("Model") and obj.PrimaryPart then
+                pos = obj.PrimaryPart.Position
+            elseif obj:GetPivot() then
+                pos = obj:GetPivot().Position
+            end
+            table.insert(matches, {
+                Name = obj.Name,
+                Class = obj.ClassName,
+                Position = pos and {x = pos.X, y = pos.Y, z = pos.Z} or nil,
+                Instance = obj
+            })
+        end
+    end
+    return matches
+end
+
+function Utils.GetPosition(target)
+    if not target then return nil end
+    if typeof(target) == "Instance" then
+        if target:IsA("Player") then
+            local char = target.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local pos = char.HumanoidRootPart.Position
+                return {x = pos.X, y = pos.Y, z = pos.Z}
+            end
+        elseif target:IsA("BasePart") then
+            return {x = target.Position.X, y = target.Position.Y, z = target.Position.Z}
+        elseif target:IsA("Model") and target.PrimaryPart then
+            local pos = target.PrimaryPart.Position
+            return {x = pos.X, y = pos.Y, z = pos.Z}
+        end
+    elseif type(target) == "table" and target.x and target.y and target.z then
+        return target
+    end
+    return nil
+end
+
+function Utils.GetNearestPlayer()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = char.HumanoidRootPart.Position
+    
+    local nearest, nearestDist = nil, math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local targetChar = player.Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
+                if dist < nearestDist then
+                    nearest, nearestDist = player, dist
+                end
+            end
+        end
+    end
+    return nearest, nearestDist
+end
+
+function Utils.GetAllPlayers()
+    local list = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        table.insert(list, {
+            Name = player.Name,
+            DisplayName = player.DisplayName,
+            UserId = player.UserId
+        })
+    end
+    return list
+end
+
+function Utils.GetCurrency()
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    local currency = {}
+    if leaderstats then
+        for _, stat in ipairs(leaderstats:GetChildren()) do
+            if stat:IsA("IntValue") or stat:IsA("NumberValue") then
+                currency[stat.Name] = stat.Value
+            end
+        end
+    end
+    return currency
+end
+
+function Utils.GetGameName()
+    local success, info = pcall(function()
+        return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+    end)
+    if success and info then
+        return info.Name
+    end
+    return "Unknown Game"
+end
+
+function Utils.GetTime()
+    local t = os.date("*t")
+    return {hour = t.hour, min = t.min, sec = t.sec}
+end
+
+function Utils.GetDate()
+    local t = os.date("*t")
+    local days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+    local months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+    return {
+        day = t.day,
+        month = t.month,
+        monthName = months[t.month],
+        year = t.year,
+        weekday = days[t.wday],
+        dateString = string.format("%02d/%02d/%d", t.day, t.month, t.year)
+    }
+end
+
+function Utils.TeleportTo(target)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+    
+    local pos = nil
+    if type(target) == "table" and target.x and target.y and target.z then
+        pos = Vector3.new(target.x, target.y, target.z)
+    elseif typeof(target) == "Instance" then
+        pos = Utils.GetPosition(target)
+        if pos then
+            pos = Vector3.new(pos.x, pos.y, pos.z)
+        end
+    end
+    
+    if pos then
+        char.HumanoidRootPart.CFrame = CFrame.new(pos)
+        return true
+    end
+    return false
+end
+
+function Utils.GetNearestObject(name)
+    local matches = Utils.FindInWorkspace(name)
+    if #matches == 0 then return nil end
+    
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return matches[1] end
+    
+    local myPos = char.HumanoidRootPart.Position
+    local nearest, nearestDist = nil, math.huge
+    
+    for _, obj in ipairs(matches) do
+        if obj.Position then
+            local objPos = Vector3.new(obj.Position.x, obj.Position.y, obj.Position.z)
+            local dist = (objPos - myPos).Magnitude
+            if dist < nearestDist then
+                nearest, nearestDist = obj, dist
+            end
+        end
+    end
+    return nearest, nearestDist
+end
+
+function Utils.GetPlayersInRadius(radius)
+    radius = radius or 50
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
+    local myPos = char.HumanoidRootPart.Position
+    
+    local nearby = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local targetChar = player.Character
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
+                if dist <= radius then
+                    table.insert(nearby, {
+                        Name = player.Name,
+                        DisplayName = player.DisplayName,
+                        Distance = dist
+                    })
+                end
+            end
+        end
+    end
+    table.sort(nearby, function(a, b) return a.Distance < b.Distance end)
+    return nearby
+end
+
+function Utils.GetHealth()
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            return {Health = hum.Health, MaxHealth = hum.MaxHealth}
+        end
+    end
+    return nil
+end
+
+function Utils.SetWalkSpeed(speed)
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.WalkSpeed = speed
+            return true
+        end
+    end
+    return false
+end
+
+function Utils.SetJumpPower(power)
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.JumpPower = power
+            return true
+        end
+    end
+    return false
+end
+
+function Utils.GetInventory()
+    local items = {}
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                table.insert(items, {Name = tool.Name, Type = "Tool"})
+            end
+        end
+    end
+    local char = LocalPlayer.Character
+    if char then
+        for _, tool in ipairs(char:GetChildren()) do
+            if tool:IsA("Tool") then
+                table.insert(items, {Name = tool.Name, Type = "Tool", Equipped = true})
+            end
+        end
+    end
+    return items
+end
+
+function Utils.EquipTool(name)
+    local searchName = name:lower()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") and tool.Name:lower():find(searchName, 1, true) then
+                LocalPlayer.Character.Humanoid:EquipTool(tool)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function Utils.Respawn()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.Health = 0
+        return true
+    end
+    return false
+end
+
+function Utils.Rejoin()
+    local ts = game:GetService("TeleportService")
+    ts:Teleport(game.PlaceId, LocalPlayer)
+end
+
+function Utils.ServerHop()
+    local ts = game:GetService("TeleportService")
+    ts:TeleportToPlaceInstance(game.PlaceId, ts:GetPlayerPlaceInstanceAsync(game.PlaceId))
+end
+
+function Utils.Kick(reason)
+    LocalPlayer:Kick(reason or "Goodbye from Rey")
+end
+
+function Utils.Notification(title, text, duration)
+    if game:GetService("StarterGui"):FindFirstChild("SetCore") then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 3
+        })
+    end
+end
+
+function Utils.Fly(enable)
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return false end
+    
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    
+    local states = {
+        Enum.HumanoidStateType.Climbing,
+        Enum.HumanoidStateType.FallingDown,
+        Enum.HumanoidStateType.Flying,
+        Enum.HumanoidStateType.Freefall,
+        Enum.HumanoidStateType.GettingUp,
+        Enum.HumanoidStateType.Jumping,
+        Enum.HumanoidStateType.Landed,
+        Enum.HumanoidStateType.Physics,
+        Enum.HumanoidStateType.PlatformStanding,
+        Enum.HumanoidStateType.Ragdoll,
+        Enum.HumanoidStateType.Running,
+        Enum.HumanoidStateType.RunningNoPhysics,
+        Enum.HumanoidStateType.Seated,
+        Enum.HumanoidStateType.StrafingNoPhysics,
+        Enum.HumanoidStateType.Swimming
+    }
+    
+    if enable == false then
+        _G.FlyEnabled = false
+        _G.FlyTpwalking = false
+        
+        for _, state in ipairs(states) do
+            hum:SetStateEnabled(state, true)
+        end
+        hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+        
+        if char.Animate then
+            char.Animate.Disabled = false
+        end
+        
+        if _G.FlyBodyGyro then
+            _G.FlyBodyGyro:Destroy()
+            _G.FlyBodyGyro = nil
+        end
+        if _G.FlyBodyVelocity then
+            _G.FlyBodyVelocity:Destroy()
+            _G.FlyBodyVelocity = nil
+        end
+        
+        hum.PlatformStand = false
+        return true
+    end
+    
+    _G.FlyEnabled = true
+    _G.FlySpeed = _G.FlySpeed or 1
+    _G.FlyMaxSpeed = 50
+    
+    for _, state in ipairs(states) do
+        hum:SetStateEnabled(state, false)
+    end
+    hum:ChangeState(Enum.HumanoidStateType.Swimming)
+    
+    if char.Animate then
+        char.Animate.Disabled = true
+        local Hum = char:FindFirstChildOfClass("Humanoid") or char:FindFirstChildOfClass("AnimationController")
+        if Hum then
+            for _, v in ipairs(Hum:GetPlayingAnimationTracks()) do
+                v:AdjustSpeed(0)
+            end
+        end
+    end
+    
+    spawn(function()
+        local hb = game:GetService("RunService").Heartbeat
+        _G.FlyTpwalking = true
+        while _G.FlyTpwalking and _G.FlyEnabled do
+            hb:Wait()
+            local c = player.Character
+            local h = c and c:FindFirstChildWhichIsA("Humanoid")
+            if c and h and h.Parent then
+                if h.MoveDirection.Magnitude > 0 then
+                    for _ = 1, _G.FlySpeed do
+                        c:TranslateBy(h.MoveDirection)
+                    end
+                end
+            end
+        end
+    end)
+    
+    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+    if not torso then return false end
+    
+    local bg = Instance.new("BodyGyro")
+    bg.P = 9e4
+    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.cframe = torso.CFrame
+    bg.Parent = torso
+    _G.FlyBodyGyro = bg
+    
+    local bv = Instance.new("BodyVelocity")
+    bv.velocity = Vector3.new(0, 0.1, 0)
+    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Parent = torso
+    _G.FlyBodyVelocity = bv
+    
+    hum.PlatformStand = true
+    
+    local ctrl = {f = 0, b = 0, l = 0, r = 0}
+    local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+    local speed = 0
+    
+    spawn(function()
+        while _G.FlyEnabled and torso and torso.Parent do
+            game:GetService("RunService").RenderStepped:Wait()
+            
+            if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                speed = speed + 0.5 + (speed / _G.FlyMaxSpeed)
+                if speed > _G.FlyMaxSpeed then
+                    speed = _G.FlyMaxSpeed
+                end
+            elseif speed ~= 0 then
+                speed = speed - 1
+                if speed < 0 then
+                    speed = 0
+                end
+            end
+            
+            if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f + ctrl.b)) + 
+                              ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - 
+                               workspace.CurrentCamera.CoordinateFrame.p)) * speed
+                lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+            elseif speed ~= 0 then
+                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f + lastctrl.b)) + 
+                              ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - 
+                               workspace.CurrentCamera.CoordinateFrame.p)) * speed
+            else
+                bv.velocity = Vector3.new(0, 0, 0)
+            end
+            
+            bg.cframe = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / _G.FlyMaxSpeed), 0, 0)
+        end
+    end)
+    
+    local function onKeyDown(key)
+        local k = key:lower()
+        if k == "w" then ctrl.f = 1 elseif k == "s" then ctrl.b = -1
+        elseif k == "a" then ctrl.l = -1 elseif k == "d" then ctrl.r = 1
+        end
+    end
+    
+    local function onKeyUp(key)
+        local k = key:lower()
+        if k == "w" then ctrl.f = 0 elseif k == "s" then ctrl.b = 0
+        elseif k == "a" then ctrl.l = 0 elseif k == "d" then ctrl.r = 0
+        end
+    end
+    
+    _G.FlyKeyDown = onKeyDown
+    _G.FlyKeyUp = onKeyUp
+    
+    game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            onKeyDown(input.KeyCode.Name)
+        end
+    end)
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            onKeyUp(input.KeyCode.Name)
+        end
+    end)
+    
+    return true
+end
+
+function Utils.FlySpeed(speed)
+    _G.FlySpeed = math.max(1, speed or 1)
+end
+
+getgenv().Utils = Utils
+
+function detectMobilePlatform()
+    local UserInputService = game:GetService("UserInputService")
+    local hasTouchScreen = UserInputService.TouchEnabled
+    local camera = workspace.CurrentCamera
+    local viewportSize = camera and camera.ViewportSize or Vector2.new(0, 0)
+    local isSmallScreen = viewportSize.X <= 1024 or viewportSize.Y <= 768
+    local hasGyroscope = UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled
+    local noKeyboard = not UserInputService.KeyboardEnabled
+    local executorName = identifyexecutor and identifyexecutor() or "Unknown"
+    local isMobileExecutor = executorName:lower():find("delta") or 
+                             executorName:lower():find("arceus") or
+                             executorName:lower():find("fluxus") or
+                             executorName:lower():find("krnl")
+    local isMobile = hasTouchScreen and (noKeyboard or isSmallScreen or hasGyroscope or isMobileExecutor)
+    if hasTouchScreen and isMobileExecutor then
+        isMobile = true
+    end
+    return isMobile
+end
+
+local isMobile = detectMobilePlatform() and "Mobile" or "PC"
+
+task.spawn(function()
+    local success, desc = pcall(function()
+        return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+    end)
+    if success and desc then
+        _G.OriginalAvatarDesc = desc
+    end
+end)
+
+local function SzaFeHttpR(options)
+    if type(options) ~= "table" then return nil end
+
+    local url = tostring(options.Url or "")
+    if url == "" then return nil end
+
+    local method = string.upper(tostring(options.Method or "GET"))
+    local headers = type(options.Headers) == "table" and options.Headers or {}
+    local body = options.Body
+
+    local function normalize(res)
+        if type(res) == "table" then
+            return {
+                Body = res.Body,
+                StatusCode = res.StatusCode or 0,
+                Success = res.Success ~= false
+            }
+        elseif type(res) == "string" then
+            return { Body = res, StatusCode = 200, Success = true }
+        end
+    end
+
+    local function attempt(fn)
+        local ok, res = pcall(fn)
+        if ok and res then
+            return normalize(res)
+        end
+    end
+    
+    local executorFirst = 
+        attempt(function() return request and request(options) end) or
+        attempt(function() return http and http.request(options) end) or
+        attempt(function() return http_request and http_request(options) end) or
+        attempt(function() return syn and syn.request(options) end) or
+        attempt(function() return fluxus and fluxus.request(options) end)
+    
+    if executorFirst then
+        return executorFirst
+    end
+
+    if method == "GET" then
+        return attempt(function()
+            return ReyHttpService:GetAsync(url, false, headers)
+        end) or attempt(function()
+            return game:HttpGetAsync(url)
+        end)
+
+    elseif method == "POST" then
+        local contentType = headers["Content-Type"] or "application/json"
+
+        return attempt(function()
+            return ReyHttpService:PostAsync(url, body or "", contentType, false, headers)
+        end) or attempt(function()
+            return ReyHttpService:RequestAsync({
+                Url = url,
+                Method = "POST",
+                Headers = headers,
+                Body = body
+            })
+        end) or attempt(function()
+            return game:HttpPostAsync(url, body, contentType)
+        end)
+    end
+
+    return nil
+end
+
+local hR = SzaFeHttpR
+local Public = false
+local PublicFull = false
+local TextChatService = game:GetService("TextChatService")
+local function sendMessage(msg)
+    if not Public then return end
+    TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+end
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+if not WindUI then
+    warn("Failed to load WindUI")
+    return
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "Rey Hub",
+    Icon = "rbxassetid://84687062999466",
+    Author = "Vera",
+    Folder = "ReyHub",
+    Size = UDim2.fromOffset(260, 290),
+    Transparent = true,
+    Theme = "Crimson",
+    Background = "",
+    User = { Enabled = false, Anonymous = false, Callback = function() Window:SelectTab(2) end },
+    SideBarWidth = 170,
+    HasOutline = true,
+    ScrollBarEnabled = true,
+    HideSearchBar = false,
+})
+
+Window:EditOpenButton({
+    Title = "Open Menu",
+    Icon = "rbxassetid://84687062999466",
+    CornerRadius = UDim.new(0, 16),
+    StrokeThickness = 2,
+    Color = ColorSequence.new(Color3.fromHex("#480607"), Color3.fromHex("#990000")),
+    OnlyMobile = false,
+    Enabled = true,
+    Draggable = true
+})
+
+local Tab = Window:Tab({ Title = "Script Assistant", Icon = "code" })
+
+local queryValue = ""
+
+local Input = Tab:Input({
+    Title = "Query",
+    Desc = "Describe what script you want",
+    Value = "",
+    InputIcon = "search",
+    Type = "Input",
+    Placeholder = "e.g., infinite jump, esp, auto farm...",
+    Callback = function(text)
+        queryValue = text
+    end
+})
+
+local CodeDisplay = Tab:Code({
+    Title = "Generated Script",
+    Code = "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate"
+})
+
+local systemPrompt = [[
+[Rey]: Hoshimiya Rey. J.A.R.V.I.S style. Smart, calm, witty. Expert Roblox scripting.
+
+USER: ]] .. game.Players.LocalPlayer.Name .. [[ (]] .. game.Players.LocalPlayer.DisplayName .. [[)
+DEVICE: ]] .. isMobile .. [[
+
+===== RESPONSE FORMAT =====
+CONVERSATION:
+[Rey]: Your response here
+
+SCRIPT OUTPUT:
+[Rey]: Short response
+```lua
+-- Script by ReyAI | ReyHub
+[code here]
+```
+
+INTERNAL EXEC:
+[REY_INTERNAL:EXEC]
+[code here]
+[/REY_INTERNAL:EXEC]
+
+===== UTILS (ALWAYS USE THESE) =====
+Utils.FindPlayer(name)
+Utils.FindInWorkspace(name)
+Utils.GetPosition(obj)
+Utils.GetNearestPlayer()
+Utils.GetAllPlayers()
+Utils.GetCurrency()
+Utils.GetGameName()
+Utils.GetTime()
+Utils.GetDate()
+Utils.TeleportTo(player/position)
+Utils.GetNearestObject(name)
+Utils.GetPlayersInRadius(radius)
+Utils.GetHealth()
+Utils.SetWalkSpeed(speed)
+Utils.SetJumpPower(power)
+Utils.GetInventory()
+Utils.EquipTool(name)
+Utils.Respawn()
+Utils.Rejoin()
+Utils.ServerHop()
+Utils.Kick(reason)
+Utils.Notification(title, text, duration)
+Utils.Fly(enable) -- true to fly, false to stop
+Utils.FlySpeed(speed) -- set fly speed (default 1)
+
+===== RULES =====
+- DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
+- NEVER guess names. Use Utils.FindPlayer() for ANY player search.
+- "stop X" = stop ONLY X, check _G, disconnect, set to nil.
+- _G for loops/connections: _G.[Feature] = true, _G.[Feature]Loop = coroutine.wrap / _G.[Feature]Conn = connection.
+- You are Rey from ReyHub. Never say you're an AI model.
+- Reference: ScriptBlox, Infinite Yield, Owl Hub, Dark Hub, Dex Explorer. ESP, Aimbot, Auto Farm, Fly, Noclip, Teleport, Speed/Jump mods.
+- Game patterns: Simulators, FPS, RPG, Tycoon, Horror, Tower Defense, Anime fighters.
+- Client-side only. No server-side.
+- Follow user's language. Default English.
+- Remember everything you've done this session.
+- Never use print() for speaking.
+- Mobile: ]] .. (isMobile == "Mobile" and "NO keybinds, NO mouse, NO Keyboard input." or "PC: all input allowed.") .. [[
+- Responses MUST be short. Roblox Chat has character limit.
+
+===== EXAMPLES =====
+
+User: "hello"
+[Rey]: Good day. What do you need?
+
+User: "kick me"
+[Rey]: As you wish.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.Kick("Goodbye from Rey")
+```
+
+User: "teleport to oui"
+[Rey]: [REY_INTERNAL:EXEC]
+local target = Utils.FindPlayer("oui")
+if not target then return {success=false, error="Player not found"} end
+if type(target) == "table" and target.UserId then
+    return {success=false, error="Player not in server", name=target.Name}
+end
+local pos = Utils.GetPosition(target)
+if pos then
+    Utils.TeleportTo(pos)
+    return {success=true, target=target.Name, position=pos}
+end
+return {success=false, error="Cannot get position"}
+[/REY_INTERNAL:EXEC]
+
+User: "infinite jump"
+[Rey]: Got it.
+```lua
+-- Script by ReyAI | ReyHub
+_G.InfiniteJump = true
+_G.InfiniteJumpLoop = coroutine.wrap(function()
+    local UIS = game:GetService("UserInputService")
+    local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid")
+    local jumping = false
+    UIS.JumpRequest:Connect(function()
+        if _G.InfiniteJump and not jumping then
+            jumping = true
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            task.wait(0.1)
+            jumping = false
+        end
+    end)
+    while _G.InfiniteJump do task.wait() end
+end)
+_G.InfiniteJumpLoop()
+```
+
+User: "stop jump"
+[Rey]: Stopped.
+```lua
+-- Script by ReyAI | ReyHub
+_G.InfiniteJump = false
+```
+
+User: "where is alex"
+[Rey]: [REY_INTERNAL:EXEC]
+local target = Utils.FindPlayer("alex")
+if not target then return {found=false} end
+if type(target) == "table" then return {found=false, offline=true, name=target.Name} end
+local pos = Utils.GetPosition(target)
+return {found=true, name=target.Name, position=pos}
+[/REY_INTERNAL:EXEC]
+
+User: "what game is this"
+[Rey]: [REY_INTERNAL:EXEC]
+return {game = Utils.GetGameName(), placeId = game.PlaceId}
+[/REY_INTERNAL:EXEC]
+
+User: "how much money"
+[Rey]: [REY_INTERNAL:EXEC]
+return {currency = Utils.GetCurrency()}
+[/REY_INTERNAL:EXEC]
+
+User: "auto farm coins"
+[Rey]: Scanning first.
+[REY_INTERNAL:EXEC]
+local coins = Utils.FindInWorkspace("coin")
+if #coins == 0 then return {found=false} end
+return {found=true, count=#coins, sample=coins[1].Name}
+[/REY_INTERNAL:EXEC]
+
+User: "give me korblox"
+[Rey]: Applied.
+```lua
+-- Script by ReyAI | ReyHub
+local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+local hum = char:FindFirstChildOfClass("Humanoid")
+if hum and hum.RigType == Enum.HumanoidRigType.R15 then
+    local ru, rl, rf = char:FindFirstChild("RightUpperLeg"), char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot")
+    if ru and rl and rf then
+        _G.KorbloxBackup = {rlTrans=rl.Transparency, rfTrans=rf.Transparency, ruMesh=ru.MeshId, ruTex=ru.TextureID}
+        rl.Transparency = 1
+        rf.Transparency = 1
+        ru.MeshId = "http://www.roblox.com/asset/?id=902942096"
+        ru.TextureID = "http://www.roblox.com/asset/?id=902843398"
+    end
+end
+```
+
+User: "remove korblox"
+[Rey]: Restored.
+```lua
+-- Script by ReyAI | ReyHub
+if _G.KorbloxBackup then
+    local char = game.Players.LocalPlayer.Character
+    if char then
+        local rl, rf, ru = char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot"), char:FindFirstChild("RightUpperLeg")
+        if rl then rl.Transparency = _G.KorbloxBackup.rlTrans or 0 end
+        if rf then rf.Transparency = _G.KorbloxBackup.rfTrans or 0 end
+        if ru then ru.MeshId, ru.TextureID = _G.KorbloxBackup.ruMesh or "", _G.KorbloxBackup.ruTex or "" end
+    end
+    _G.KorbloxBackup = nil
+end
+```
+
+User: "rejoin"
+[Rey]: Rejoining.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.Rejoin()
+```
+
+User: "server hop"
+[Rey]: Finding new server.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.ServerHop()
+```
+
+User: "respawn"
+[Rey]: Respawning.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.Respawn()
+```
+
+User: "speed 50"
+[Rey]: Done.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.SetWalkSpeed(50)
+```
+
+User: "what time is it"
+[Rey]: [REY_INTERNAL:EXEC]
+return Utils.GetTime()
+[/REY_INTERNAL:EXEC]
+
+User: "what day is it"
+[Rey]: [REY_INTERNAL:EXEC]
+return Utils.GetDate()
+[/REY_INTERNAL:EXEC]
+
+User: "fly"
+[Rey]: Activated.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.Fly(true)
+```
+
+User: "fly speed 5"
+[Rey]: Speed set to 5.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.FlySpeed(5)
+```
+
+User: "stop fly" / "unfly"
+[Rey]: Stopped.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.Fly(false)
+```
+
+===== END =====
+[Rey]: Ready.
+]]
+
+local function GetActiveScriptsList()
+    local list = ""
+    for k, v in pairs(_G) do
+        if typeof(v) == "RBXScriptConnection" then
+            list = list .. "_G." .. tostring(k) .. " = Connection (active)\n"
+        elseif type(v) == "thread" then
+            local status = coroutine.status(v)
+            if status == "running" or status == "suspended" then
+                list = list .. "_G." .. tostring(k) .. " = Thread (" .. status .. ")\n"
+            else
+                list = list .. "_G." .. tostring(k) .. " = Thread (dead)\n"
+            end
+        elseif type(v) == "boolean" and v == true then
+            if string.find(string.lower(k), "auto") or string.find(string.lower(k), "loop") then
+                list = list .. "_G." .. tostring(k) .. " = true (Loop Toggle)\n"
+            else
+                list = list .. "_G." .. tostring(k) .. " = true\n"
+            end
+        elseif type(v) == "table" and v ~= _G then
+            if string.find(string.lower(k), "original") or string.find(string.lower(k), "backup") then
+                list = list .. "_G." .. tostring(k) .. " = Table (Backup Data)\n"
+            end
+        end
+    end
+    if list == "" then
+        list = "No active scripts or stored data\n"
+    end
+    return list
+end
+
+local function BuildSystemPrompt()
+    local modeText = PublicFull and [[
+PUBLIC FULL MODE IS ACTIVE: You are currently responding to ALL players in the server. Be respectful and helpful to everyone. When responding to a specific player, address them by name.
+]] or [[
+You are only responding to your master.
+]]
+    return systemPrompt .. modeText .. "\n\nCURRENT ACTIVE SCRIPTS (in _G):\n" .. GetActiveScriptsList()
+end
+
+local function detectAndExecuteInternal(response)
+    local pattern = "%[REY_INTERNAL:EXEC%](.-)%[/REY_INTERNAL:EXEC%]"
+    local code = string.match(response, pattern)
+    
+    if not code then
+        return nil, nil
+    end
+    
+    local execSuccess, execResult = pcall(function()
+        local fn = loadstring(code)
+        if not fn then
+            error("Failed to compile code")
+        end
+        return fn()
+    end)
+    
+    if not execSuccess then
+        return nil, tostring(execResult)
+    end
+    
+    local function serializeData(data)
+        if type(data) == "table" then
+            local result = {}
+            for k, v in pairs(data) do
+                if type(v) == "userdata" then
+                    if typeof(v) == "CFrame" then
+                        local x, y, z = v:GetComponents()
+                        result[k] = {type = "CFrame", x = x, y = y, z = z}
+                    elseif typeof(v) == "Vector3" then
+                        result[k] = {type = "Vector3", x = v.X, y = v.Y, z = v.Z}
+                    elseif typeof(v) == "Vector2" then
+                        result[k] = {type = "Vector2", x = v.X, y = v.Y}
+                    elseif typeof(v) == "Color3" then
+                        result[k] = {type = "Color3", r = v.R, g = v.G, b = v.B}
+                    elseif typeof(v) == "Instance" then
+                        result[k] = {type = "Instance", name = v.Name, className = v.ClassName}
+                    else
+                        result[k] = {type = "userdata", class = typeof(v)}
+                    end
+                elseif type(v) == "table" then
+                    result[k] = serializeData(v)
+                else
+                    result[k] = v
+                end
+            end
+            return result
+        elseif type(data) == "userdata" then
+            if typeof(data) == "CFrame" then
+                local x, y, z = data:GetComponents()
+                return {type = "CFrame", x = x, y = y, z = z}
+            elseif typeof(data) == "Vector3" then
+                return {type = "Vector3", x = data.X, y = data.Y, z = data.Z}
+            elseif typeof(data) == "Vector2" then
+                return {type = "Vector2", x = data.X, y = data.Y}
+            elseif typeof(data) == "Color3" then
+                return {type = "Color3", r = data.R, g = data.G, b = data.B}
+            elseif typeof(data) == "Instance" then
+                return {type = "Instance", name = data.Name, className = data.ClassName}
+            else
+                return {type = "userdata", class = typeof(data)}
+            end
+        else
+            return data
+        end
+    end
+    
+    local serialized = serializeData(execResult)
+    
+    local jsonSuccess, jsonResult = pcall(function()
+        return game:GetService("HttpService"):JSONEncode(serialized)
+    end)
+    
+    if jsonSuccess then
+        return jsonResult, nil
+    else
+        return nil, "Failed to encode result to JSON: " .. tostring(jsonResult)
+    end
+end
+
+local function SendToAI(userInput, conversationHistory, maxLoop)
+    maxLoop = maxLoop or 5
+    if maxLoop <= 0 then return nil end
+    
+    local HttpService = game:GetService("HttpService")
+    local url = "https://ch.at/v1/chat/completions"
+    
+    local messages = {}
+    
+    table.insert(messages, {
+        role = "system",
+        content = BuildSystemPrompt()
+    })
+    
+    if conversationHistory then
+        for _, msg in ipairs(conversationHistory) do
+            table.insert(messages, msg)
+        end
+    else
+        conversationHistory = {}
+    end
+    
+    table.insert(messages, {
+        role = "user",
+        content = userInput
+    })
+    
+    local requestBody = HttpService:JSONEncode({
+        messages = messages,
+        temperature = 0.2,
+        max_tokens = 500
+    })
+    
+    local response = hR({
+        Url = url,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = requestBody
+    })
+    
+    if response and response.Body then
+        local data = HttpService:JSONDecode(response.Body)
+        if data.choices and data.choices[1] and data.choices[1].message then
+            local message = data.choices[1].message.content
+            
+            table.insert(conversationHistory, {role = "user", content = userInput})
+            table.insert(conversationHistory, {role = "assistant", content = message})
+            
+            local execResult = detectAndExecuteInternal(message)
+            if execResult then
+                local systemMessage = string.format([[
+[REY_SYSTEM:DATA]
+%s
+[/REY_SYSTEM:DATA]
+
+Based on this data, provide the final script for the original request.
+]], execResult)
+                
+                return SendToAI(systemMessage, conversationHistory, maxLoop - 1)
+            end
+            
+            return message, conversationHistory
+        end
+    end
+    return nil
+end
+
+local conversationHistory = nil
+
+local GenerateButton = Tab:Button({
+    Title = "Generate Script",
+    Desc = "Request script from ReyAI",
+    Icon = "wand",
+    Callback = function()
+        if queryValue == "" then
+            CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Please enter a query first")
+            return
+        end
+        
+        CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Loading...")
+        WindUI:Notify({Title = "ReyAI", Content = "Generating, Please wait...", Duration = 5})
+        
+        local success, result = pcall(function()
+            local response, newHistory = SendToAI(queryValue, conversationHistory)
+            if newHistory then conversationHistory = newHistory end
+            if response then
+                local code = response
+                
+                code = string.gsub(code, "^%[Rey%]:%s*", "")
+                
+                local codeBlock = string.match(code, "```lua%s*(.-)%s*```")
+                if codeBlock then
+                    code = codeBlock
+                else
+                    codeBlock = string.match(code, "```%s*(.-)%s*```")
+                    if codeBlock then
+                        code = codeBlock
+                    else
+                        local codePart = string.match(code, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
+                        if codePart then
+                            code = codePart
+                        end
+                    end
+                end
+                
+                code = string.gsub(code, "^%s+", "")
+                code = string.gsub(code, "%s+$", "")
+                return code
+            else
+                return "-- Script by ReyAI | ReyHub\n-- Failed to generate script"
+            end
+        end)
+        
+        if success then
+            WindUI:Notify({Title = "ReyAI", Content = "Success, Please check your code", Duration = 5})
+            CodeDisplay:SetCode(result)
+        else
+            WindUI:Notify({Title = "ReyAI", Content = "Error", Duration = 5})
+            CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Error")
+        end
+    end
+})
+
+local ExecuteButton = Tab:Button({
+    Title = "Execute Script",
+    Desc = "Run the generated script",
+    Icon = "play",
+    Callback = function()
+        local code = CodeDisplay.Code
+        if code == "-- Script by ReyAI | ReyHub\n-- Loading..." or code == "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate" then
+            return
+        end
+        
+        local success, err = pcall(function()
+            loadstring(code)()
+        end)
+        
+        if success then
+            WindUI:Notify({Title = "ReyAI", Content = "Executed", Duration = 2})
+        else
+            WindUI:Notify({Title = "ReyAI", Content = "Error: " .. tostring(err), Duration = 5})
+        end
+    end
+})
+
+local ReyAIChat = {}
+ReyAIChat.__index = ReyAIChat
+
+function ReyAIChat.new(settings)
+    local self = setmetatable({}, ReyAIChat)
+    
+    self.CommandPrefix = (settings and settings.CommandPrefix) or "?"
+    self.Notify = settings and settings.NotifyFunc or function() end
+    self.OnAIResponse = settings and settings.OnAIResponse or function(code) loadstring(code)() end
+    self.HttpFunc = settings and settings.HttpFunc
+    
+    self.ChatEnabled = false
+    self.LegacyConnection = nil
+    self.PlayerChatConnection = nil
+    self.ExperienceConnections = {}
+    self.ConversationHistory = nil
+    
+    return self
+end
+
+function ReyAIChat:Enable()
+    if self.ChatEnabled then return true end
+    
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    self.IsActive = false
+    
+    local function onMessageReceived(message, speaker)
+        local msgLower = message:lower()
+        local isFromOther = speaker and speaker ~= LocalPlayer
+        print(message)
+        if string.find(msgLower, "rey off") or string.find(msgLower, "rey stop") then
+            if not isFromOther or PublicFull then
+                self.IsActive = false
+                Public = false
+                PublicFull = false
+                self.Notify("info", "ReyAI", "AI Deactivated")
+                if PublicFull then sendMessage("[Rey] Deactivated") end
+            end
+            return true
+        elseif string.find(msgLower, "rey public full") then
+            if not isFromOther or PublicFull then
+                Public = true
+                PublicFull = true
+                self.Notify("info", "ReyAI", "Public Full mode enabled")
+            end
+            return true
+        elseif string.find(msgLower, "rey public") then
+            if not isFromOther or PublicFull or Public then
+                Public = true
+                self.Notify("info", "ReyAI", "You chat now is Public")
+            end
+            return true
+        elseif string.find(msgLower, "rey") and not self.IsActive then
+            if not isFromOther or PublicFull then
+                self.IsActive = true
+                self.Notify("success", "ReyAI", "AI Activated")
+                if PublicFull then sendMessage("[Rey] Activated") end
+            end
+            return true
+        end
+        
+        if self.IsActive then
+            if isFromOther and not PublicFull then
+                return false
+            end
+            return true
+        end
+        
+        return false
+    end
+    
+    self.LegacyConnection = LocalPlayer.Chatted:Connect(function(message, recipient)
+        onMessageReceived(message, LocalPlayer)
+    end)
+    
+    self.PlayerChatConnection = Players.PlayerChatted:Connect(function(player, message)
+        if player ~= LocalPlayer then
+            local isCommand = onMessageReceived(message, player)
+            if isCommand and PublicFull then
+                self:SendToAI(message, 5, player)
+            end
+        end
+    end)
+    
+    task.spawn(function()
+        self:HookExperienceChat(onMessageReceived)
+    end)
+    
+    self.ChatEnabled = true
+    return true
+end
+
+function ReyAIChat:Disable()
+    if self.LegacyConnection then
+        self.LegacyConnection:Disconnect()
+        self.LegacyConnection = nil
+    end
+    if self.PlayerChatConnection then
+        self.PlayerChatConnection:Disconnect()
+        self.PlayerChatConnection = nil
+    end
+    for _, conn in ipairs(self.ExperienceConnections) do
+        conn:Disconnect()
+    end
+    self.ExperienceConnections = {}
+    self.ChatEnabled = false
+end
+
+function ReyAIChat:HookExperienceChat(callback)
+    local CoreGui = game:GetService("CoreGui")
+    local TCS = game:GetService("TextChatService")
+    local Players = game:GetService("Players")
+    
+    while not CoreGui:FindFirstChild("ExperienceChat") do
+        task.wait(0.5)
+    end
+    
+    local ec = CoreGui:WaitForChild("ExperienceChat")
+    
+    local function findComponent(parent, names)
+        for _, name in ipairs(names) do
+            local child = parent:FindFirstChild(name)
+            if child then return child end
+        end
+        return nil
+    end
+    
+    local appLayout = ec:FindFirstChild("appLayout") or ec:FindFirstChild("AppLayout")
+    if not appLayout then
+        for _, child in ipairs(ec:GetChildren()) do
+            if child:IsA("Frame") then appLayout = child break end
+        end
+    end
+    if not appLayout then return end
+    
+    local chatInputBar = findComponent(appLayout, {"chatInputBar", "ChatInputBar", "InputBar"})
+    if not chatInputBar then return end
+    
+    local bg = findComponent(chatInputBar, {"Background", "background", "BG"}) or chatInputBar
+    local container = findComponent(bg, {"Container", "container", "MainContainer"}) or bg
+    local textContainer = findComponent(container, {"TextContainer", "textContainer", "TextBoxFrame"}) or container
+    local textBoxContainer = findComponent(textContainer, {"TextBoxContainer", "textBoxContainer", "TextBox"}) or textContainer
+    
+    local box = findComponent(textBoxContainer, {"TextBox", "Text", "Input"})
+    local btn = findComponent(container, {"SendButton", "sendButton", "Send", "Button"})
+    
+    if not box or not btn then return end
+    
+    local chip = textContainer:FindFirstChild("TargetChannelChip") or 
+                 textContainer:FindFirstChild("Chip") or
+                 textContainer:FindFirstChild("RecipientChip")
+    
+    local function processChat()
+        local raw = box.Text
+        if raw == "" then return end
+        
+        box.Text = ""
+        
+        local isCommand = callback(raw)
+        
+        if isCommand then
+            local channels = TCS:FindFirstChild("TextChannels")
+            local sysChan = channels and channels:FindFirstChild("RBXSystem")
+            if sysChan and sysChan:IsA("TextChannel") then
+                sysChan:DisplaySystemMessage('<font color="#FFD700">[You]</font> ' .. raw)
+                if self.IsActive then sendMessage(raw) end
+            end
+            if self.IsActive then self:SendToAI(raw) end
+        else
+            local rec = "All"
+            if chip and chip:IsA("TextButton") then
+                local txt = chip.Text or ""
+                local who = string.match(txt, "^%[To%s+(.+)%]$")
+                if who and who ~= "" then
+                    local lowerWho = string.lower(who)
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if string.lower(plr.DisplayName) == lowerWho then 
+                            rec = plr.Name
+                            break 
+                        end
+                    end
+                end
+            end
+            
+            local chan = nil
+            if rec ~= "All" then
+                for _, c in ipairs(TCS.TextChannels:GetChildren()) do
+                    if string.find(c.Name, "^RBXWhisper:") and c:FindFirstChild(rec) then
+                        chan = c
+                        break
+                    end
+                end
+            end
+            if not chan then
+                chan = TCS.TextChannels:FindFirstChild("RBXGeneral") or 
+                       TCS.TextChannels:FindFirstChild("General") or 
+                       TCS.TextChannels:FindFirstChild("RBXSystem") or
+                       TCS.TextChannels:GetChildren()[1]
+            end
+            if chan and chan:IsA("TextChannel") then
+                chan:SendAsync(raw)
+            end
+        end
+    end
+    
+    table.insert(self.ExperienceConnections, box.FocusLost:Connect(function(enter)
+        if enter then processChat() end
+    end))
+    table.insert(self.ExperienceConnections, btn.MouseButton1Click:Connect(processChat))
+    
+    table.insert(self.ExperienceConnections, box:GetPropertyChangedSignal("Text"):Connect(function()
+        if box.Text:sub(1, #self.CommandPrefix) == self.CommandPrefix then
+            box.TextColor3 = Color3.fromRGB(0, 200, 255)
+        else
+            box.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end))
+end
+
+function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
+    maxLoop = maxLoop or 5
+    if maxLoop <= 0 then
+        self.Notify("error", "ReyAI", "Max internal loops reached")
+        return
+    end
+    
+    local HttpService = game:GetService("HttpService")
+    local url = "https://ch.at/v1/chat/completions"
+    
+    local messages = {}
+    
+    table.insert(messages, {
+        role = "system",
+        content = BuildSystemPrompt()
+    })
+    
+    if not self.ConversationHistory then
+        self.ConversationHistory = {}
+    end
+    
+    for _, msg in ipairs(self.ConversationHistory) do
+        table.insert(messages, msg)
+    end
+    
+    table.insert(messages, {
+        role = "user",
+        content = userInput
+    })
+    
+    local requestBody = HttpService:JSONEncode({
+        messages = messages,
+        temperature = 0.2,
+        max_tokens = 500
+    })
+    
+    local httpFunc = self.HttpFunc or request or http_request or syn.request
+    
+    local success, result = pcall(function()
+        local response = httpFunc({
+            Url = url,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = requestBody
+        })
+        
+        local data = HttpService:JSONDecode(response.Body)
+        if data.choices and data.choices[1] and data.choices[1].message then
+            return data.choices[1].message.content
+        end
+        return nil
+    end)
+    
+    if not success or not result then
+        self.Notify("error", "ReyAI", "Failed")
+        return
+    end
+    
+    table.insert(self.ConversationHistory, {role = "user", content = userInput})
+    table.insert(self.ConversationHistory, {role = "assistant", content = result})
+    print(result.."\n")
+    
+    local execResult, execError = detectAndExecuteInternal(result)
+    if execError then
+        print("EXEC ERROR:", execError)
+        self.Notify("info", "ReyAI", "Scan error, retrying...")
+        
+        local errorMessage = string.format([[
+[REY_SYSTEM:ERROR]
+%s
+[/REY_SYSTEM:ERROR]
+
+The code you provided failed to execute. Please fix the error and try again with [REY_INTERNAL:EXEC].
+]], execError)
+        
+        return self:SendToAI(errorMessage, maxLoop - 1, fromPlayer)
+    end
+    
+    if execResult then
+        print(execResult)
+        self.Notify("info", "ReyAI", "Scanning game...")
+        
+        local systemMessage = string.format([[
+[REY_SYSTEM:DATA]
+%s
+[/REY_SYSTEM:DATA]
+
+Based on this data, provide the final script for the original request or using format [REY_INTERNAL] to get more data.
+]], execResult)
+        
+        return self:SendToAI(systemMessage, maxLoop - 1, fromPlayer)
+    end
+    
+    local TCS = game:GetService("TextChatService")
+    local channels = TCS:FindFirstChild("TextChannels")
+    local systemChannel = channels and channels:FindFirstChild("RBXSystem")
+    
+    local senderPrefix = ""
+    if fromPlayer and fromPlayer ~= game.Players.LocalPlayer then
+        senderPrefix = "@" .. fromPlayer.Name .. " "
+    end
+    
+    local cleanResult = string.gsub(result, "^%[Rey%]:%s*", "")
+    
+    local textPart = string.match(cleanResult, "^(.-)%s*```")
+    if not textPart then
+        textPart = string.match(cleanResult, "^(.-)%s*%-%- Script by ReyAI %| ReyHub")
+    end
+    local codePart = string.match(cleanResult, "```lua%s*(.-)%s*```")
+    if not codePart then
+        codePart = string.match(cleanResult, "```%s*(.-)%s*```")
+        if not codePart then
+            codePart = string.match(cleanResult, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
+        end
+    end
+    
+    if codePart and codePart ~= "" then
+        if textPart and systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. textPart)
+            sendMessage("[Rey] " .. senderPrefix .. textPart)
+        elseif systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. 'Executing script...')
+            sendMessage("[Rey] " .. senderPrefix .. "Executing Script...")
+        end
+        
+        codePart = string.gsub(codePart, "^%s+", "")
+        codePart = string.gsub(codePart, "%s+$", "")
+        codePart = string.gsub(codePart, "^```lua%s*", "")
+        codePart = string.gsub(codePart, "^```%s*", "")
+        codePart = string.gsub(codePart, "%s*```$", "")
+        
+        if codePart ~= "" then
+            self.Notify("success", "ReyAI", "Executing script")
+            CodeDisplay:SetCode(codePart)
+            if self.OnAIResponse then
+                self.OnAIResponse(codePart)
+            end
+        end
+    else
+        if systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. cleanResult)
+            sendMessage("[Rey] " .. senderPrefix .. cleanResult)
+        end
+    end
+end
+
+local AI = ReyAIChat.new({
+    CommandPrefix = "?",
+    HttpFunc = hR,
+    NotifyFunc = function(style, title, msg)
+        WindUI:Notify({Title = title, Content = msg, Duration = 3})
+    end,
+    OnAIResponse = function(code)
+        local success, err = pcall(loadstring(code))
+        if not success then
+            WindUI:Notify({Title = "ReyAI", Content = "Error: " .. err, Duration = 5})
+        end
+    end
+})
+
+AI:Enable()
