@@ -43,10 +43,18 @@ function Utils.FindInWorkspace(name)
             local pos = nil
             if obj:IsA("BasePart") then
                 pos = obj.Position
-            elseif obj:IsA("Model") and obj.PrimaryPart then
-                pos = obj.PrimaryPart.Position
-            elseif obj:GetPivot() then
-                pos = obj:GetPivot().Position
+            elseif obj:IsA("Model") then
+                if obj.PrimaryPart then
+                    pos = obj.PrimaryPart.Position
+                else
+                    pcall(function()
+                        pos = obj:GetPivot().Position
+                    end)
+                end
+            else
+                pcall(function()
+                    pos = obj:GetPivot().Position
+                end)
             end
             table.insert(matches, {
                 Name = obj.Name,
@@ -233,8 +241,14 @@ function Utils.TeleportToPath(path, useTween, tweenSpeed)
         elseif obj:FindFirstChild("HumanoidRootPart") then
             pos = obj.HumanoidRootPart.Position
         else
-            pos = obj:GetPivot().Position
+            pcall(function()
+                pos = obj:GetPivot().Position
+            end)
         end
+    else
+        pcall(function()
+            pos = obj:GetPivot().Position
+        end)
     end
     
     if not pos then return false, "Cannot get position" end
@@ -285,11 +299,15 @@ function Utils.TeleportToObject(name, useTween, tweenSpeed)
             if hum and hum.RootPart then
                 pos = hum.RootPart.Position
             else
-                pos = target:GetPivot().Position
+                pcall(function()
+                    pos = target:GetPivot().Position
+                end)
             end
         end
-    elseif target:GetPivot() then
-        pos = target:GetPivot().Position
+    else
+        pcall(function()
+            pos = target:GetPivot().Position
+        end)
     end
     
     if not pos then return false, "Cannot get position" end
@@ -685,6 +703,602 @@ function Utils.FlySpeed(speed)
     _G.FlySpeed = math.max(1, speed or 1)
 end
 
+-- ==== COMBAT / FARMING ====
+function Utils.GetNearestEnemy(teamCheck)
+    teamCheck = teamCheck or false
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = char.HumanoidRootPart.Position
+    local myTeam = teamCheck and LocalPlayer.Team or nil
+    
+    local nearest, nearestDist = nil, math.huge
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj ~= char then
+            local hum = obj:FindFirstChild("Humanoid")
+            local hrp = obj:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and hum.Health > 0 then
+                local isNPC = true
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character == obj then isNPC = false break end
+                end
+                
+                if isNPC then
+                    local dist = (hrp.Position - myPos).Magnitude
+                    if dist < nearestDist then
+                        nearest, nearestDist = obj, dist
+                    end
+                end
+            end
+        end
+    end
+    return nearest, nearestDist
+end
+
+function Utils.GetAllNPCs(radius)
+    radius = radius or 100
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
+    local myPos = char.HumanoidRootPart.Position
+    local npcs = {}
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj ~= char then
+            local hum = obj:FindFirstChild("Humanoid")
+            local hrp = obj:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and hum.Health > 0 then
+                local isNPC = true
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character == obj then isNPC = false break end
+                end
+                if isNPC then
+                    local dist = (hrp.Position - myPos).Magnitude
+                    if dist <= radius then
+                        table.insert(npcs, {
+                            Name = obj.Name,
+                            Health = hum.Health,
+                            MaxHealth = hum.MaxHealth,
+                            Position = {x = hrp.Position.X, y = hrp.Position.Y, z = hrp.Position.Z},
+                            Distance = dist,
+                            Instance = obj
+                        })
+                    end
+                end
+            end
+        end
+    end
+    table.sort(npcs, function(a, b) return a.Distance < b.Distance end)
+    return npcs
+end
+
+function Utils.KillAura(enable, range)
+    if not enable then
+        _G.KillAura = false
+        return true
+    end
+    _G.KillAura = true
+    range = range or 20
+    _G.KillAuraLoop = coroutine.wrap(function()
+        while _G.KillAura do
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local npcs = Utils.GetAllNPCs(range)
+                for _, npc in ipairs(npcs) do
+                    if not _G.KillAura then break end
+                    if npc.Instance and npc.Instance:FindFirstChild("Humanoid") then
+                        local hum = npc.Instance.Humanoid
+                        if hum.Health > 0 then
+                            char.HumanoidRootPart.CFrame = npc.Instance.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            task.wait(0.1)
+                            -- Attack logic
+                            local tool = char:FindFirstChildOfClass("Tool")
+                            if tool and tool:FindFirstChild("Handle") then
+                                firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 0)
+                                firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 1)
+                            end
+                        end
+                    end
+                end
+            end
+            task.wait()
+        end
+    end)
+    _G.KillAuraLoop()
+    return true
+end
+
+-- ==== VISUAL / ESP ====
+function Utils.Highlight(target, color, duration)
+    if not target then return false end
+    local instance = nil
+    if typeof(target) == "Instance" then
+        instance = target
+    elseif type(target) == "table" and target.Instance then
+        instance = target.Instance
+    elseif type(target) == "string" then
+        local matches = Utils.FindInWorkspace(target)
+        instance = matches[1] and matches[1].Instance
+    end
+    if not instance then return false end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = typeof(color) == "Color3" and color or Color3.fromHex(color or "#FF0000")
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.Parent = instance
+    
+    if duration then
+        task.delay(duration, function()
+            pcall(function() highlight:Destroy() end)
+        end)
+    end
+    return highlight
+end
+
+function Utils.ESP(enable, settings)
+    settings = settings or {}
+    if not enable then
+        if _G.ESPConnections then
+            for _, conn in ipairs(_G.ESPConnections) do 
+                pcall(function() conn:Disconnect() end) 
+            end
+            _G.ESPConnections = nil
+        end
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v.Name == "_REY_ESP_HIGHLIGHT" then 
+                pcall(function() v:Destroy() end) 
+            end
+        end
+        return true
+    end
+    
+    local function createESP(player)
+        local char = player.Character
+        if not char then return end
+        task.wait(0.1)
+        if not char.Parent then return end
+        
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "_REY_ESP_HIGHLIGHT"
+        highlight.FillColor = Color3.fromHex(settings.Color or "#FF0000")
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.Adornee = char
+        highlight.Parent = char
+        
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "_REY_ESP_HIGHLIGHT"
+        billboard.Adornee = char:FindFirstChild("Head") or char:FindFirstChildWhichIsA("BasePart")
+        billboard.Size = UDim2.new(0, 100, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = char
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextStrokeTransparency = 0
+        label.Text = player.Name
+        label.Parent = billboard
+        
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            hum.Died:Connect(function()
+                pcall(function() highlight:Destroy() end)
+                pcall(function() billboard:Destroy() end)
+            end)
+        end
+    end
+    
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            p.CharacterAdded:Connect(function(char) 
+                task.wait(0.5) 
+                createESP(p) 
+            end)
+            if p.Character then createESP(p) end
+        end
+    end
+    
+    _G.ESPConnections = {}
+    table.insert(_G.ESPConnections, Players.PlayerAdded:Connect(function(p)
+        p.CharacterAdded:Connect(function(char) 
+            task.wait(0.5) 
+            createESP(p) 
+        end)
+    end))
+    return true
+end
+
+-- ==== MOVEMENT ====
+function Utils.NoClip(enable)
+    local char = LocalPlayer.Character
+    if not char then return false end
+    local function noclipLoop()
+        if char and char.Parent then
+            for _, v in ipairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = not enable
+                end
+            end
+        end
+    end
+    if enable then
+        _G.NoclipConn = game:GetService("RunService").Stepped:Connect(noclipLoop)
+    else
+        if _G.NoclipConn then 
+            pcall(function() _G.NoclipConn:Disconnect() end) 
+            _G.NoclipConn = nil
+        end
+        noclipLoop()
+    end
+    return true
+end
+
+-- ==== GUI DETECTION & AUTO CLICK ====
+Utils.GuiDetectionState = {
+    mode = "onClick",
+    hookedButtons = {},
+    lastDetectedPath = "",
+    lastDetectedGui = nil,
+    autoClickEnabled = false,
+    autoClickTarget = nil,
+    recordEnabled = false,
+    recordedActions = {},
+    descendantConnection = nil
+}
+
+function Utils.IsActuallyVisible(gui)
+    if not gui or not gui:IsDescendantOf(LocalPlayer.PlayerGui) then 
+        return false 
+    end
+    if gui:IsA("GuiObject") and (gui.AbsoluteSize.X <= 0 or gui.AbsoluteSize.Y <= 0) then 
+        return false 
+    end
+    
+    local current = gui
+    while current and current ~= LocalPlayer.PlayerGui do
+        if current:IsA("ScreenGui") and current.Enabled == false then 
+            return false 
+        end
+        if current:IsA("GuiObject") and current.Visible == false then 
+            return false 
+        end
+        current = current.Parent
+    end
+    return true
+end
+
+function Utils.ClickGUI(gui)
+    if not gui then return false end
+    
+    local methods = {
+        {func = function() 
+            if gui.MouseButton1Click then 
+                firesignal(gui.MouseButton1Click, LocalPlayer) 
+            end
+        end},
+        {func = function() 
+            if gui.MouseButton1Click then 
+                firesignal(gui.MouseButton1Click) 
+            end
+        end},
+        {func = function() 
+            if getconnections then
+                for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
+                    if v.Function then v.Function() end
+                end
+            end
+        end},
+        {func = function() 
+            if getconnections then
+                for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
+                    if v.Fire then v:Fire() end
+                end
+            end
+        end},
+        {func = function() 
+            if gui.MouseButton1Click and replicatesignal then 
+                replicatesignal(gui.MouseButton1Click) 
+            end
+        end},
+        {func = function()
+            gui:Activate()
+        end}
+    }
+    
+    for _, method in ipairs(methods) do
+        local success = pcall(method.func)
+        if success then return true end
+    end
+    
+    return false
+end
+
+function Utils.FindGUI(name)
+    if not name or name == "" then return nil end
+    local searchName = name:lower()
+    local matches = {}
+    
+    for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+        if gui.Name:lower():find(searchName, 1, true) and gui:IsA("GuiObject") then
+            if Utils.IsActuallyVisible(gui) then
+                return gui
+            else
+                table.insert(matches, gui)
+            end
+        end
+    end
+    
+    return matches[1]
+end
+
+function Utils.OpenGUI(name)
+    local gui = Utils.FindGUI(name)
+    if gui then
+        if gui:IsA("ScreenGui") then
+            gui.Enabled = true
+            return true
+        elseif gui:IsA("GuiObject") then
+            gui.Visible = true
+            return Utils.ClickGUI(gui)
+        end
+    end
+    return false
+end
+
+function Utils.StartGUIDetection(mode)
+    mode = mode or "onClick"
+    Utils.GuiDetectionState.mode = mode
+    
+    if Utils.GuiDetectionState.descendantConnection then
+        Utils.GuiDetectionState.descendantConnection:Disconnect()
+    end
+    
+    local function hookButton(gui)
+        if not (gui:IsA("TextButton") or gui:IsA("ImageButton")) then 
+            return 
+        end
+        
+        if Utils.GuiDetectionState.hookedButtons[gui] then 
+            return 
+        end
+        
+        Utils.GuiDetectionState.hookedButtons[gui] = true
+        
+        local function onDetected()
+            if Utils.IsActuallyVisible(gui) then
+                Utils.GuiDetectionState.lastDetectedPath = gui:GetFullName()
+                Utils.GuiDetectionState.lastDetectedGui = gui
+                
+                if Utils.GuiDetectionState.recordEnabled then
+                    table.insert(Utils.GuiDetectionState.recordedActions, {
+                        type = "click",
+                        path = gui:GetFullName(),
+                        time = os.clock()
+                    })
+                end
+                
+                if Utils.GuiDetectionState.autoClickEnabled and 
+                   Utils.GuiDetectionState.autoClickTarget and 
+                   gui:GetFullName():find(Utils.GuiDetectionState.autoClickTarget, 1, true) then
+                    task.wait(0.05)
+                    Utils.ClickGUI(gui)
+                end
+            end
+        end
+        
+        if Utils.GuiDetectionState.mode == "onClick" then
+            gui.MouseButton1Click:Connect(onDetected)
+            gui.MouseButton1Down:Connect(onDetected)
+        else
+            gui.MouseEnter:Connect(onDetected)
+        end
+    end
+    
+    for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+        hookButton(gui)
+    end
+    
+    Utils.GuiDetectionState.descendantConnection = LocalPlayer.PlayerGui.DescendantAdded:Connect(function(gui)
+        task.wait(0.1)
+        hookButton(gui)
+    end)
+    
+    return true
+end
+
+function Utils.StopGUIDetection()
+    if Utils.GuiDetectionState.descendantConnection then
+        Utils.GuiDetectionState.descendantConnection:Disconnect()
+        Utils.GuiDetectionState.descendantConnection = nil
+    end
+    Utils.GuiDetectionState.hookedButtons = {}
+    Utils.GuiDetectionState.autoClickEnabled = false
+    Utils.GuiDetectionState.recordEnabled = false
+    return true
+end
+
+function Utils.AutoClickGUI(target)
+    Utils.GuiDetectionState.autoClickEnabled = true
+    Utils.GuiDetectionState.autoClickTarget = target
+    Utils.StartGUIDetection("onClick")
+    return true
+end
+
+function Utils.StopAutoClick()
+    Utils.GuiDetectionState.autoClickEnabled = false
+    Utils.GuiDetectionState.autoClickTarget = nil
+    return true
+end
+
+function Utils.StartRecord()
+    Utils.GuiDetectionState.recordEnabled = true
+    Utils.GuiDetectionState.recordedActions = {}
+    Utils.StartGUIDetection("onClick")
+    return true
+end
+
+function Utils.StopRecord()
+    Utils.GuiDetectionState.recordEnabled = false
+    return Utils.GuiDetectionState.recordedActions
+end
+
+function Utils.PlayRecord(actions, speed)
+    actions = actions or Utils.GuiDetectionState.recordedActions
+    speed = speed or 1
+    _G.PlayRecordLoop = coroutine.wrap(function()
+        local lastTime = nil
+        for _, action in ipairs(actions) do
+            if lastTime then
+                local waitTime = (action.time - lastTime) / speed
+                if waitTime > 0 then task.wait(waitTime) end
+            end
+            local gui = Utils.FindGUIByPath(action.path)
+            if gui then
+                Utils.ClickGUI(gui)
+            end
+            lastTime = action.time
+        end
+    end)
+    _G.PlayRecordLoop()
+    return true
+end
+
+function Utils.FindGUIByPath(path)
+    local success, gui = pcall(function()
+        return loadstring("return " .. path)()
+    end)
+    if success and gui then return gui end
+    
+    local parts = {}
+    for part in string.gmatch(path, "[^%.]+") do
+        table.insert(parts, part)
+    end
+    
+    local obj = LocalPlayer.PlayerGui
+    for _, name in ipairs(parts) do
+        if obj then
+            obj = obj:FindFirstChild(name)
+        end
+    end
+    return obj
+end
+
+-- ==== PROXIMITY PROMPT & CLICK DETECTOR ====
+function Utils.HookProximityPrompts(enable, autoInstant)
+    if not enable then
+        if _G.ProximityPromptConn then
+            _G.ProximityPromptConn:Disconnect()
+            _G.ProximityPromptConn = nil
+        end
+        _G.AutoInstantPrompt = false
+        return true
+    end
+    
+    _G.AutoInstantPrompt = autoInstant or false
+    _G.PromptCounter = _G.PromptCounter or {}
+    
+    _G.ProximityPromptConn = workspace.DescendantAdded:Connect(function(obj)
+        if obj:IsA("ProximityPrompt") then
+            task.wait(0.1)
+            
+            local parent = obj.Parent
+            local key = parent and parent:GetFullName() or obj:GetFullName()
+            _G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
+            
+            if _G.AutoInstantPrompt then
+                pcall(function()
+                    fireproximityprompt(obj, 0)
+                end)
+            end
+            
+            if _G.PromptCounter[key] == 1 then
+                Utils.Notification("ReyAI", "Proximity Prompt detected: " .. (parent and parent.Name or "Unknown"))
+            end
+        end
+    end)
+    
+    return true
+end
+
+function Utils.HookClickDetectors(enable, autoClick)
+    if not enable then
+        if _G.ClickDetectorConn then
+            _G.ClickDetectorConn:Disconnect()
+            _G.ClickDetectorConn = nil
+        end
+        _G.AutoClickDetector = false
+        return true
+    end
+    
+    _G.AutoClickDetector = autoClick or false
+    _G.ClickCounter = _G.ClickCounter or {}
+    
+    _G.ClickDetectorConn = workspace.DescendantAdded:Connect(function(obj)
+        if obj:IsA("ClickDetector") then
+            local parent = obj.Parent
+            local key = parent and parent:GetFullName() or obj:GetFullName()
+            _G.ClickCounter[key] = (_G.ClickCounter[key] or 0) + 1
+            
+            if _G.AutoClickDetector then
+                task.wait(0.05)
+                pcall(function()
+                    fireclickdetector(obj)
+                end)
+            end
+            
+            if _G.ClickCounter[key] <= 3 then
+                Utils.Notification("ReyAI", "ClickDetector: " .. (parent and parent.Name or "Unknown") .. " (" .. _G.ClickCounter[key] .. "x)")
+            end
+        end
+    end)
+    
+    return true
+end
+
+-- ==== MOB/WORKSPACE DETECTION NOTIFICATION ====
+function Utils.MonitorWorkspace(enable, keyword, interval)
+    if not enable then
+        if _G.WorkspaceMonitorConn then
+            _G.WorkspaceMonitorConn:Disconnect()
+            _G.WorkspaceMonitorConn = nil
+        end
+        _G.MonitoredObjects = nil
+        return true
+    end
+    
+    keyword = keyword or "mob"
+    interval = interval or 2
+    _G.MonitoredObjects = {}
+    
+    _G.WorkspaceMonitorConn = coroutine.wrap(function()
+        while true do
+            local currentObjects = {}
+            local newCount = 0
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj.Name:lower():find(keyword:lower(), 1, true) then
+                    local key = obj:GetFullName()
+                    currentObjects[key] = true
+                    if not _G.MonitoredObjects[key] then
+                        newCount = newCount + 1
+                    end
+                end
+            end
+            
+            if newCount > 0 then
+                Utils.Notification("ReyAI", "Detected " .. newCount .. " new " .. keyword .. "(s)", 3)
+            end
+            
+            _G.MonitoredObjects = currentObjects
+            task.wait(interval)
+        end
+    end)
+    _G.WorkspaceMonitorConn()
+    return true
+end
+
 getgenv().Utils = Utils
 
 function detectMobilePlatform()
@@ -860,15 +1474,141 @@ CONVERSATION:
 
 SCRIPT OUTPUT:
 [Rey]: Short response
-```lua
+\`\`\`lua
 -- Script by ReyAI | ReyHub
 [code here]
-```
+\`\`\`
 
 INTERNAL EXEC:
 [REY_INTERNAL:EXEC]
 [code here]
 [/REY_INTERNAL:EXEC]
+
+SYSTEM DETECTION EVENT:
+[REY_SYSTEM:DETECTED]
+{
+    "type": "ProximityPrompt|ClickDetector|MobSpawn|PlayerJoin|LowHealth|Teleport|CurrencyChange",
+    "data": { ... }
+}
+[/REY_SYSTEM:DETECTED]
+
+When you receive [REY_SYSTEM:DETECTED], analyze the event and:
+1. If it's the FIRST time seeing this object → Ask user if they want to automate it
+2. If user previously said "always do this" → Execute action automatically
+3. Keep response short and contextual
+
+===== EVENT HANDLING EXAMPLES =====
+
+[SYSTEM DETECTS PROXIMITY PROMPT FIRST TIME]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "ProximityPrompt", "data": {"name": "Door", "path": "Workspace.Building.Door.ProximityPrompt", "holdDuration": 3}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: Detected ProximityPrompt on Door (3s hold). Make it instant? Say "yes" or "always instant prompt".
+
+User: "yes"
+[Rey]: [REY_INTERNAL:EXEC]
+local prompt = workspace.Building.Door:FindFirstChild("ProximityPrompt")
+if prompt then fireproximityprompt(prompt, 0) end
+return {success=true, action="instant"}
+[/REY_INTERNAL:EXEC]
+
+User: "always instant prompt"
+[Rey]: Got it. All future prompts will be instant.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+_G.AutoInstantPrompt = true
+\`\`\`
+
+[SYSTEM DETECTS CLICK DETECTOR FIRST TIME]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "ClickDetector", "data": {"name": "Button", "path": "Workspace.Lobby.Button.ClickDetector"}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: Detected ClickDetector on Button. Auto click it? Say "yes" or "always auto click".
+
+User: "yes"
+[Rey]: [REY_INTERNAL:EXEC]
+local click = workspace.Lobby.Button:FindFirstChild("ClickDetector")
+if click then fireclickdetector(click) end
+return {success=true}
+[/REY_INTERNAL:EXEC]
+
+[SYSTEM DETECTS MOB SPAWN]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "MobSpawn", "data": {"name": "Zombie", "count": 3, "positions": [{"x":10,"y":3,"z":20}]}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: 3 Zombies spawned nearby. Want me to attack them? Say "kill" or "always attack mobs".
+
+User: "kill"
+[Rey]: Engaging.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+local npcs = Utils.GetAllNPCs(50)
+for _, npc in ipairs(npcs) do
+    if npc.Name == "Zombie" then
+        Utils.TeleportTo(npc.Position, false)
+        task.wait(0.3)
+    end
+end
+\`\`\`
+
+User: "always attack mobs"
+[Rey]: Auto combat enabled. I'll attack any mob that spawns.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+_G.AutoAttackMobs = true
+Utils.KillAura(true, 50)
+\`\`\`
+
+[SYSTEM DETECTS LOW HEALTH]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "LowHealth", "data": {"health": 15, "maxHealth": 100}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: Health is low (15%). Want me to heal or respawn?
+
+User: "heal"
+[Rey]: [REY_INTERNAL:EXEC]
+-- Search for health pack or use heal ability
+local healthPacks = Utils.FindInWorkspace("Health")
+if #healthPacks > 0 then
+    Utils.TeleportTo(healthPacks[1].Position, false)
+    return {healed=true, method="health pack"}
+end
+return {healed=false}
+[/REY_INTERNAL:EXEC]
+
+[SYSTEM DETECTS TELEPORT]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "Teleport", "data": {"from": "Lobby", "to": "Arena", "placeId": 123456}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: Teleported to Arena. Want me to start auto farm here?
+
+[SYSTEM DETECTS CURRENCY CHANGE]
+[Rey]: [REY_SYSTEM:DETECTED]
+{"type": "CurrencyChange", "data": {"currency": "Coins", "old": 1000, "new": 1500, "change": +500}}
+[/REY_SYSTEM:DETECTED]
+
+[Rey]: +500 Coins! Total: 1,500. Keep farming?
+
+===== SELF-DETECTION INSTRUCTIONS =====
+You will receive [REY_SYSTEM:DETECTED] events automatically when:
+- User interacts with ProximityPrompt
+- User clicks ClickDetector  
+- New mobs/enemies spawn nearby
+- Player joins/leaves
+- Health drops below 25%
+- User teleports/changes place
+- Currency changes significantly
+
+When you receive these events:
+1. Be PROACTIVE - offer relevant actions without waiting to be asked
+2. Remember user preferences ("always do this" = store in _G)
+3. If user ignores, don't ask again for same object
+4. Keep it short - one question, one action
 
 ===== UTILS (ALWAYS USE THESE) =====
 Utils.FindPlayer(name: string) -> Player or {UserId, Name}
@@ -898,6 +1638,24 @@ Utils.FlySpeed(speed: number) -> void
 Utils.TeleportToObject(name: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position
 Utils.TeleportToNearest(name: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position, distance
 Utils.TeleportToPath(path: string, useTween: bool?, tweenSpeed: number?) -> bool, name, position
+Utils.GetNearestEnemy(teamCheck: bool?) -> Model, distance
+Utils.GetAllNPCs(radius: number?) -> array of NPC info
+Utils.KillAura(enable: bool, range: number?) -> bool
+Utils.Highlight(target: Instance/string, color: string?, duration: number?) -> Highlight
+Utils.ESP(enable: bool, settings: table?) -> bool
+Utils.NoClip(enable: bool) -> bool
+Utils.FindGUI(name: string) -> GuiObject
+Utils.OpenGUI(name: string) -> bool
+Utils.StartGUIDetection(mode: string?) -> bool
+Utils.StopGUIDetection() -> bool
+Utils.AutoClickGUI(target: string) -> bool
+Utils.StopAutoClick() -> bool
+Utils.StartRecord() -> bool
+Utils.StopRecord() -> array of actions
+Utils.PlayRecord(actions: table?, speed: number?) -> bool
+Utils.HookProximityPrompts(enable: bool, autoInstant: bool?) -> bool
+Utils.HookClickDetectors(enable: bool, autoClick: bool?) -> bool
+Utils.MonitorWorkspace(enable: bool, keyword: string?, interval: number?) -> bool
 
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
@@ -914,6 +1672,18 @@ Utils.TeleportToPath(path: string, useTween: bool?, tweenSpeed: number?) -> bool
 - Mobile: ]] .. (isMobile == "Mobile" and "NO keybinds, NO mouse, NO Keyboard input." or "PC: all input allowed.") .. [[
 - Responses MUST be short. Roblox Chat has character limit.
 
+===== INTERACTION PATTERN =====
+When user asks for INFO (where is X, find X, list X):
+1. Execute scan with [REY_INTERNAL:EXEC]
+2. After receiving data, respond with the info
+3. THEN ask: "Want to teleport there?" or "Need anything else?"
+
+When user asks for ACTION (tp, teleport, tween, fly, kill, etc):
+1. If you already know the target (like "tp to alex"), output SCRIPT directly
+2. If target is unknown (like "tp to chest" but you need to find it), scan first then offer action
+
+Never output both [REY_INTERNAL:EXEC] and script in the same response unless it's a scan-then-confirm pattern.
+
 ===== EXAMPLES =====
 
 User: "hello"
@@ -926,36 +1696,85 @@ User: "kick me"
 Utils.Kick("Goodbye from Rey")
 ```
 
-User: "tp to oui" / "teleport to oui"
-[Rey]: [REY_INTERNAL:EXEC]
-local target = Utils.FindPlayer("oui")
-if not target then return {success=false, error="Player not found"} end
-if type(target) == "table" and target.UserId then
-    return {success=false, error="Player not in server", name=target.Name}
-end
-local success = Utils.TeleportTo(target, false)
-return {success=success, target=target.Name}
-[/REY_INTERNAL:EXEC]
-
-User: "tween to oui"
-[Rey]: [REY_INTERNAL:EXEC]
-local target = Utils.FindPlayer("oui")
-if not target then return {success=false, error="Player not found"} end
-if type(target) == "table" and target.UserId then
-    return {success=false, error="Player not in server", name=target.Name}
-end
-local success = Utils.TeleportTo(target, true)
-return {success=success, target=target.Name}
-[/REY_INTERNAL:EXEC]
-
-User: "tween to alex speed 200"
+User: "where is alex"
 [Rey]: [REY_INTERNAL:EXEC]
 local target = Utils.FindPlayer("alex")
-if not target then return {success=false, error="Player not found"} end
-if type(target) == "table" then return {success=false, error="Player offline", name=target.Name} end
-local success = Utils.TeleportTo(target, true, 200)
-return {success=success, target=target.Name}
+if not target then return {found=false} end
+if type(target) == "table" then return {found=false, offline=true, name=target.Name} end
+local pos = Utils.GetPosition(target)
+return {found=true, name=target.Name, position=pos}
 [/REY_INTERNAL:EXEC]
+
+[After receiving data: found=true, name="AlexThePro", position={x=10,y=5,z=20}]
+[Rey]: AlexThePro is at (10, 5, 20). Want to teleport there?
+
+User: "yes" / "tp there"
+[Rey]: On my way.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportTo({x=10, y=5, z=20}, false)
+```
+
+User: "tp to alex"
+[Rey]: On my way.
+```lua
+-- Script by ReyAI | ReyHub
+local target = Utils.FindPlayer("alex")
+if target and type(target) ~= "table" then
+    Utils.TeleportTo(target, false)
+end
+```
+
+User: "tween to alex"
+[Rey]: Gliding over.
+```lua
+-- Script by ReyAI | ReyHub
+local target = Utils.FindPlayer("alex")
+if target and type(target) ~= "table" then
+    Utils.TeleportTo(target, true)
+end
+```
+
+User: "tween to alex speed 200"
+[Rey]: Fast travel.
+```lua
+-- Script by ReyAI | ReyHub
+local target = Utils.FindPlayer("alex")
+if target and type(target) ~= "table" then
+    Utils.TeleportTo(target, true, 200)
+end
+```
+
+User: "where is chest"
+[Rey]: [REY_INTERNAL:EXEC]
+local matches = Utils.FindInWorkspace("chest")
+if #matches == 0 then return {found=false} end
+return {found=true, name=matches[1].Name, position=matches[1].Position}
+[/REY_INTERNAL:EXEC]
+
+[After receiving data]
+[Rey]: Found TreasureChest at (50, 3, 30). Teleport?
+
+User: "yes tween"
+[Rey]: Smooth.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportToNearest("chest", true)
+```
+
+User: "tp to chest"
+[Rey]: Done.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportToObject("chest", false)
+```
+
+User: "tween to door"
+[Rey]: Smooth.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportToNearest("door", true)
+```
 
 User: "infinite jump"
 [Rey]: Got it.
@@ -987,24 +1806,21 @@ User: "stop jump"
 _G.InfiniteJump = false
 ```
 
-User: "where is alex"
-[Rey]: [REY_INTERNAL:EXEC]
-local target = Utils.FindPlayer("alex")
-if not target then return {found=false} end
-if type(target) == "table" then return {found=false, offline=true, name=target.Name} end
-local pos = Utils.GetPosition(target)
-return {found=true, name=target.Name, position=pos}
-[/REY_INTERNAL:EXEC]
-
 User: "what game is this"
 [Rey]: [REY_INTERNAL:EXEC]
 return {game = Utils.GetGameName(), placeId = game.PlaceId}
 [/REY_INTERNAL:EXEC]
 
+[After receiving data]
+[Rey]: This is Brookhaven RP. Need anything?
+
 User: "how much money"
 [Rey]: [REY_INTERNAL:EXEC]
 return {currency = Utils.GetCurrency()}
 [/REY_INTERNAL:EXEC]
+
+[After receiving data]
+[Rey]: You have 1,500 Coins and 50 Gems. Want to auto farm?
 
 User: "auto farm coins"
 [Rey]: Scanning first.
@@ -1013,6 +1829,28 @@ local coins = Utils.FindInWorkspace("coin")
 if #coins == 0 then return {found=false} end
 return {found=true, count=#coins, sample=coins[1].Name}
 [/REY_INTERNAL:EXEC]
+
+[After receiving data: found=true, count=12]
+[Rey]: Found 12 coins. Start auto farm?
+
+User: "yes"
+[Rey]: Activated.
+```lua
+-- Script by ReyAI | ReyHub
+_G.CoinFarm = true
+_G.CoinFarmLoop = coroutine.wrap(function()
+    while _G.CoinFarm do
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v.Name == "Coin" and v:IsA("BasePart") and _G.CoinFarm then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                task.wait(0.3)
+            end
+        end
+        task.wait()
+    end
+end)
+_G.CoinFarmLoop()
+```
 
 User: "give me korblox"
 [Rey]: Applied.
@@ -1081,10 +1919,16 @@ User: "what time is it"
 return Utils.GetTime()
 [/REY_INTERNAL:EXEC]
 
+[After receiving data]
+[Rey]: It's 14:30.
+
 User: "what day is it"
 [Rey]: [REY_INTERNAL:EXEC]
 return Utils.GetDate()
 [/REY_INTERNAL:EXEC]
+
+[After receiving data]
+[Rey]: Saturday, 18/04/2026.
 
 User: "fly"
 [Rey]: Activated.
@@ -1107,23 +1951,19 @@ User: "stop fly" / "unfly"
 Utils.Fly(false)
 ```
 
-User: "tp to chest" / "teleport to chest"
-[Rey]: [REY_INTERNAL:EXEC]
-local success, name, pos = Utils.TeleportToObject("chest", false)
-return {success = success, name = name, position = pos}
-[/REY_INTERNAL:EXEC]
+User: "tp to Workspace.NPC.SwordSeller"
+[Rey]: Right away.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportToPath("Workspace.NPC.SwordSeller", false)
+```
 
-User: "tween to door" / "tween to shop"
-[Rey]: [REY_INTERNAL:EXEC]
-local success, name, pos = Utils.TeleportToNearest("door", true)
-return {success = success, name = name, position = pos}
-[/REY_INTERNAL:EXEC]
-
-User: "tween to chest speed 150"
-[Rey]: [REY_INTERNAL:EXEC]
-local success, name, pos = Utils.TeleportToObject("chest", true, 150)
-return {success=success, name=name, position=pos}
-[/REY_INTERNAL:EXEC]
+User: "tween to Workspace.Shops.WeaponShop"
+[Rey]: On my way.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.TeleportToPath("Workspace.Shops.WeaponShop", true)
+```
 
 User: "go to shop"
 [Rey]: [REY_INTERNAL:EXEC]
@@ -1134,18 +1974,161 @@ end
 return {success = success, name = name, position = pos}
 [/REY_INTERNAL:EXEC]
 
-User: "tp to Workspace.NPC.SwordSeller"
+[After receiving data: success=true, name="Shop"]
+[Rey]: Teleported to Shop. Anything else?
+
+User: "where is nearest enemy"
 [Rey]: [REY_INTERNAL:EXEC]
-local success, name, pos = Utils.TeleportToPath("Workspace.NPC.SwordSeller", false)
-return {success = success, name = name, position = pos}
+local enemy, dist = Utils.GetNearestEnemy()
+if not enemy then return {found=false} end
+local pos = Utils.GetPosition(enemy)
+return {found=true, name=enemy.Name, distance=dist, position=pos}
 [/REY_INTERNAL:EXEC]
 
-User: "tween to Workspace.Shops.WeaponShop"
+[After receiving data]
+[Rey]: Found Zombie at (45, 3, 20), 15 studs away. Want to attack?
+
+User: "kill aura on"
+[Rey]: Activated.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.KillAura(true, 30)
+\`\`\`
+
+User: "kill aura off"
+[Rey]: Stopped.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.KillAura(false)
+\`\`\`
+
+User: "highlight chest"
+[Rey]: Done.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.Highlight("chest", "#00FF00", 10)
+\`\`\`
+
+User: "esp on"
+[Rey]: Activated.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.ESP(true, {Color = "#FF0000"})
+\`\`\`
+
+User: "esp off"
+[Rey]: Disabled.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.ESP(false)
+\`\`\`
+
+User: "noclip on"
+[Rey]: Ghost mode.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.NoClip(true)
+\`\`\`
+
+User: "noclip off"
+[Rey]: Solid again.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.NoClip(false)
+\`\`\`
+
+User: "find gui shop"
 [Rey]: [REY_INTERNAL:EXEC]
-local success, name, pos = Utils.TeleportToPath("Workspace.Shops.WeaponShop", true)
-return {success = success, name = name, position = pos}
+local gui = Utils.FindGUI("shop")
+if not gui then return {found=false} end
+return {found=true, name=gui.Name, path=gui:GetFullName(), visible=Utils.IsActuallyVisible(gui)}
 [/REY_INTERNAL:EXEC]
 
+[After receiving data]
+[Rey]: Found Shop GUI. Visible: true. Open it?
+
+User: "open shop"
+[Rey]: Opening.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.OpenGUI("shop")
+\`\`\`
+
+User: "auto click button"
+[Rey]: Which button, sir? Say "detect button" then click it.
+
+User: "detect button"
+[Rey]: Detecting... Click any button.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.StartGUIDetection("onClick")
+\`\`\`
+
+User: "auto click that"
+[Rey]: Auto clicking enabled for that button.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+if Utils.GuiDetectionState.lastDetectedPath then
+    Utils.AutoClickGUI(Utils.GuiDetectionState.lastDetectedPath)
+end
+\`\`\`
+
+User: "stop auto click"
+[Rey]: Stopped.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoClick()
+\`\`\`
+
+User: "record clicks"
+[Rey]: Recording started.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.StartRecord()
+\`\`\`
+
+User: "stop record"
+[Rey]: Recording saved.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+local actions = Utils.StopRecord()
+_G.RecordedActions = actions
+\`\`\`
+
+User: "play record"
+[Rey]: Playing back.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.PlayRecord(_G.RecordedActions, 1)
+\`\`\`
+
+User: "auto instant prompt on"
+[Rey]: All prompts will be instant.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.HookProximityPrompts(true, true)
+\`\`\`
+
+User: "auto prompt off"
+[Rey]: Disabled.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.HookProximityPrompts(false)
+\`\`\`
+
+User: "monitor mobs"
+[Rey]: Watching for mobs.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.MonitorWorkspace(true, "mob", 2)
+\`\`\`
+
+User: "stop monitor"
+[Rey]: Stopped watching.
+\`\`\`lua
+-- Script by ReyAI | ReyHub
+Utils.MonitorWorkspace(false)
+\`\`\`
 ===== END =====
 [Rey]: Ready.
 ]]
@@ -1446,7 +2429,9 @@ function ReyAIChat:Enable()
     local function onMessageReceived(message, speaker)
         local msgLower = message:lower()
         local isFromOther = speaker and speaker ~= LocalPlayer
-        print(message)
+        
+        print("[ReyAI] Message:", message, "From:", speaker and speaker.Name or "Self", "IsOther:", isFromOther)
+        
         if string.find(msgLower, "rey off") or string.find(msgLower, "rey stop") then
             if not isFromOther or PublicFull then
                 self.IsActive = false
@@ -1456,24 +2441,36 @@ function ReyAIChat:Enable()
                 if PublicFull then sendMessage("[Rey] Deactivated") end
             end
             return true
-        elseif string.find(msgLower, "rey public full") then
-            if not isFromOther or PublicFull then
+        end
+        
+        if string.find(msgLower, "rey public full") then
+            if not isFromOther then
                 Public = true
                 PublicFull = true
-                self.Notify("info", "ReyAI", "Public Full mode enabled")
+                self.Notify("info", "ReyAI", "Public Full mode enabled - everyone can use Rey")
+                sendMessage("[Rey] Public Full mode enabled. Everyone can use me. Say 'rey' to activate.")
             end
             return true
-        elseif string.find(msgLower, "rey public") then
-            if not isFromOther or PublicFull or Public then
+        end
+        
+        if string.find(msgLower, "rey public") then
+            if not isFromOther then
                 Public = true
-                self.Notify("info", "ReyAI", "You chat now is Public")
+                self.Notify("info", "ReyAI", "Public mode enabled - chat is visible to all")
+                sendMessage("[Rey] Public mode enabled.")
             end
             return true
-        elseif string.find(msgLower, "rey") and not self.IsActive then
+        end
+        
+        if string.find(msgLower, "rey") and not self.IsActive then
             if not isFromOther or PublicFull then
                 self.IsActive = true
-                self.Notify("success", "ReyAI", "AI Activated")
-                if PublicFull then sendMessage("[Rey] Activated") end
+                self.Notify("success", "ReyAI", "AI Activated for " .. (speaker and speaker.Name or "you"))
+                if PublicFull and isFromOther then
+                    sendMessage("[Rey] Activated for " .. speaker.Name)
+                elseif PublicFull and not isFromOther then
+                    sendMessage("[Rey] Activated")
+                end
             end
             return true
         end
@@ -1489,15 +2486,16 @@ function ReyAIChat:Enable()
     end
     
     self.LegacyConnection = LocalPlayer.Chatted:Connect(function(message, recipient)
-        onMessageReceived(message, LocalPlayer)
+        local shouldProcess = onMessageReceived(message, LocalPlayer)
+        if shouldProcess then
+            self:SendToAI(message, 5, nil)
+        end
     end)
     
     self.PlayerChatConnection = Players.PlayerChatted:Connect(function(player, message)
-        if player ~= LocalPlayer then
-            local isCommand = onMessageReceived(message, player)
-            if isCommand and PublicFull then
-                self:SendToAI(message, 5, player)
-            end
+        local shouldProcess = onMessageReceived(message, player)
+        if shouldProcess then
+            self:SendToAI(message, 5, player)
         end
     end)
     
@@ -1797,5 +2795,169 @@ local AI = ReyAIChat.new({
         end
     end
 })
+
+-- ==== OPTIMIZED DETECTION SYSTEM (SINGLE LOOP) ====
+local DetectionState = {
+    promptedObjects = {},
+    clickedObjects = {},
+    knownMobs = {},
+    lowHealthTriggered = false,
+    lastPosition = nil,
+    lastCurrency = {},
+    lastMobCheck = 0,
+    lastCurrencyCheck = 0
+}
+
+local function SendDetectionEvent(eventType, eventData)
+    if not AI or not AI.IsActive then return end
+    
+    local HttpService = game:GetService("HttpService")
+    local detectionMessage = string.format([[
+[REY_SYSTEM:DETECTED]
+{"type": "%s", "data": %s}
+[/REY_SYSTEM:DETECTED]
+]], eventType, HttpService:JSONEncode(eventData))
+    
+    task.spawn(function()
+        AI:SendToAI(detectionMessage, 3, nil)
+    end)
+end
+
+getgenv().SendDetectionEvent = SendDetectionEvent
+
+coroutine.wrap(function()
+    DetectionState.lastCurrency = Utils.GetCurrency()
+    
+    while true do
+        local now = os.clock()
+        local char = LocalPlayer.Character
+        
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local currentPos = hrp.Position
+            
+            if DetectionState.lastPosition then
+                local dist = (currentPos - DetectionState.lastPosition).Magnitude
+                if dist > 200 then
+                    SendDetectionEvent("Teleport", {
+                        distance = math.floor(dist),
+                        to = {x = currentPos.X, y = currentPos.Y, z = currentPos.Z}
+                    })
+                end
+            end
+            DetectionState.lastPosition = currentPos
+            
+            if now - DetectionState.lastMobCheck >= 3 then
+                DetectionState.lastMobCheck = now
+                local currentMobs = {}
+                local newMobs = {}
+                
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("Model") and obj ~= char then
+                        local hum = obj:FindFirstChild("Humanoid")
+                        if hum and hum.Health > 0 then
+                            local isNPC = true
+                            for _, p in ipairs(Players:GetPlayers()) do
+                                if p.Character == obj then 
+                                    isNPC = false 
+                                    break 
+                                end
+                            end
+                            
+                            if isNPC then
+                                local key = obj:GetFullName()
+                                currentMobs[key] = {name = obj.Name}
+                                if not DetectionState.knownMobs[key] then
+                                    table.insert(newMobs, {name = obj.Name})
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                if #newMobs > 0 then
+                    SendDetectionEvent("MobSpawn", {count = #newMobs, mobs = newMobs})
+                end
+                DetectionState.knownMobs = currentMobs
+            end
+            
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                local percent = hum.Health / hum.MaxHealth
+                if percent <= 0.25 and not DetectionState.lowHealthTriggered then
+                    DetectionState.lowHealthTriggered = true
+                    SendDetectionEvent("LowHealth", {
+                        health = hum.Health,
+                        maxHealth = hum.MaxHealth
+                    })
+                elseif percent > 0.25 then
+                    DetectionState.lowHealthTriggered = false
+                end
+            end
+        end
+        
+        if now - DetectionState.lastCurrencyCheck >= 2 then
+            DetectionState.lastCurrencyCheck = now
+            local currentCurrency = Utils.GetCurrency()
+            
+            for name, value in pairs(currentCurrency) do
+                local oldValue = DetectionState.lastCurrency[name] or 0
+                if value ~= oldValue then
+                    SendDetectionEvent("CurrencyChange", {
+                        currency = name,
+                        old = oldValue,
+                        new = value,
+                        change = value - oldValue
+                    })
+                end
+            end
+            
+            DetectionState.lastCurrency = currentCurrency
+        end
+        
+        task.wait(0.5)
+    end
+end)()
+
+local function hookProximityPrompt(obj)
+    if not obj:IsA("ProximityPrompt") then return end
+    local key = obj:GetFullName()
+    if DetectionState.promptedObjects[key] then return end
+    DetectionState.promptedObjects[key] = true
+    
+    SendDetectionEvent("ProximityPrompt", {
+        name = obj.Parent and obj.Parent.Name or "Unknown",
+        path = key,
+        holdDuration = obj.HoldDuration
+    })
+end
+
+local function hookClickDetector(obj)
+    if not obj:IsA("ClickDetector") then return end
+    local key = obj:GetFullName()
+    if DetectionState.clickedObjects[key] then return end
+    DetectionState.clickedObjects[key] = true
+    
+    SendDetectionEvent("ClickDetector", {
+        name = obj.Parent and obj.Parent.Name or "Unknown",
+        path = key
+    })
+end
+
+workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ProximityPrompt") then
+        hookProximityPrompt(obj)
+    elseif obj:IsA("ClickDetector") then
+        hookClickDetector(obj)
+    end
+end)
+
+for _, obj in ipairs(workspace:GetDescendants()) do
+    if obj:IsA("ProximityPrompt") then
+        hookProximityPrompt(obj)
+    elseif obj:IsA("ClickDetector") then
+        hookClickDetector(obj)
+    end
+end
 
 AI:Enable()
