@@ -1299,6 +1299,77 @@ function Utils.MonitorWorkspace(enable, keyword, interval)
     return true
 end
 
+Utils.DetectionControl = {
+    promptEnabled = true,
+    clickDetectorEnabled = true,
+    mobSpawnEnabled = true,
+    lowHealthEnabled = true,
+    teleportEnabled = true,
+    currencyEnabled = true
+}
+
+function Utils.StopAutoDetection(feature)
+    if not feature then
+        for k, _ in pairs(Utils.DetectionControl) do
+            Utils.DetectionControl[k] = false
+        end
+        return true
+    end
+    
+    local map = {
+        prompt = "promptEnabled",
+        proximity = "promptEnabled",
+        click = "clickDetectorEnabled",
+        clickdetector = "clickDetectorEnabled",
+        mob = "mobSpawnEnabled",
+        mobspawn = "mobSpawnEnabled",
+        health = "lowHealthEnabled",
+        lowhealth = "lowHealthEnabled",
+        teleport = "teleportEnabled",
+        tp = "teleportEnabled",
+        currency = "currencyEnabled",
+        money = "currencyEnabled"
+    }
+    
+    local key = map[feature:lower()]
+    if key and Utils.DetectionControl[key] ~= nil then
+        Utils.DetectionControl[key] = false
+        return true
+    end
+    return false
+end
+
+function Utils.StartAutoDetection(feature)
+    local map = {
+        prompt = "promptEnabled",
+        proximity = "promptEnabled",
+        click = "clickDetectorEnabled",
+        clickdetector = "clickDetectorEnabled",
+        mob = "mobSpawnEnabled",
+        mobspawn = "mobSpawnEnabled",
+        health = "lowHealthEnabled",
+        lowhealth = "lowHealthEnabled",
+        teleport = "teleportEnabled",
+        tp = "teleportEnabled",
+        currency = "currencyEnabled",
+        money = "currencyEnabled"
+    }
+    
+    if not feature then
+        for k, _ in pairs(Utils.DetectionControl) do
+            Utils.DetectionControl[k] = true
+        end
+        return true
+    end
+    
+    local key = map[feature:lower()]
+    if key and Utils.DetectionControl[key] ~= nil then
+        Utils.DetectionControl[key] = true
+        return true
+    end
+    return false
+end
+
 getgenv().Utils = Utils
 
 function detectMobilePlatform()
@@ -1656,7 +1727,9 @@ Utils.PlayRecord(actions: table?, speed: number?) -> bool
 Utils.HookProximityPrompts(enable: bool, autoInstant: bool?) -> bool
 Utils.HookClickDetectors(enable: bool, autoClick: bool?) -> bool
 Utils.MonitorWorkspace(enable: bool, keyword: string?, interval: number?) -> bool
-
+Utils.DetectionControl = {promptEnabled, clickDetectorEnabled, mobSpawnEnabled, lowHealthEnabled, teleportEnabled, currencyEnabled}
+Utils.StopAutoDetection(feature: string?) -> bool  -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk matikan semua
+Utils.StartAutoDetection(feature: string?) -> bool -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk nyalakan semua
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
 - NEVER guess names. Use Utils.FindPlayer() for ANY player search.
@@ -2129,6 +2202,81 @@ User: "stop monitor"
 -- Script by ReyAI | ReyHub
 Utils.MonitorWorkspace(false)
 ```
+
+User: "stop detection"
+[Rey]: All detections disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection()
+```
+
+User: "stop prompt detection"
+[Rey]: ProximityPrompt detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("prompt")
+```
+
+User: "stop mob detection"
+[Rey]: Mob spawn detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("mob")
+```
+
+User: "stop health detection"
+[Rey]: Low health detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("health")
+```
+
+User: "stop teleport detection"
+[Rey]: Teleport detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("teleport")
+```
+
+User: "stop currency detection"
+[Rey]: Currency change detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("currency")
+```
+
+User: "stop click detection"
+[Rey]: ClickDetector detection disabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StopAutoDetection("click")
+```
+
+User: "start detection"
+[Rey]: All detections enabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StartAutoDetection()
+```
+
+User: "start prompt detection"
+[Rey]: ProximityPrompt detection enabled.
+```lua
+-- Script by ReyAI | ReyHub
+Utils.StartAutoDetection("prompt")
+```
+
+User: "what detection is on"
+[Rey]: [REY_INTERNAL:EXEC]
+local status = {}
+for k, v in pairs(Utils.DetectionControl) do
+    status[k] = v
+end
+return status
+[/REY_INTERNAL:EXEC]
+
+[After receiving data]
+[Rey]: Prompt: ON, Click: ON, Mob: ON, Health: ON, Teleport: ON, Currency: ON.
 ===== END =====
 [Rey]: Ready.
 ]]
@@ -2811,6 +2959,17 @@ local DetectionState = {
 local function SendDetectionEvent(eventType, eventData)
     if not AI or not AI.IsActive then return end
     
+    local enabledMap = {
+        ProximityPrompt = Utils.DetectionControl.promptEnabled,
+        ClickDetector = Utils.DetectionControl.clickDetectorEnabled,
+        MobSpawn = Utils.DetectionControl.mobSpawnEnabled,
+        LowHealth = Utils.DetectionControl.lowHealthEnabled,
+        Teleport = Utils.DetectionControl.teleportEnabled,
+        CurrencyChange = Utils.DetectionControl.currencyEnabled
+    }
+    
+    if enabledMap[eventType] == false then return end
+    
     local HttpService = game:GetService("HttpService")
     local detectionMessage = string.format([[
 [REY_SYSTEM:DETECTED]
@@ -2919,19 +3078,6 @@ coroutine.wrap(function()
     end
 end)()
 
-local function hookProximityPrompt(obj)
-    if not obj:IsA("ProximityPrompt") then return end
-    local key = obj:GetFullName()
-    if DetectionState.promptedObjects[key] then return end
-    DetectionState.promptedObjects[key] = true
-    
-    SendDetectionEvent("ProximityPrompt", {
-        name = obj.Parent and obj.Parent.Name or "Unknown",
-        path = key,
-        holdDuration = obj.HoldDuration
-    })
-end
-
 local function hookClickDetector(obj)
     if not obj:IsA("ClickDetector") then return end
     local key = obj:GetFullName()
@@ -2944,20 +3090,37 @@ local function hookClickDetector(obj)
     })
 end
 
-workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA("ProximityPrompt") then
-        hookProximityPrompt(obj)
-    elseif obj:IsA("ClickDetector") then
-        hookClickDetector(obj)
-    end
-end)
+local shownPrompts = {}
+local function hookProximityPrompt(prompt)
+    local key = prompt:GetFullName()
+    if shownPrompts[key] then return end
+    shownPrompts[key] = true
+    
+    SendDetectionEvent("ProximityPrompt", {
+        name = prompt.Parent and prompt.Parent.Name or "Unknown",
+        path = key,
+        holdDuration = prompt.HoldDuration
+    })
+end
 
 for _, obj in ipairs(workspace:GetDescendants()) do
     if obj:IsA("ProximityPrompt") then
-        hookProximityPrompt(obj)
+        obj.PromptShown:Connect(function()
+            hookProximityPrompt(obj)
+        end)
     elseif obj:IsA("ClickDetector") then
         hookClickDetector(obj)
     end
 end
+
+workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ProximityPrompt") then
+        obj.PromptShown:Connect(function()
+            hookProximityPrompt(obj)
+        end)
+    elseif obj:IsA("ClickDetector") then
+        hookClickDetector(obj)
+    end
+end)
 
 AI:Enable()
