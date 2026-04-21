@@ -1370,6 +1370,159 @@ function Utils.StartAutoDetection(feature)
     return false
 end
 
+Utils.KillState = {
+    threshold = 0.9,
+    buttons = {V1 = nil, V2 = nil, V3 = nil},
+    autoV4 = false,
+    autoV5 = false,
+    v4Conn = nil,
+    v5Conn = nil,
+    v5Loop = nil,
+    hooked = {}
+}
+
+function Utils.Kill(action, value)
+    action = action:lower()
+    
+    if action == "threshold" then
+        Utils.KillState.threshold = math.clamp((tonumber(value) or 90) / 100, 0.01, 1)
+        return true
+    end
+    
+    if action == "v1" or action == "v2" or action == "v3" then
+        local ver = action:sub(2,2)
+        if value == true then
+            if Utils.KillState.buttons["V"..ver] then
+                Utils.KillState.buttons["V"..ver]:Destroy()
+            end
+            local sg = Instance.new("ScreenGui")
+            sg.Name = "KillV"..ver
+            sg.Parent = game:GetService("CoreGui")
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(0, 80, 0, 35)
+            btn.Position = UDim2.new(1, -140, 0, 10 + ((tonumber(ver)-1)*40))
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.Text = "KILL V"..ver
+            btn.TextColor3 = Color3.new(1, 0, 0)
+            btn.BorderSizePixel = 0
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 14
+            btn.Parent = sg
+            btn.Active = true
+            btn.Draggable = true
+            btn.MouseButton1Click:Connect(function()
+                pcall(function()
+                    sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
+                    sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
+                end)
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj:IsA("Humanoid") and obj.Parent and obj.Parent:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name then
+                        if ver == "1" and obj.Health < obj.MaxHealth then obj.Health = 0 end
+                        if ver == "2" and obj.Health < obj.MaxHealth then obj.Parent:BreakJoints() end
+                        if ver == "3" then obj.Health = 0 end
+                    end
+                end
+            end)
+            Utils.KillState.buttons["V"..ver] = sg
+        else
+            if Utils.KillState.buttons["V"..ver] then
+                Utils.KillState.buttons["V"..ver]:Destroy()
+                Utils.KillState.buttons["V"..ver] = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "v4" then
+        if value == true then
+            if Utils.KillState.v4Conn then return true end
+            Utils.KillState.autoV4 = true
+            local function hook(hum)
+                if Utils.KillState.hooked[hum] then return end
+                Utils.KillState.hooked[hum] = hum.HealthChanged:Connect(function()
+                    if not Utils.KillState.autoV4 then return end
+                    local m = hum.Parent
+                    if m and m:IsA("Model") and m.Name ~= LocalPlayer.Name and hum.Health > 0 then
+                        if hum.Health / math.max(hum.MaxHealth, 1) < Utils.KillState.threshold then
+                            hum.Health = 0
+                            m:BreakJoints()
+                        end
+                    end
+                end)
+            end
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Humanoid") then hook(v) end
+            end
+            Utils.KillState.v4Conn = workspace.DescendantAdded:Connect(function(v)
+                if v:IsA("Humanoid") then task.wait() hook(v) end
+            end)
+        else
+            Utils.KillState.autoV4 = false
+            if Utils.KillState.v4Conn then
+                Utils.KillState.v4Conn:Disconnect()
+                Utils.KillState.v4Conn = nil
+            end
+            for _, c in pairs(Utils.KillState.hooked) do pcall(function() c:Disconnect() end) end
+            Utils.KillState.hooked = {}
+        end
+        return true
+    end
+    
+    if action == "v5" then
+        if value == true then
+            if Utils.KillState.autoV5 then return true end
+            Utils.KillState.autoV5 = true
+            local humans = {}
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Humanoid") and v.Parent and v.Parent:IsA("Model") and v.Parent.Name ~= LocalPlayer.Name then
+                    humans[v] = true
+                end
+            end
+            Utils.KillState.v5Conn = workspace.DescendantAdded:Connect(function(v)
+                if not Utils.KillState.autoV5 then return end
+                local h = v:IsA("Humanoid") and v or v:FindFirstChildWhichIsA("Humanoid")
+                if h and h.Parent and h.Parent:IsA("Model") and h.Parent.Name ~= LocalPlayer.Name then
+                    humans[h] = true
+                end
+            end)
+            Utils.KillState.v5Loop = task.spawn(function()
+                while Utils.KillState.autoV5 do
+                    for h in pairs(humans) do
+                        if not h or not h.Parent or h.Health <= 0 then
+                            humans[h] = nil
+                        elseif h.Health > 0 and h.Health / math.max(h.MaxHealth, 1) < Utils.KillState.threshold then
+                            h.Health = 0
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        else
+            Utils.KillState.autoV5 = false
+            if Utils.KillState.v5Conn then
+                Utils.KillState.v5Conn:Disconnect()
+                Utils.KillState.v5Conn = nil
+            end
+            if Utils.KillState.v5Loop then
+                task.cancel(Utils.KillState.v5Loop)
+                Utils.KillState.v5Loop = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "all" then
+        if value == true then
+            Utils.Kill("v1", true) Utils.Kill("v2", true) Utils.Kill("v3", true)
+        else
+            Utils.Kill("v1", false) Utils.Kill("v2", false) Utils.Kill("v3", false)
+        end
+        return true
+    end
+    
+    return false
+end
+
 getgenv().Utils = Utils
 
 function detectMobilePlatform()
@@ -1730,6 +1883,12 @@ Utils.MonitorWorkspace(enable: bool, keyword: string?, interval: number?) -> boo
 Utils.DetectionControl = {promptEnabled, clickDetectorEnabled, mobSpawnEnabled, lowHealthEnabled, teleportEnabled, currencyEnabled}
 Utils.StopAutoDetection(feature: string?) -> bool  -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk matikan semua
 Utils.StartAutoDetection(feature: string?) -> bool -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk nyalakan semua
+Utils.Kill(action: string, value: any) -> bool
+-- action: "v1"/"v2"/"v3" + true/false = show/hide button
+-- action: "v4"/"v5" + true/false = enable/disable auto kill
+-- action: "threshold" + number = set health threshold (%)
+-- action: "all" + true/false = show/hide all buttons
+
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
 - NEVER guess names. Use Utils.FindPlayer() for ANY player search.
@@ -2277,6 +2436,49 @@ return status
 
 [After receiving data]
 [Rey]: Prompt: ON, Click: ON, Mob: ON, Health: ON, Teleport: ON, Currency: ON.
+
+User: "kill v1" or "instant kill v1"
+[Rey]: Kill V1 button shown.
+\`\`\`lua
+Utils.Kill("v1", true)
+\`\`\`
+
+User: "hide kill v1" or "hide instant kill v1"
+[Rey]: Kill V1 hidden.
+\`\`\`lua
+Utils.Kill("v1", false)
+\`\`\`
+
+User: "kill v4 on" or "instant kill v4 on"
+[Rey]: Auto kill V4 activated.
+\`\`\`lua
+Utils.Kill("v4", true)
+\`\`\`
+
+User: "kill v4 off" or "instant kill v4 off"
+[Rey]: Auto kill V4 disabled.
+\`\`\`lua
+Utils.Kill("v4", false)
+\`\`\`
+
+User: "kill threshold 80" or "instant kill 80%"
+[Rey]: Threshold set to 80%.
+\`\`\`lua
+Utils.Kill("threshold", 80)
+\`\`\`
+
+User: "show all kill"
+[Rey]: All kill buttons shown.
+\`\`\`lua
+Utils.Kill("all", true)
+\`\`\`
+
+User: "hide all kill"
+[Rey]: All kill buttons hidden.
+\`\`\`lua
+Utils.Kill("all", false)
+\`\`\`
+
 ===== END =====
 [Rey]: Ready.
 ]]
