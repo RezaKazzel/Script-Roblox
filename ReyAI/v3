@@ -1474,10 +1474,10 @@ CONVERSATION:
 
 SCRIPT OUTPUT:
 [Rey]: Short response
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 [code here]
-\`\`\`
+```
 
 INTERNAL EXEC:
 [REY_INTERNAL:EXEC]
@@ -1515,10 +1515,10 @@ return {success=true, action="instant"}
 
 User: "always instant prompt"
 [Rey]: Got it. All future prompts will be instant.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 _G.AutoInstantPrompt = true
-\`\`\`
+```
 
 [SYSTEM DETECTS CLICK DETECTOR FIRST TIME]
 [Rey]: [REY_SYSTEM:DETECTED]
@@ -1543,7 +1543,7 @@ return {success=true}
 
 User: "kill"
 [Rey]: Engaging.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 local npcs = Utils.GetAllNPCs(50)
 for _, npc in ipairs(npcs) do
@@ -1552,15 +1552,15 @@ for _, npc in ipairs(npcs) do
         task.wait(0.3)
     end
 end
-\`\`\`
+```
 
 User: "always attack mobs"
 [Rey]: Auto combat enabled. I'll attack any mob that spawns.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 _G.AutoAttackMobs = true
 Utils.KillAura(true, 50)
-\`\`\`
+```
 
 [SYSTEM DETECTS LOW HEALTH]
 [Rey]: [REY_SYSTEM:DETECTED]
@@ -1990,52 +1990,52 @@ return {found=true, name=enemy.Name, distance=dist, position=pos}
 
 User: "kill aura on"
 [Rey]: Activated.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.KillAura(true, 30)
-\`\`\`
+```
 
 User: "kill aura off"
 [Rey]: Stopped.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.KillAura(false)
-\`\`\`
+```
 
 User: "highlight chest"
 [Rey]: Done.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.Highlight("chest", "#00FF00", 10)
-\`\`\`
+```
 
 User: "esp on"
 [Rey]: Activated.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.ESP(true, {Color = "#FF0000"})
-\`\`\`
+```
 
 User: "esp off"
 [Rey]: Disabled.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.ESP(false)
-\`\`\`
+```
 
 User: "noclip on"
 [Rey]: Ghost mode.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.NoClip(true)
-\`\`\`
+```
 
 User: "noclip off"
 [Rey]: Solid again.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.NoClip(false)
-\`\`\`
+```
 
 User: "find gui shop"
 [Rey]: [REY_INTERNAL:EXEC]
@@ -2049,86 +2049,86 @@ return {found=true, name=gui.Name, path=gui:GetFullName(), visible=Utils.IsActua
 
 User: "open shop"
 [Rey]: Opening.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.OpenGUI("shop")
-\`\`\`
+```
 
 User: "auto click button"
 [Rey]: Which button, sir? Say "detect button" then click it.
 
 User: "detect button"
 [Rey]: Detecting... Click any button.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.StartGUIDetection("onClick")
-\`\`\`
+```
 
 User: "auto click that"
 [Rey]: Auto clicking enabled for that button.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 if Utils.GuiDetectionState.lastDetectedPath then
     Utils.AutoClickGUI(Utils.GuiDetectionState.lastDetectedPath)
 end
-\`\`\`
+```
 
 User: "stop auto click"
 [Rey]: Stopped.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.StopAutoClick()
-\`\`\`
+```
 
 User: "record clicks"
 [Rey]: Recording started.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.StartRecord()
-\`\`\`
+```
 
 User: "stop record"
 [Rey]: Recording saved.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 local actions = Utils.StopRecord()
 _G.RecordedActions = actions
-\`\`\`
+```
 
 User: "play record"
 [Rey]: Playing back.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.PlayRecord(_G.RecordedActions, 1)
-\`\`\`
+```
 
 User: "auto instant prompt on"
 [Rey]: All prompts will be instant.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.HookProximityPrompts(true, true)
-\`\`\`
+```
 
 User: "auto prompt off"
 [Rey]: Disabled.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.HookProximityPrompts(false)
-\`\`\`
+```
 
 User: "monitor mobs"
 [Rey]: Watching for mobs.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.MonitorWorkspace(true, "mob", 2)
-\`\`\`
+```
 
 User: "stop monitor"
 [Rey]: Stopped watching.
-\`\`\`lua
+```lua
 -- Script by ReyAI | ReyHub
 Utils.MonitorWorkspace(false)
-\`\`\`
+```
 ===== END =====
 [Rey]: Ready.
 ]]
