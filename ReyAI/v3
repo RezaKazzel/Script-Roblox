@@ -2437,25 +2437,25 @@ return status
 [After receiving data]
 [Rey]: Prompt: ON, Click: ON, Mob: ON, Health: ON, Teleport: ON, Currency: ON.
 
-User: "kill v1" or "instant kill v1"
+User: "kill v1" or "instant kill v1" or "one hit v1"
 [Rey]: Kill V1 button shown.
 \`\`\`lua
 Utils.Kill("v1", true)
 \`\`\`
 
-User: "hide kill v1" or "hide instant kill v1"
+User: "hide kill v1" or "destroy instant kill v1" or "hide one hit v1"
 [Rey]: Kill V1 hidden.
 \`\`\`lua
 Utils.Kill("v1", false)
 \`\`\`
 
-User: "kill v4 on" or "instant kill v4 on"
+User: "kill v4 on" or "instant kill v4 on" or "one hit v4"
 [Rey]: Auto kill V4 activated.
 \`\`\`lua
 Utils.Kill("v4", true)
 \`\`\`
 
-User: "kill v4 off" or "instant kill v4 off"
+User: "kill v4 off" or "instant kill v4 off" or "one hit v4 stop"
 [Rey]: Auto kill V4 disabled.
 \`\`\`lua
 Utils.Kill("v4", false)
