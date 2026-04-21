@@ -7,1662 +7,1667 @@ local LocalPlayer = Players.LocalPlayer
 local Utils = {}
 
 function Utils.FindPlayer(name)
-    if not name or name == "" then return nil end
-    local searchName = name:lower()
-    local foundPlayer = nil
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Name:lower() == searchName or player.DisplayName:lower() == searchName then
-            return player
-        end
-        if player.Name:lower():sub(1, #searchName) == searchName or 
-           player.DisplayName:lower():sub(1, #searchName) == searchName then
-            foundPlayer = player
-        end
-    end
-    
-    if not foundPlayer then
-        local success, userId = pcall(function()
-            return Players:GetUserIdFromNameAsync(searchName)
-        end)
-        if success and userId then
-            return {UserId = userId, Name = name}
-        end
-    end
-    
-    return foundPlayer
+	if not name or name == "" then return nil end
+	local searchName = name:lower()
+	local foundPlayer = nil
+	
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Name:lower() == searchName or player.DisplayName:lower() == searchName then
+			return player
+		end
+		if player.Name:lower():sub(1, #searchName) == searchName or 
+		   player.DisplayName:lower():sub(1, #searchName) == searchName then
+			foundPlayer = player
+		end
+	end
+	
+	if not foundPlayer then
+		local success, userId = pcall(function()
+			return Players:GetUserIdFromNameAsync(searchName)
+		end)
+		if success and userId then
+			return {UserId = userId, Name = name}
+		end
+	end
+	
+	return foundPlayer
 end
 
 function Utils.FindInWorkspace(name)
-    if not name or name == "" then return {} end
-    local searchName = name:lower()
-    local matches = {}
-    
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj.Name:lower():find(searchName, 1, true) then
-            local pos = nil
-            if obj:IsA("BasePart") then
-                pos = obj.Position
-            elseif obj:IsA("Model") then
-                if obj.PrimaryPart then
-                    pos = obj.PrimaryPart.Position
-                else
-                    pcall(function()
-                        pos = obj:GetPivot().Position
-                    end)
-                end
-            else
-                pcall(function()
-                    pos = obj:GetPivot().Position
-                end)
-            end
-            table.insert(matches, {
-                Name = obj.Name,
-                Class = obj.ClassName,
-                Position = pos and {x = pos.X, y = pos.Y, z = pos.Z} or nil,
-                Instance = obj
-            })
-        end
-    end
-    return matches
+	if not name or name == "" then return {} end
+	local searchName = name:lower()
+	local matches = {}
+	
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj.Name:lower():find(searchName, 1, true) then
+			local pos = nil
+			if obj:IsA("BasePart") then
+				pos = obj.Position
+			elseif obj:IsA("Model") then
+				if obj.PrimaryPart then
+					pos = obj.PrimaryPart.Position
+				else
+					pcall(function()
+						pos = obj:GetPivot().Position
+					end)
+				end
+			else
+				pcall(function()
+					pos = obj:GetPivot().Position
+				end)
+			end
+			table.insert(matches, {
+				Name = obj.Name,
+				Class = obj.ClassName,
+				Position = pos and {x = pos.X, y = pos.Y, z = pos.Z} or nil,
+				Instance = obj
+			})
+		end
+	end
+	return matches
 end
 
 function Utils.GetPosition(target)
-    if not target then return nil end
-    if typeof(target) == "Instance" then
-        if target:IsA("Player") then
-            local char = target.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local pos = char.HumanoidRootPart.Position
-                return {x = pos.X, y = pos.Y, z = pos.Z}
-            end
-        elseif target:IsA("BasePart") then
-            return {x = target.Position.X, y = target.Position.Y, z = target.Position.Z}
-        elseif target:IsA("Model") and target.PrimaryPart then
-            local pos = target.PrimaryPart.Position
-            return {x = pos.X, y = pos.Y, z = pos.Z}
-        end
-    elseif type(target) == "table" and target.x and target.y and target.z then
-        return target
-    end
-    return nil
+	if not target then return nil end
+	if typeof(target) == "Instance" then
+		if target:IsA("Player") then
+			local char = target.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local pos = char.HumanoidRootPart.Position
+				return {x = pos.X, y = pos.Y, z = pos.Z}
+			end
+		elseif target:IsA("BasePart") then
+			return {x = target.Position.X, y = target.Position.Y, z = target.Position.Z}
+		elseif target:IsA("Model") and target.PrimaryPart then
+			local pos = target.PrimaryPart.Position
+			return {x = pos.X, y = pos.Y, z = pos.Z}
+		end
+	elseif type(target) == "table" and target.x and target.y and target.z then
+		return target
+	end
+	return nil
 end
 
 function Utils.GetNearestPlayer()
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = char.HumanoidRootPart.Position
-    
-    local nearest, nearestDist = nil, math.huge
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local targetChar = player.Character
-            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
-                local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
-                if dist < nearestDist then
-                    nearest, nearestDist = player, dist
-                end
-            end
-        end
-    end
-    return nearest, nearestDist
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+	local myPos = char.HumanoidRootPart.Position
+	
+	local nearest, nearestDist = nil, math.huge
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local targetChar = player.Character
+			if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+				local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
+				if dist < nearestDist then
+					nearest, nearestDist = player, dist
+				end
+			end
+		end
+	end
+	return nearest, nearestDist
 end
 
 function Utils.GetAllPlayers()
-    local list = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        table.insert(list, {
-            Name = player.Name,
-            DisplayName = player.DisplayName,
-            UserId = player.UserId
-        })
-    end
-    return list
+	local list = {}
+	for _, player in ipairs(Players:GetPlayers()) do
+		table.insert(list, {
+			Name = player.Name,
+			DisplayName = player.DisplayName,
+			UserId = player.UserId
+		})
+	end
+	return list
 end
 
 function Utils.GetCurrency()
-    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-    local currency = {}
-    if leaderstats then
-        for _, stat in ipairs(leaderstats:GetChildren()) do
-            if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-                currency[stat.Name] = stat.Value
-            end
-        end
-    end
-    return currency
+	local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+	local currency = {}
+	if leaderstats then
+		for _, stat in ipairs(leaderstats:GetChildren()) do
+			if stat:IsA("IntValue") or stat:IsA("NumberValue") then
+				currency[stat.Name] = stat.Value
+			end
+		end
+	end
+	return currency
 end
 
 function Utils.GetGameName()
-    local success, info = pcall(function()
-        return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
-    end)
-    if success and info then
-        return info.Name
-    end
-    return "Unknown Game"
+	local success, info = pcall(function()
+		return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+	end)
+	if success and info then
+		return info.Name
+	end
+	return "Unknown Game"
 end
 
 function Utils.GetTime()
-    local t = os.date("*t")
-    return {hour = t.hour, min = t.min, sec = t.sec}
+	local t = os.date("*t")
+	return {hour = t.hour, min = t.min, sec = t.sec}
 end
 
 function Utils.GetDate()
-    local t = os.date("*t")
-    local days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
-    local months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
-    return {
-        day = t.day,
-        month = t.month,
-        monthName = months[t.month],
-        year = t.year,
-        weekday = days[t.wday],
-        dateString = string.format("%02d/%02d/%d", t.day, t.month, t.year)
-    }
+	local t = os.date("*t")
+	local days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+	local months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+	return {
+		day = t.day,
+		month = t.month,
+		monthName = months[t.month],
+		year = t.year,
+		weekday = days[t.wday],
+		dateString = string.format("%02d/%02d/%d", t.day, t.month, t.year)
+	}
 end
 
 function Utils.TeleportTo(target, useTween, tweenSpeed)
-    useTween = useTween or false
-    tweenSpeed = tweenSpeed or 100
-    
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
-    
-    local pos = nil
-    if type(target) == "table" and target.x and target.y and target.z then
-        pos = Vector3.new(target.x, target.y, target.z)
-    elseif typeof(target) == "Instance" then
-        if target:IsA("Player") then
-            local targetChar = target.Character
-            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
-                pos = targetChar.HumanoidRootPart.Position
-            end
-        elseif target:IsA("BasePart") then
-            pos = target.Position
-        elseif target:IsA("Model") and target.PrimaryPart then
-            pos = target.PrimaryPart.Position
-        end
-    end
-    
-    if not pos then return false end
-    
-    local hrp = char.HumanoidRootPart
-    
-    if useTween then
-        local TweenService = game:GetService("TweenService")
-        local dist = (hrp.Position - pos).Magnitude
-        local tweenInfo = TweenInfo.new(
-            math.clamp(dist / tweenSpeed, 0.3, 5),
-            Enum.EasingStyle.Quad,
-            Enum.EasingDirection.Out
-        )
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
-        tween:Play()
-        tween.Completed:Wait()
-    else
-        hrp.CFrame = CFrame.new(pos)
-    end
-    
-    return true
+	useTween = useTween or false
+	tweenSpeed = tweenSpeed or 100
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+	
+	local pos = nil
+	if type(target) == "table" and target.x and target.y and target.z then
+		pos = Vector3.new(target.x, target.y, target.z)
+	elseif typeof(target) == "Instance" then
+		if target:IsA("Player") then
+			local targetChar = target.Character
+			if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+				pos = targetChar.HumanoidRootPart.Position
+			end
+		elseif target:IsA("BasePart") then
+			pos = target.Position
+		elseif target:IsA("Model") and target.PrimaryPart then
+			pos = target.PrimaryPart.Position
+		end
+	end
+	
+	if not pos then return false end
+	
+	local hrp = char.HumanoidRootPart
+	
+	if useTween then
+		local TweenService = game:GetService("TweenService")
+		local dist = (hrp.Position - pos).Magnitude
+		local tweenInfo = TweenInfo.new(
+			math.clamp(dist / tweenSpeed, 0.3, 5),
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+		local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+		tween:Play()
+		tween.Completed:Wait()
+	else
+		hrp.CFrame = CFrame.new(pos)
+	end
+	
+	return true
 end
 
 function Utils.TeleportToPath(path, useTween, tweenSpeed)
-    useTween = useTween or false
-    tweenSpeed = tweenSpeed or 100
-    
-    local success, obj = pcall(function()
-        return loadstring("return " .. path)()
-    end)
-    
-    if not success or not obj then
-        local parts = {}
-        for part in string.gmatch(path, "[^%.]+") do
-            table.insert(parts, part)
-        end
-        
-        obj = workspace
-        for _, name in ipairs(parts) do
-            if obj then
-                obj = obj:FindFirstChild(name)
-            end
-        end
-    end
-    
-    if not obj then return false, "Path not found" end
-    
-    local pos = nil
-    if obj:IsA("BasePart") then
-        pos = obj.Position
-    elseif obj:IsA("Model") then
-        local primary = obj.PrimaryPart
-        if primary then
-            pos = primary.Position
-        elseif obj:FindFirstChild("HumanoidRootPart") then
-            pos = obj.HumanoidRootPart.Position
-        else
-            pcall(function()
-                pos = obj:GetPivot().Position
-            end)
-        end
-    else
-        pcall(function()
-            pos = obj:GetPivot().Position
-        end)
-    end
-    
-    if not pos then return false, "Cannot get position" end
-    
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then 
-        return false, "Character not ready" 
-    end
-    
-    local hrp = char.HumanoidRootPart
-    
-    if useTween then
-        local TweenService = game:GetService("TweenService")
-        local dist = (hrp.Position - pos).Magnitude
-        local tweenInfo = TweenInfo.new(
-            math.clamp(dist / tweenSpeed, 0.3, 5),
-            Enum.EasingStyle.Quad,
-            Enum.EasingDirection.Out
-        )
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
-        tween:Play()
-        tween.Completed:Wait()
-    else
-        hrp.CFrame = CFrame.new(pos)
-    end
-    
-    return true, obj.Name, pos
+	useTween = useTween or false
+	tweenSpeed = tweenSpeed or 100
+	
+	local success, obj = pcall(function()
+		return loadstring("return " .. path)()
+	end)
+	
+	if not success or not obj then
+		local parts = {}
+		for part in string.gmatch(path, "[^%.]+") do
+			table.insert(parts, part)
+		end
+		
+		obj = workspace
+		for _, name in ipairs(parts) do
+			if obj then
+				obj = obj:FindFirstChild(name)
+			end
+		end
+	end
+	
+	if not obj then return false, "Path not found" end
+	
+	local pos = nil
+	if obj:IsA("BasePart") then
+		pos = obj.Position
+	elseif obj:IsA("Model") then
+		local primary = obj.PrimaryPart
+		if primary then
+			pos = primary.Position
+		elseif obj:FindFirstChild("HumanoidRootPart") then
+			pos = obj.HumanoidRootPart.Position
+		else
+			pcall(function()
+				pos = obj:GetPivot().Position
+			end)
+		end
+	else
+		pcall(function()
+			pos = obj:GetPivot().Position
+		end)
+	end
+	
+	if not pos then return false, "Cannot get position" end
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then 
+		return false, "Character not ready" 
+	end
+	
+	local hrp = char.HumanoidRootPart
+	
+	if useTween then
+		local TweenService = game:GetService("TweenService")
+		local dist = (hrp.Position - pos).Magnitude
+		local tweenInfo = TweenInfo.new(
+			math.clamp(dist / tweenSpeed, 0.3, 5),
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+		local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+		tween:Play()
+		tween.Completed:Wait()
+	else
+		hrp.CFrame = CFrame.new(pos)
+	end
+	
+	return true, obj.Name, pos
 end
 
 function Utils.TeleportToObject(name, useTween, tweenSpeed)
-    useTween = useTween or false
-    tweenSpeed = tweenSpeed or 100
-    
-    local matches = Utils.FindInWorkspace(name)
-    if #matches == 0 then return false, "Object not found" end
-    
-    local target = matches[1].Instance
-    local pos = nil
-    
-    if target:IsA("BasePart") then
-        pos = target.Position
-    elseif target:IsA("Model") then
-        local primary = target.PrimaryPart
-        if primary then
-            pos = primary.Position
-        else
-            local hum = target:FindFirstChild("Humanoid")
-            if hum and hum.RootPart then
-                pos = hum.RootPart.Position
-            else
-                pcall(function()
-                    pos = target:GetPivot().Position
-                end)
-            end
-        end
-    else
-        pcall(function()
-            pos = target:GetPivot().Position
-        end)
-    end
-    
-    if not pos then return false, "Cannot get position" end
-    
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then 
-        return false, "Character not ready" 
-    end
-    
-    local hrp = char.HumanoidRootPart
-    
-    if useTween then
-        local TweenService = game:GetService("TweenService")
-        local dist = (hrp.Position - pos).Magnitude
-        local tweenInfo = TweenInfo.new(
-            math.clamp(dist / tweenSpeed, 0.3, 5),
-            Enum.EasingStyle.Quad,
-            Enum.EasingDirection.Out
-        )
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
-        tween:Play()
-        tween.Completed:Wait()
-    else
-        hrp.CFrame = CFrame.new(pos)
-    end
-    
-    return true, target.Name, pos
+	useTween = useTween or false
+	tweenSpeed = tweenSpeed or 100
+	
+	local matches = Utils.FindInWorkspace(name)
+	if #matches == 0 then return false, "Object not found" end
+	
+	local target = matches[1].Instance
+	local pos = nil
+	
+	if target:IsA("BasePart") then
+		pos = target.Position
+	elseif target:IsA("Model") then
+		local primary = target.PrimaryPart
+		if primary then
+			pos = primary.Position
+		else
+			local hum = target:FindFirstChild("Humanoid")
+			if hum and hum.RootPart then
+				pos = hum.RootPart.Position
+			else
+				pcall(function()
+					pos = target:GetPivot().Position
+				end)
+			end
+		end
+	else
+		pcall(function()
+			pos = target:GetPivot().Position
+		end)
+	end
+	
+	if not pos then return false, "Cannot get position" end
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then 
+		return false, "Character not ready" 
+	end
+	
+	local hrp = char.HumanoidRootPart
+	
+	if useTween then
+		local TweenService = game:GetService("TweenService")
+		local dist = (hrp.Position - pos).Magnitude
+		local tweenInfo = TweenInfo.new(
+			math.clamp(dist / tweenSpeed, 0.3, 5),
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+		local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(pos)})
+		tween:Play()
+		tween.Completed:Wait()
+	else
+		hrp.CFrame = CFrame.new(pos)
+	end
+	
+	return true, target.Name, pos
 end
 
 function Utils.TeleportToNearest(name, useTween, tweenSpeed)
-    useTween = useTween or false
-    tweenSpeed = tweenSpeed or 100
-    
-    local nearest, dist = Utils.GetNearestObject(name)
-    if not nearest then return false, "Object not found" end
-    
-    local pos = nearest.Position
-    if not pos then return false, "Cannot get position" end
-    
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then 
-        return false, "Character not ready" 
-    end
-    
-    local hrp = char.HumanoidRootPart
-    local targetPos = Vector3.new(pos.x, pos.y, pos.z)
-    
-    if useTween then
-        local TweenService = game:GetService("TweenService")
-        local tweenInfo = TweenInfo.new(
-            math.clamp(dist / tweenSpeed, 0.3, 5),
-            Enum.EasingStyle.Quad,
-            Enum.EasingDirection.Out
-        )
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos)})
-        tween:Play()
-        tween.Completed:Wait()
-    else
-        hrp.CFrame = CFrame.new(targetPos)
-    end
-    
-    return true, nearest.Name, targetPos, dist
+	useTween = useTween or false
+	tweenSpeed = tweenSpeed or 100
+	
+	local nearest, dist = Utils.GetNearestObject(name)
+	if not nearest then return false, "Object not found" end
+	
+	local pos = nearest.Position
+	if not pos then return false, "Cannot get position" end
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then 
+		return false, "Character not ready" 
+	end
+	
+	local hrp = char.HumanoidRootPart
+	local targetPos = Vector3.new(pos.x, pos.y, pos.z)
+	
+	if useTween then
+		local TweenService = game:GetService("TweenService")
+		local tweenInfo = TweenInfo.new(
+			math.clamp(dist / tweenSpeed, 0.3, 5),
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+		local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos)})
+		tween:Play()
+		tween.Completed:Wait()
+	else
+		hrp.CFrame = CFrame.new(targetPos)
+	end
+	
+	return true, nearest.Name, targetPos, dist
 end
 
 function Utils.GetNearestObject(name)
-    local matches = Utils.FindInWorkspace(name)
-    if #matches == 0 then return nil end
-    
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return matches[1] end
-    
-    local myPos = char.HumanoidRootPart.Position
-    local nearest, nearestDist = nil, math.huge
-    
-    for _, obj in ipairs(matches) do
-        if obj.Position then
-            local objPos = Vector3.new(obj.Position.x, obj.Position.y, obj.Position.z)
-            local dist = (objPos - myPos).Magnitude
-            if dist < nearestDist then
-                nearest, nearestDist = obj, dist
-            end
-        end
-    end
-    return nearest, nearestDist
+	local matches = Utils.FindInWorkspace(name)
+	if #matches == 0 then return nil end
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return matches[1] end
+	
+	local myPos = char.HumanoidRootPart.Position
+	local nearest, nearestDist = nil, math.huge
+	
+	for _, obj in ipairs(matches) do
+		if obj.Position then
+			local objPos = Vector3.new(obj.Position.x, obj.Position.y, obj.Position.z)
+			local dist = (objPos - myPos).Magnitude
+			if dist < nearestDist then
+				nearest, nearestDist = obj, dist
+			end
+		end
+	end
+	return nearest, nearestDist
 end
 
 function Utils.GetPlayersInRadius(radius)
-    radius = radius or 50
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
-    local myPos = char.HumanoidRootPart.Position
-    
-    local nearby = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local targetChar = player.Character
-            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
-                local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
-                if dist <= radius then
-                    table.insert(nearby, {
-                        Name = player.Name,
-                        DisplayName = player.DisplayName,
-                        Distance = dist
-                    })
-                end
-            end
-        end
-    end
-    table.sort(nearby, function(a, b) return a.Distance < b.Distance end)
-    return nearby
+	radius = radius or 50
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
+	local myPos = char.HumanoidRootPart.Position
+	
+	local nearby = {}
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local targetChar = player.Character
+			if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+				local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
+				if dist <= radius then
+					table.insert(nearby, {
+						Name = player.Name,
+						DisplayName = player.DisplayName,
+						Distance = dist
+					})
+				end
+			end
+		end
+	end
+	table.sort(nearby, function(a, b) return a.Distance < b.Distance end)
+	return nearby
 end
 
 function Utils.GetHealth()
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            return {Health = hum.Health, MaxHealth = hum.MaxHealth}
-        end
-    end
-    return nil
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChild("Humanoid")
+		if hum then
+			return {Health = hum.Health, MaxHealth = hum.MaxHealth}
+		end
+	end
+	return nil
 end
 
 function Utils.SetWalkSpeed(speed)
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.WalkSpeed = speed
-            return true
-        end
-    end
-    return false
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChild("Humanoid")
+		if hum then
+			hum.WalkSpeed = speed
+			return true
+		end
+	end
+	return false
 end
 
 function Utils.SetJumpPower(power)
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.JumpPower = power
-            return true
-        end
-    end
-    return false
+	local char = LocalPlayer.Character
+	if char then
+		local hum = char:FindFirstChild("Humanoid")
+		if hum then
+			hum.JumpPower = power
+			return true
+		end
+	end
+	return false
 end
 
 function Utils.GetInventory()
-    local items = {}
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if backpack then
-        for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                table.insert(items, {Name = tool.Name, Type = "Tool"})
-            end
-        end
-    end
-    local char = LocalPlayer.Character
-    if char then
-        for _, tool in ipairs(char:GetChildren()) do
-            if tool:IsA("Tool") then
-                table.insert(items, {Name = tool.Name, Type = "Tool", Equipped = true})
-            end
-        end
-    end
-    return items
+	local items = {}
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(items, {Name = tool.Name, Type = "Tool"})
+			end
+		end
+	end
+	local char = LocalPlayer.Character
+	if char then
+		for _, tool in ipairs(char:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(items, {Name = tool.Name, Type = "Tool", Equipped = true})
+			end
+		end
+	end
+	return items
 end
 
 function Utils.EquipTool(name)
-    local searchName = name:lower()
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if backpack then
-        for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") and tool.Name:lower():find(searchName, 1, true) then
-                LocalPlayer.Character.Humanoid:EquipTool(tool)
-                return true
-            end
-        end
-    end
-    return false
+	local searchName = name:lower()
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and tool.Name:lower():find(searchName, 1, true) then
+				LocalPlayer.Character.Humanoid:EquipTool(tool)
+				return true
+			end
+		end
+	end
+	return false
 end
 
 function Utils.Respawn()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.Health = 0
-        return true
-    end
-    return false
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.Health = 0
+		return true
+	end
+	return false
 end
 
 function Utils.Rejoin()
-    local ts = game:GetService("TeleportService")
-    ts:Teleport(game.PlaceId, LocalPlayer)
+	local ts = game:GetService("TeleportService")
+	ts:Teleport(game.PlaceId, LocalPlayer)
 end
 
 function Utils.ServerHop()
-    local ts = game:GetService("TeleportService")
-    ts:TeleportToPlaceInstance(game.PlaceId, ts:GetPlayerPlaceInstanceAsync(game.PlaceId))
+	local ts = game:GetService("TeleportService")
+	ts:TeleportToPlaceInstance(game.PlaceId, ts:GetPlayerPlaceInstanceAsync(game.PlaceId))
 end
 
 function Utils.Kick(reason)
-    LocalPlayer:Kick(reason or "Goodbye from Rey")
+	LocalPlayer:Kick(reason or "Goodbye from Rey")
 end
 
 function Utils.Notification(title, text, duration)
-    if game:GetService("StarterGui"):FindFirstChild("SetCore") then
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = duration or 3
-        })
-    end
+	if game:GetService("StarterGui"):FindFirstChild("SetCore") then
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = title,
+			Text = text,
+			Duration = duration or 3
+		})
+	end
 end
 
 function Utils.Fly(enable)
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if not char then return false end
-    
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return false end
-    
-    local states = {
-        Enum.HumanoidStateType.Climbing,
-        Enum.HumanoidStateType.FallingDown,
-        Enum.HumanoidStateType.Flying,
-        Enum.HumanoidStateType.Freefall,
-        Enum.HumanoidStateType.GettingUp,
-        Enum.HumanoidStateType.Jumping,
-        Enum.HumanoidStateType.Landed,
-        Enum.HumanoidStateType.Physics,
-        Enum.HumanoidStateType.PlatformStanding,
-        Enum.HumanoidStateType.Ragdoll,
-        Enum.HumanoidStateType.Running,
-        Enum.HumanoidStateType.RunningNoPhysics,
-        Enum.HumanoidStateType.Seated,
-        Enum.HumanoidStateType.StrafingNoPhysics,
-        Enum.HumanoidStateType.Swimming
-    }
-    
-    if enable == false then
-        _G.FlyEnabled = false
-        _G.FlyTpwalking = false
-        
-        for _, state in ipairs(states) do
-            hum:SetStateEnabled(state, true)
-        end
-        hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-        
-        if char.Animate then
-            char.Animate.Disabled = false
-        end
-        
-        if _G.FlyBodyGyro then
-            _G.FlyBodyGyro:Destroy()
-            _G.FlyBodyGyro = nil
-        end
-        if _G.FlyBodyVelocity then
-            _G.FlyBodyVelocity:Destroy()
-            _G.FlyBodyVelocity = nil
-        end
-        
-        hum.PlatformStand = false
-        return true
-    end
-    
-    _G.FlyEnabled = true
-    _G.FlySpeed = _G.FlySpeed or 1
-    _G.FlyMaxSpeed = 50
-    
-    for _, state in ipairs(states) do
-        hum:SetStateEnabled(state, false)
-    end
-    hum:ChangeState(Enum.HumanoidStateType.Swimming)
-    
-    if char.Animate then
-        char.Animate.Disabled = true
-        local Hum = char:FindFirstChildOfClass("Humanoid") or char:FindFirstChildOfClass("AnimationController")
-        if Hum then
-            for _, v in ipairs(Hum:GetPlayingAnimationTracks()) do
-                v:AdjustSpeed(0)
-            end
-        end
-    end
-    
-    spawn(function()
-        local hb = game:GetService("RunService").Heartbeat
-        _G.FlyTpwalking = true
-        while _G.FlyTpwalking and _G.FlyEnabled do
-            hb:Wait()
-            local c = player.Character
-            local h = c and c:FindFirstChildWhichIsA("Humanoid")
-            if c and h and h.Parent then
-                if h.MoveDirection.Magnitude > 0 then
-                    for _ = 1, _G.FlySpeed do
-                        c:TranslateBy(h.MoveDirection)
-                    end
-                end
-            end
-        end
-    end)
-    
-    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-    if not torso then return false end
-    
-    local bg = Instance.new("BodyGyro")
-    bg.P = 9e4
-    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-    bg.cframe = torso.CFrame
-    bg.Parent = torso
-    _G.FlyBodyGyro = bg
-    
-    local bv = Instance.new("BodyVelocity")
-    bv.velocity = Vector3.new(0, 0.1, 0)
-    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-    bv.Parent = torso
-    _G.FlyBodyVelocity = bv
-    
-    hum.PlatformStand = true
-    
-    local ctrl = {f = 0, b = 0, l = 0, r = 0}
-    local lastctrl = {f = 0, b = 0, l = 0, r = 0}
-    local speed = 0
-    
-    spawn(function()
-        while _G.FlyEnabled and torso and torso.Parent do
-            game:GetService("RunService").RenderStepped:Wait()
-            
-            if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
-                speed = speed + 0.5 + (speed / _G.FlyMaxSpeed)
-                if speed > _G.FlyMaxSpeed then
-                    speed = _G.FlyMaxSpeed
-                end
-            elseif speed ~= 0 then
-                speed = speed - 1
-                if speed < 0 then
-                    speed = 0
-                end
-            end
-            
-            if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
-                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f + ctrl.b)) + 
-                              ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - 
-                               workspace.CurrentCamera.CoordinateFrame.p)) * speed
-                lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
-            elseif speed ~= 0 then
-                bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f + lastctrl.b)) + 
-                              ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - 
-                               workspace.CurrentCamera.CoordinateFrame.p)) * speed
-            else
-                bv.velocity = Vector3.new(0, 0, 0)
-            end
-            
-            bg.cframe = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / _G.FlyMaxSpeed), 0, 0)
-        end
-    end)
-    
-    local function onKeyDown(key)
-        local k = key:lower()
-        if k == "w" then ctrl.f = 1 elseif k == "s" then ctrl.b = -1
-        elseif k == "a" then ctrl.l = -1 elseif k == "d" then ctrl.r = 1
-        end
-    end
-    
-    local function onKeyUp(key)
-        local k = key:lower()
-        if k == "w" then ctrl.f = 0 elseif k == "s" then ctrl.b = 0
-        elseif k == "a" then ctrl.l = 0 elseif k == "d" then ctrl.r = 0
-        end
-    end
-    
-    _G.FlyKeyDown = onKeyDown
-    _G.FlyKeyUp = onKeyUp
-    
-    game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
-        if processed then return end
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            onKeyDown(input.KeyCode.Name)
-        end
-    end)
-    
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            onKeyUp(input.KeyCode.Name)
-        end
-    end)
-    
-    return true
+	local player = game.Players.LocalPlayer
+	local char = player.Character
+	if not char then return false end
+	
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return false end
+	
+	local states = {
+		Enum.HumanoidStateType.Climbing,
+		Enum.HumanoidStateType.FallingDown,
+		Enum.HumanoidStateType.Flying,
+		Enum.HumanoidStateType.Freefall,
+		Enum.HumanoidStateType.GettingUp,
+		Enum.HumanoidStateType.Jumping,
+		Enum.HumanoidStateType.Landed,
+		Enum.HumanoidStateType.Physics,
+		Enum.HumanoidStateType.PlatformStanding,
+		Enum.HumanoidStateType.Ragdoll,
+		Enum.HumanoidStateType.Running,
+		Enum.HumanoidStateType.RunningNoPhysics,
+		Enum.HumanoidStateType.Seated,
+		Enum.HumanoidStateType.StrafingNoPhysics,
+		Enum.HumanoidStateType.Swimming
+	}
+	
+	if enable == false then
+		_G.FlyEnabled = false
+		_G.FlyTpwalking = false
+		
+		for _, state in ipairs(states) do
+			hum:SetStateEnabled(state, true)
+		end
+		hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+		
+		if char.Animate then
+			char.Animate.Disabled = false
+		end
+		
+		if _G.FlyBodyGyro then
+			_G.FlyBodyGyro:Destroy()
+			_G.FlyBodyGyro = nil
+		end
+		if _G.FlyBodyVelocity then
+			_G.FlyBodyVelocity:Destroy()
+			_G.FlyBodyVelocity = nil
+		end
+		
+		hum.PlatformStand = false
+		return true
+	end
+	
+	_G.FlyEnabled = true
+	_G.FlySpeed = _G.FlySpeed or 1
+	_G.FlyMaxSpeed = 50
+	
+	for _, state in ipairs(states) do
+		hum:SetStateEnabled(state, false)
+	end
+	hum:ChangeState(Enum.HumanoidStateType.Swimming)
+	
+	if char.Animate then
+		char.Animate.Disabled = true
+		local Hum = char:FindFirstChildOfClass("Humanoid") or char:FindFirstChildOfClass("AnimationController")
+		if Hum then
+			for _, v in ipairs(Hum:GetPlayingAnimationTracks()) do
+				v:AdjustSpeed(0)
+			end
+		end
+	end
+	
+	spawn(function()
+		local hb = game:GetService("RunService").Heartbeat
+		_G.FlyTpwalking = true
+		while _G.FlyTpwalking and _G.FlyEnabled do
+			hb:Wait()
+			local c = player.Character
+			local h = c and c:FindFirstChildWhichIsA("Humanoid")
+			if c and h and h.Parent then
+				if h.MoveDirection.Magnitude > 0 then
+					for _ = 1, _G.FlySpeed do
+						c:TranslateBy(h.MoveDirection)
+					end
+				end
+			end
+		end
+	end)
+	
+	local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+	if not torso then return false end
+	
+	local bg = Instance.new("BodyGyro")
+	bg.P = 9e4
+	bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.cframe = torso.CFrame
+	bg.Parent = torso
+	_G.FlyBodyGyro = bg
+	
+	local bv = Instance.new("BodyVelocity")
+	bv.velocity = Vector3.new(0, 0.1, 0)
+	bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+	bv.Parent = torso
+	_G.FlyBodyVelocity = bv
+	
+	hum.PlatformStand = true
+	
+	local ctrl = {f = 0, b = 0, l = 0, r = 0}
+	local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+	local speed = 0
+	
+	spawn(function()
+		while _G.FlyEnabled and torso and torso.Parent do
+			game:GetService("RunService").RenderStepped:Wait()
+			
+			if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+				speed = speed + 0.5 + (speed / _G.FlyMaxSpeed)
+				if speed > _G.FlyMaxSpeed then
+					speed = _G.FlyMaxSpeed
+				end
+			elseif speed ~= 0 then
+				speed = speed - 1
+				if speed < 0 then
+					speed = 0
+				end
+			end
+			
+			if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+				bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f + ctrl.b)) + 
+							  ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - 
+							   workspace.CurrentCamera.CoordinateFrame.p)) * speed
+				lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+			elseif speed ~= 0 then
+				bv.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f + lastctrl.b)) + 
+							  ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - 
+							   workspace.CurrentCamera.CoordinateFrame.p)) * speed
+			else
+				bv.velocity = Vector3.new(0, 0, 0)
+			end
+			
+			bg.cframe = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / _G.FlyMaxSpeed), 0, 0)
+		end
+	end)
+	
+	local function onKeyDown(key)
+		local k = key:lower()
+		if k == "w" then ctrl.f = 1 elseif k == "s" then ctrl.b = -1
+		elseif k == "a" then ctrl.l = -1 elseif k == "d" then ctrl.r = 1
+		end
+	end
+	
+	local function onKeyUp(key)
+		local k = key:lower()
+		if k == "w" then ctrl.f = 0 elseif k == "s" then ctrl.b = 0
+		elseif k == "a" then ctrl.l = 0 elseif k == "d" then ctrl.r = 0
+		end
+	end
+	
+	_G.FlyKeyDown = onKeyDown
+	_G.FlyKeyUp = onKeyUp
+	
+	game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+		if processed then return end
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			onKeyDown(input.KeyCode.Name)
+		end
+	end)
+	
+	game:GetService("UserInputService").InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			onKeyUp(input.KeyCode.Name)
+		end
+	end)
+	
+	return true
 end
 
 function Utils.FlySpeed(speed)
-    _G.FlySpeed = math.max(1, speed or 1)
+	_G.FlySpeed = math.max(1, speed or 1)
 end
 
 -- ==== COMBAT / FARMING ====
 function Utils.GetNearestEnemy(teamCheck)
-    teamCheck = teamCheck or false
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local myPos = char.HumanoidRootPart.Position
-    local myTeam = teamCheck and LocalPlayer.Team or nil
-    
-    local nearest, nearestDist = nil, math.huge
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj ~= char then
-            local hum = obj:FindFirstChild("Humanoid")
-            local hrp = obj:FindFirstChild("HumanoidRootPart")
-            if hum and hrp and hum.Health > 0 then
-                local isNPC = true
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p.Character == obj then isNPC = false break end
-                end
-                
-                if isNPC then
-                    local dist = (hrp.Position - myPos).Magnitude
-                    if dist < nearestDist then
-                        nearest, nearestDist = obj, dist
-                    end
-                end
-            end
-        end
-    end
-    return nearest, nearestDist
+	teamCheck = teamCheck or false
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+	local myPos = char.HumanoidRootPart.Position
+	local myTeam = teamCheck and LocalPlayer.Team or nil
+	
+	local nearest, nearestDist = nil, math.huge
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj ~= char then
+			local hum = obj:FindFirstChild("Humanoid")
+			local hrp = obj:FindFirstChild("HumanoidRootPart")
+			if hum and hrp and hum.Health > 0 then
+				local isNPC = true
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character == obj then isNPC = false break end
+				end
+				
+				if isNPC then
+					local dist = (hrp.Position - myPos).Magnitude
+					if dist < nearestDist then
+						nearest, nearestDist = obj, dist
+					end
+				end
+			end
+		end
+	end
+	return nearest, nearestDist
 end
 
 function Utils.GetAllNPCs(radius)
-    radius = radius or 100
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
-    local myPos = char.HumanoidRootPart.Position
-    local npcs = {}
-    
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj ~= char then
-            local hum = obj:FindFirstChild("Humanoid")
-            local hrp = obj:FindFirstChild("HumanoidRootPart")
-            if hum and hrp and hum.Health > 0 then
-                local isNPC = true
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p.Character == obj then isNPC = false break end
-                end
-                if isNPC then
-                    local dist = (hrp.Position - myPos).Magnitude
-                    if dist <= radius then
-                        table.insert(npcs, {
-                            Name = obj.Name,
-                            Health = hum.Health,
-                            MaxHealth = hum.MaxHealth,
-                            Position = {x = hrp.Position.X, y = hrp.Position.Y, z = hrp.Position.Z},
-                            Distance = dist,
-                            Instance = obj
-                        })
-                    end
-                end
-            end
-        end
-    end
-    table.sort(npcs, function(a, b) return a.Distance < b.Distance end)
-    return npcs
+	radius = radius or 100
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
+	local myPos = char.HumanoidRootPart.Position
+	local npcs = {}
+	
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj ~= char then
+			local hum = obj:FindFirstChild("Humanoid")
+			local hrp = obj:FindFirstChild("HumanoidRootPart")
+			if hum and hrp and hum.Health > 0 then
+				local isNPC = true
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p.Character == obj then isNPC = false break end
+				end
+				if isNPC then
+					local dist = (hrp.Position - myPos).Magnitude
+					if dist <= radius then
+						table.insert(npcs, {
+							Name = obj.Name,
+							Health = hum.Health,
+							MaxHealth = hum.MaxHealth,
+							Position = {x = hrp.Position.X, y = hrp.Position.Y, z = hrp.Position.Z},
+							Distance = dist,
+							Instance = obj
+						})
+					end
+				end
+			end
+		end
+	end
+	table.sort(npcs, function(a, b) return a.Distance < b.Distance end)
+	return npcs
 end
 
 function Utils.KillAura(enable, range)
-    if not enable then
-        _G.KillAura = false
-        return true
-    end
-    _G.KillAura = true
-    range = range or 20
-    _G.KillAuraLoop = coroutine.wrap(function()
-        while _G.KillAura do
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local npcs = Utils.GetAllNPCs(range)
-                for _, npc in ipairs(npcs) do
-                    if not _G.KillAura then break end
-                    if npc.Instance and npc.Instance:FindFirstChild("Humanoid") then
-                        local hum = npc.Instance.Humanoid
-                        if hum.Health > 0 then
-                            char.HumanoidRootPart.CFrame = npc.Instance.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                            task.wait(0.1)
-                            -- Attack logic
-                            local tool = char:FindFirstChildOfClass("Tool")
-                            if tool and tool:FindFirstChild("Handle") then
-                                firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 0)
-                                firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 1)
-                            end
-                        end
-                    end
-                end
-            end
-            task.wait()
-        end
-    end)
-    _G.KillAuraLoop()
-    return true
+	if not enable then
+		_G.KillAura = false
+		return true
+	end
+	_G.KillAura = true
+	range = range or 20
+	_G.KillAuraLoop = coroutine.wrap(function()
+		while _G.KillAura do
+			local char = LocalPlayer.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local npcs = Utils.GetAllNPCs(range)
+				for _, npc in ipairs(npcs) do
+					if not _G.KillAura then break end
+					if npc.Instance and npc.Instance:FindFirstChild("Humanoid") then
+						local hum = npc.Instance.Humanoid
+						if hum.Health > 0 then
+							char.HumanoidRootPart.CFrame = npc.Instance.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+							task.wait(0.1)
+							-- Attack logic
+							local tool = char:FindFirstChildOfClass("Tool")
+							if tool and tool:FindFirstChild("Handle") then
+								firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 0)
+								firetouchinterest(tool.Handle, npc.Instance:FindFirstChild("HumanoidRootPart"), 1)
+							end
+						end
+					end
+				end
+			end
+			task.wait()
+		end
+	end)
+	_G.KillAuraLoop()
+	return true
 end
 
 -- ==== VISUAL / ESP ====
 function Utils.Highlight(target, color, duration)
-    if not target then return false end
-    local instance = nil
-    if typeof(target) == "Instance" then
-        instance = target
-    elseif type(target) == "table" and target.Instance then
-        instance = target.Instance
-    elseif type(target) == "string" then
-        local matches = Utils.FindInWorkspace(target)
-        instance = matches[1] and matches[1].Instance
-    end
-    if not instance then return false end
-    
-    local highlight = Instance.new("Highlight")
-    highlight.FillColor = typeof(color) == "Color3" and color or Color3.fromHex(color or "#FF0000")
-    highlight.FillTransparency = 0.5
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.Parent = instance
-    
-    if duration then
-        task.delay(duration, function()
-            pcall(function() highlight:Destroy() end)
-        end)
-    end
-    return highlight
+	if not target then return false end
+	local instance = nil
+	if typeof(target) == "Instance" then
+		instance = target
+	elseif type(target) == "table" and target.Instance then
+		instance = target.Instance
+	elseif type(target) == "string" then
+		local matches = Utils.FindInWorkspace(target)
+		instance = matches[1] and matches[1].Instance
+	end
+	if not instance then return false end
+	
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = typeof(color) == "Color3" and color or Color3.fromHex(color or "#FF0000")
+	highlight.FillTransparency = 0.5
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.Parent = instance
+	
+	if duration then
+		task.delay(duration, function()
+			pcall(function() highlight:Destroy() end)
+		end)
+	end
+	return highlight
 end
 
 function Utils.ESP(enable, settings)
-    settings = settings or {}
-    if not enable then
-        if _G.ESPConnections then
-            for _, conn in ipairs(_G.ESPConnections) do 
-                pcall(function() conn:Disconnect() end) 
-            end
-            _G.ESPConnections = nil
-        end
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == "_REY_ESP_HIGHLIGHT" then 
-                pcall(function() v:Destroy() end) 
-            end
-        end
-        return true
-    end
-    
-    local function createESP(player)
-        local char = player.Character
-        if not char then return end
-        task.wait(0.1)
-        if not char.Parent then return end
-        
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "_REY_ESP_HIGHLIGHT"
-        highlight.FillColor = Color3.fromHex(settings.Color or "#FF0000")
-        highlight.FillTransparency = 0.5
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.Adornee = char
-        highlight.Parent = char
-        
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "_REY_ESP_HIGHLIGHT"
-        billboard.Adornee = char:FindFirstChild("Head") or char:FindFirstChildWhichIsA("BasePart")
-        billboard.Size = UDim2.new(0, 100, 0, 50)
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        billboard.AlwaysOnTop = true
-        billboard.Parent = char
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextStrokeTransparency = 0
-        label.Text = player.Name
-        label.Parent = billboard
-        
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.Died:Connect(function()
-                pcall(function() highlight:Destroy() end)
-                pcall(function() billboard:Destroy() end)
-            end)
-        end
-    end
-    
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            p.CharacterAdded:Connect(function(char) 
-                task.wait(0.5) 
-                createESP(p) 
-            end)
-            if p.Character then createESP(p) end
-        end
-    end
-    
-    _G.ESPConnections = {}
-    table.insert(_G.ESPConnections, Players.PlayerAdded:Connect(function(p)
-        p.CharacterAdded:Connect(function(char) 
-            task.wait(0.5) 
-            createESP(p) 
-        end)
-    end))
-    return true
+	settings = settings or {}
+	if not enable then
+		if _G.ESPConnections then
+			for _, conn in ipairs(_G.ESPConnections) do 
+				pcall(function() conn:Disconnect() end) 
+			end
+			_G.ESPConnections = nil
+		end
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v.Name == "_REY_ESP_HIGHLIGHT" then 
+				pcall(function() v:Destroy() end) 
+			end
+		end
+		return true
+	end
+	
+	local function createESP(player)
+		local char = player.Character
+		if not char then return end
+		task.wait(0.1)
+		if not char.Parent then return end
+		
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "_REY_ESP_HIGHLIGHT"
+		highlight.FillColor = Color3.fromHex(settings.Color or "#FF0000")
+		highlight.FillTransparency = 0.5
+		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		highlight.Adornee = char
+		highlight.Parent = char
+		
+		local billboard = Instance.new("BillboardGui")
+		billboard.Name = "_REY_ESP_HIGHLIGHT"
+		billboard.Adornee = char:FindFirstChild("Head") or char:FindFirstChildWhichIsA("BasePart")
+		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.StudsOffset = Vector3.new(0, 3, 0)
+		billboard.AlwaysOnTop = true
+		billboard.Parent = char
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, 0, 1, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.TextStrokeTransparency = 0
+		label.Text = player.Name
+		label.Parent = billboard
+		
+		local hum = char:FindFirstChild("Humanoid")
+		if hum then
+			hum.Died:Connect(function()
+				pcall(function() highlight:Destroy() end)
+				pcall(function() billboard:Destroy() end)
+			end)
+		end
+	end
+	
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer then
+			p.CharacterAdded:Connect(function(char) 
+				task.wait(0.5) 
+				createESP(p) 
+			end)
+			if p.Character then createESP(p) end
+		end
+	end
+	
+	_G.ESPConnections = {}
+	table.insert(_G.ESPConnections, Players.PlayerAdded:Connect(function(p)
+		p.CharacterAdded:Connect(function(char) 
+			task.wait(0.5) 
+			createESP(p) 
+		end)
+	end))
+	return true
 end
 
 -- ==== MOVEMENT ====
 function Utils.NoClip(enable)
-    local char = LocalPlayer.Character
-    if not char then return false end
-    local function noclipLoop()
-        if char and char.Parent then
-            for _, v in ipairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = not enable
-                end
-            end
-        end
-    end
-    if enable then
-        _G.NoclipConn = game:GetService("RunService").Stepped:Connect(noclipLoop)
-    else
-        if _G.NoclipConn then 
-            pcall(function() _G.NoclipConn:Disconnect() end) 
-            _G.NoclipConn = nil
-        end
-        noclipLoop()
-    end
-    return true
+	local char = LocalPlayer.Character
+	if not char then return false end
+	local function noclipLoop()
+		if char and char.Parent then
+			for _, v in ipairs(char:GetDescendants()) do
+				if v:IsA("BasePart") then
+					v.CanCollide = not enable
+				end
+			end
+		end
+	end
+	if enable then
+		_G.NoclipConn = game:GetService("RunService").Stepped:Connect(noclipLoop)
+	else
+		if _G.NoclipConn then 
+			pcall(function() _G.NoclipConn:Disconnect() end) 
+			_G.NoclipConn = nil
+		end
+		noclipLoop()
+	end
+	return true
 end
 
 -- ==== GUI DETECTION & AUTO CLICK ====
 Utils.GuiDetectionState = {
-    mode = "onClick",
-    hookedButtons = {},
-    lastDetectedPath = "",
-    lastDetectedGui = nil,
-    autoClickEnabled = false,
-    autoClickTarget = nil,
-    recordEnabled = false,
-    recordedActions = {},
-    descendantConnection = nil
+	mode = "onClick",
+	hookedButtons = {},
+	lastDetectedPath = "",
+	lastDetectedGui = nil,
+	autoClickEnabled = false,
+	autoClickTarget = nil,
+	recordEnabled = false,
+	recordedActions = {},
+	descendantConnection = nil
 }
 
 function Utils.IsActuallyVisible(gui)
-    if not gui or not gui:IsDescendantOf(LocalPlayer.PlayerGui) then 
-        return false 
-    end
-    if gui:IsA("GuiObject") and (gui.AbsoluteSize.X <= 0 or gui.AbsoluteSize.Y <= 0) then 
-        return false 
-    end
-    
-    local current = gui
-    while current and current ~= LocalPlayer.PlayerGui do
-        if current:IsA("ScreenGui") and current.Enabled == false then 
-            return false 
-        end
-        if current:IsA("GuiObject") and current.Visible == false then 
-            return false 
-        end
-        current = current.Parent
-    end
-    return true
+	if not gui or not gui:IsDescendantOf(LocalPlayer.PlayerGui) then 
+		return false 
+	end
+	if gui:IsA("GuiObject") and (gui.AbsoluteSize.X <= 0 or gui.AbsoluteSize.Y <= 0) then 
+		return false 
+	end
+	
+	local current = gui
+	while current and current ~= LocalPlayer.PlayerGui do
+		if current:IsA("ScreenGui") and current.Enabled == false then 
+			return false 
+		end
+		if current:IsA("GuiObject") and current.Visible == false then 
+			return false 
+		end
+		current = current.Parent
+	end
+	return true
 end
 
 function Utils.ClickGUI(gui)
-    if not gui then return false end
-    
-    local methods = {
-        {func = function() 
-            if gui.MouseButton1Click then 
-                firesignal(gui.MouseButton1Click, LocalPlayer) 
-            end
-        end},
-        {func = function() 
-            if gui.MouseButton1Click then 
-                firesignal(gui.MouseButton1Click) 
-            end
-        end},
-        {func = function() 
-            if getconnections then
-                for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
-                    if v.Function then v.Function() end
-                end
-            end
-        end},
-        {func = function() 
-            if getconnections then
-                for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
-                    if v.Fire then v:Fire() end
-                end
-            end
-        end},
-        {func = function() 
-            if gui.MouseButton1Click and replicatesignal then 
-                replicatesignal(gui.MouseButton1Click) 
-            end
-        end},
-        {func = function()
-            gui:Activate()
-        end}
-    }
-    
-    for _, method in ipairs(methods) do
-        local success = pcall(method.func)
-        if success then return true end
-    end
-    
-    return false
+	if not gui then return false end
+	
+	local methods = {
+		{func = function() 
+			if gui.MouseButton1Click then 
+				firesignal(gui.MouseButton1Click, LocalPlayer) 
+			end
+		end},
+		{func = function() 
+			if gui.MouseButton1Click then 
+				firesignal(gui.MouseButton1Click) 
+			end
+		end},
+		{func = function() 
+			if getconnections then
+				for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
+					if v.Function then v.Function() end
+				end
+			end
+		end},
+		{func = function() 
+			if getconnections then
+				for _, v in pairs(getconnections(gui.MouseButton1Down)) do 
+					if v.Fire then v:Fire() end
+				end
+			end
+		end},
+		{func = function() 
+			if gui.MouseButton1Click and replicatesignal then 
+				replicatesignal(gui.MouseButton1Click) 
+			end
+		end},
+		{func = function()
+			gui:Activate()
+		end}
+	}
+	
+	for _, method in ipairs(methods) do
+		local success = pcall(method.func)
+		if success then return true end
+	end
+	
+	return false
 end
 
 function Utils.FindGUI(name)
-    if not name or name == "" then return nil end
-    local searchName = name:lower()
-    local matches = {}
-    
-    for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
-        if gui.Name:lower():find(searchName, 1, true) and gui:IsA("GuiObject") then
-            if Utils.IsActuallyVisible(gui) then
-                return gui
-            else
-                table.insert(matches, gui)
-            end
-        end
-    end
-    
-    return matches[1]
+	if not name or name == "" then return nil end
+	local searchName = name:lower()
+	local matches = {}
+	
+	for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+		if gui.Name:lower():find(searchName, 1, true) and gui:IsA("GuiObject") then
+			if Utils.IsActuallyVisible(gui) then
+				return gui
+			else
+				table.insert(matches, gui)
+			end
+		end
+	end
+	
+	return matches[1]
 end
 
 function Utils.OpenGUI(name)
-    local gui = Utils.FindGUI(name)
-    if gui then
-        if gui:IsA("ScreenGui") then
-            gui.Enabled = true
-            return true
-        elseif gui:IsA("GuiObject") then
-            gui.Visible = true
-            return Utils.ClickGUI(gui)
-        end
-    end
-    return false
+	local gui = Utils.FindGUI(name)
+	if gui then
+		if gui:IsA("ScreenGui") then
+			gui.Enabled = true
+			return true
+		elseif gui:IsA("GuiObject") then
+			gui.Visible = true
+			return Utils.ClickGUI(gui)
+		end
+	end
+	return false
 end
 
 function Utils.StartGUIDetection(mode)
-    mode = mode or "onClick"
-    Utils.GuiDetectionState.mode = mode
-    
-    if Utils.GuiDetectionState.descendantConnection then
-        Utils.GuiDetectionState.descendantConnection:Disconnect()
-    end
-    
-    local function hookButton(gui)
-        if not (gui:IsA("TextButton") or gui:IsA("ImageButton")) then 
-            return 
-        end
-        
-        if Utils.GuiDetectionState.hookedButtons[gui] then 
-            return 
-        end
-        
-        Utils.GuiDetectionState.hookedButtons[gui] = true
-        
-        local function onDetected()
-            if Utils.IsActuallyVisible(gui) then
-                Utils.GuiDetectionState.lastDetectedPath = gui:GetFullName()
-                Utils.GuiDetectionState.lastDetectedGui = gui
-                
-                if Utils.GuiDetectionState.recordEnabled then
-                    table.insert(Utils.GuiDetectionState.recordedActions, {
-                        type = "click",
-                        path = gui:GetFullName(),
-                        time = os.clock()
-                    })
-                end
-                
-                if Utils.GuiDetectionState.autoClickEnabled and 
-                   Utils.GuiDetectionState.autoClickTarget and 
-                   gui:GetFullName():find(Utils.GuiDetectionState.autoClickTarget, 1, true) then
-                    task.wait(0.05)
-                    Utils.ClickGUI(gui)
-                end
-            end
-        end
-        
-        if Utils.GuiDetectionState.mode == "onClick" then
-            gui.MouseButton1Click:Connect(onDetected)
-            gui.MouseButton1Down:Connect(onDetected)
-        else
-            gui.MouseEnter:Connect(onDetected)
-        end
-    end
-    
-    for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
-        hookButton(gui)
-    end
-    
-    Utils.GuiDetectionState.descendantConnection = LocalPlayer.PlayerGui.DescendantAdded:Connect(function(gui)
-        task.wait(0.1)
-        hookButton(gui)
-    end)
-    
-    return true
+	mode = mode or "onClick"
+	Utils.GuiDetectionState.mode = mode
+	
+	if Utils.GuiDetectionState.descendantConnection then
+		Utils.GuiDetectionState.descendantConnection:Disconnect()
+	end
+	
+	local function hookButton(gui)
+		if not (gui:IsA("TextButton") or gui:IsA("ImageButton")) then 
+			return 
+		end
+		
+		if Utils.GuiDetectionState.hookedButtons[gui] then 
+			return 
+		end
+		
+		Utils.GuiDetectionState.hookedButtons[gui] = true
+		
+		local function onDetected()
+			if Utils.IsActuallyVisible(gui) then
+				Utils.GuiDetectionState.lastDetectedPath = gui:GetFullName()
+				Utils.GuiDetectionState.lastDetectedGui = gui
+				
+				if Utils.GuiDetectionState.recordEnabled then
+					table.insert(Utils.GuiDetectionState.recordedActions, {
+						type = "click",
+						path = gui:GetFullName(),
+						time = os.clock()
+					})
+				end
+				
+				if Utils.GuiDetectionState.autoClickEnabled and 
+				   Utils.GuiDetectionState.autoClickTarget and 
+				   gui:GetFullName():find(Utils.GuiDetectionState.autoClickTarget, 1, true) then
+					task.wait(0.05)
+					Utils.ClickGUI(gui)
+				end
+			end
+		end
+		
+		if Utils.GuiDetectionState.mode == "onClick" then
+			gui.MouseButton1Click:Connect(onDetected)
+			gui.MouseButton1Down:Connect(onDetected)
+		else
+			gui.MouseEnter:Connect(onDetected)
+		end
+	end
+	
+	for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+		hookButton(gui)
+	end
+	
+	Utils.GuiDetectionState.descendantConnection = LocalPlayer.PlayerGui.DescendantAdded:Connect(function(gui)
+		task.wait(0.1)
+		hookButton(gui)
+	end)
+	
+	return true
 end
 
 function Utils.StopGUIDetection()
-    if Utils.GuiDetectionState.descendantConnection then
-        Utils.GuiDetectionState.descendantConnection:Disconnect()
-        Utils.GuiDetectionState.descendantConnection = nil
-    end
-    Utils.GuiDetectionState.hookedButtons = {}
-    Utils.GuiDetectionState.autoClickEnabled = false
-    Utils.GuiDetectionState.recordEnabled = false
-    return true
+	if Utils.GuiDetectionState.descendantConnection then
+		Utils.GuiDetectionState.descendantConnection:Disconnect()
+		Utils.GuiDetectionState.descendantConnection = nil
+	end
+	Utils.GuiDetectionState.hookedButtons = {}
+	Utils.GuiDetectionState.autoClickEnabled = false
+	Utils.GuiDetectionState.recordEnabled = false
+	return true
 end
 
 function Utils.AutoClickGUI(target)
-    Utils.GuiDetectionState.autoClickEnabled = true
-    Utils.GuiDetectionState.autoClickTarget = target
-    Utils.StartGUIDetection("onClick")
-    return true
+	Utils.GuiDetectionState.autoClickEnabled = true
+	Utils.GuiDetectionState.autoClickTarget = target
+	Utils.StartGUIDetection("onClick")
+	return true
 end
 
 function Utils.StopAutoClick()
-    Utils.GuiDetectionState.autoClickEnabled = false
-    Utils.GuiDetectionState.autoClickTarget = nil
-    return true
+	Utils.GuiDetectionState.autoClickEnabled = false
+	Utils.GuiDetectionState.autoClickTarget = nil
+	return true
 end
 
 function Utils.StartRecord()
-    Utils.GuiDetectionState.recordEnabled = true
-    Utils.GuiDetectionState.recordedActions = {}
-    Utils.StartGUIDetection("onClick")
-    return true
+	Utils.GuiDetectionState.recordEnabled = true
+	Utils.GuiDetectionState.recordedActions = {}
+	Utils.StartGUIDetection("onClick")
+	return true
 end
 
 function Utils.StopRecord()
-    Utils.GuiDetectionState.recordEnabled = false
-    return Utils.GuiDetectionState.recordedActions
+	Utils.GuiDetectionState.recordEnabled = false
+	return Utils.GuiDetectionState.recordedActions
 end
 
 function Utils.PlayRecord(actions, speed)
-    actions = actions or Utils.GuiDetectionState.recordedActions
-    speed = speed or 1
-    _G.PlayRecordLoop = coroutine.wrap(function()
-        local lastTime = nil
-        for _, action in ipairs(actions) do
-            if lastTime then
-                local waitTime = (action.time - lastTime) / speed
-                if waitTime > 0 then task.wait(waitTime) end
-            end
-            local gui = Utils.FindGUIByPath(action.path)
-            if gui then
-                Utils.ClickGUI(gui)
-            end
-            lastTime = action.time
-        end
-    end)
-    _G.PlayRecordLoop()
-    return true
+	actions = actions or Utils.GuiDetectionState.recordedActions
+	speed = speed or 1
+	_G.PlayRecordLoop = coroutine.wrap(function()
+		local lastTime = nil
+		for _, action in ipairs(actions) do
+			if lastTime then
+				local waitTime = (action.time - lastTime) / speed
+				if waitTime > 0 then task.wait(waitTime) end
+			end
+			local gui = Utils.FindGUIByPath(action.path)
+			if gui then
+				Utils.ClickGUI(gui)
+			end
+			lastTime = action.time
+		end
+	end)
+	_G.PlayRecordLoop()
+	return true
 end
 
 function Utils.FindGUIByPath(path)
-    local success, gui = pcall(function()
-        return loadstring("return " .. path)()
-    end)
-    if success and gui then return gui end
-    
-    local parts = {}
-    for part in string.gmatch(path, "[^%.]+") do
-        table.insert(parts, part)
-    end
-    
-    local obj = LocalPlayer.PlayerGui
-    for _, name in ipairs(parts) do
-        if obj then
-            obj = obj:FindFirstChild(name)
-        end
-    end
-    return obj
+	local success, gui = pcall(function()
+		return loadstring("return " .. path)()
+	end)
+	if success and gui then return gui end
+	
+	local parts = {}
+	for part in string.gmatch(path, "[^%.]+") do
+		table.insert(parts, part)
+	end
+	
+	local obj = LocalPlayer.PlayerGui
+	for _, name in ipairs(parts) do
+		if obj then
+			obj = obj:FindFirstChild(name)
+		end
+	end
+	return obj
 end
 
 -- ==== PROXIMITY PROMPT & CLICK DETECTOR ====
 function Utils.HookProximityPrompts(enable, autoInstant)
-    if not enable then
-        if _G.ProximityPromptConn then
-            _G.ProximityPromptConn:Disconnect()
-            _G.ProximityPromptConn = nil
-        end
-        _G.AutoInstantPrompt = false
-        return true
-    end
-    
-    _G.AutoInstantPrompt = autoInstant or false
-    _G.PromptCounter = _G.PromptCounter or {}
-    
-    _G.ProximityPromptConn = workspace.DescendantAdded:Connect(function(obj)
-        if obj:IsA("ProximityPrompt") then
-            task.wait(0.1)
-            
-            local parent = obj.Parent
-            local key = parent and parent:GetFullName() or obj:GetFullName()
-            _G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
-            
-            if _G.AutoInstantPrompt then
-                pcall(function()
-                    fireproximityprompt(obj, 0)
-                end)
-            end
-            
-            if _G.PromptCounter[key] == 1 then
-                Utils.Notification("ReyAI", "Proximity Prompt detected: " .. (parent and parent.Name or "Unknown"))
-            end
-        end
-    end)
-    
-    return true
+	if not enable then
+		if _G.ProximityPromptConn then
+			_G.ProximityPromptConn:Disconnect()
+			_G.ProximityPromptConn = nil
+		end
+		_G.AutoInstantPrompt = false
+		return true
+	end
+	
+	_G.AutoInstantPrompt = autoInstant or false
+	_G.PromptCounter = _G.PromptCounter or {}
+	
+	_G.ProximityPromptConn = workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("ProximityPrompt") then
+			task.wait(0.1)
+			
+			local parent = obj.Parent
+			local key = parent and parent:GetFullName() or obj:GetFullName()
+			_G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
+			
+			if _G.AutoInstantPrompt then
+				pcall(function()
+					fireproximityprompt(obj, 0)
+				end)
+			end
+			
+			if _G.PromptCounter[key] == 1 then
+				Utils.Notification("ReyAI", "Proximity Prompt detected: " .. (parent and parent.Name or "Unknown"))
+			end
+		end
+	end)
+	
+	return true
 end
 
 function Utils.HookClickDetectors(enable, autoClick)
-    if not enable then
-        if _G.ClickDetectorConn then
-            _G.ClickDetectorConn:Disconnect()
-            _G.ClickDetectorConn = nil
-        end
-        _G.AutoClickDetector = false
-        return true
-    end
-    
-    _G.AutoClickDetector = autoClick or false
-    _G.ClickCounter = _G.ClickCounter or {}
-    
-    _G.ClickDetectorConn = workspace.DescendantAdded:Connect(function(obj)
-        if obj:IsA("ClickDetector") then
-            local parent = obj.Parent
-            local key = parent and parent:GetFullName() or obj:GetFullName()
-            _G.ClickCounter[key] = (_G.ClickCounter[key] or 0) + 1
-            
-            if _G.AutoClickDetector then
-                task.wait(0.05)
-                pcall(function()
-                    fireclickdetector(obj)
-                end)
-            end
-            
-            if _G.ClickCounter[key] <= 3 then
-                Utils.Notification("ReyAI", "ClickDetector: " .. (parent and parent.Name or "Unknown") .. " (" .. _G.ClickCounter[key] .. "x)")
-            end
-        end
-    end)
-    
-    return true
+	if not enable then
+		if _G.ClickDetectorConn then
+			_G.ClickDetectorConn:Disconnect()
+			_G.ClickDetectorConn = nil
+		end
+		_G.AutoClickDetector = false
+		return true
+	end
+	
+	_G.AutoClickDetector = autoClick or false
+	_G.ClickCounter = _G.ClickCounter or {}
+	
+	_G.ClickDetectorConn = workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("ClickDetector") then
+			local parent = obj.Parent
+			local key = parent and parent:GetFullName() or obj:GetFullName()
+			_G.ClickCounter[key] = (_G.ClickCounter[key] or 0) + 1
+			
+			if _G.AutoClickDetector then
+				task.wait(0.05)
+				pcall(function()
+					fireclickdetector(obj)
+				end)
+			end
+			
+			if _G.ClickCounter[key] <= 3 then
+				Utils.Notification("ReyAI", "ClickDetector: " .. (parent and parent.Name or "Unknown") .. " (" .. _G.ClickCounter[key] .. "x)")
+			end
+		end
+	end)
+	
+	return true
 end
 
 -- ==== MOB/WORKSPACE DETECTION NOTIFICATION ====
 function Utils.MonitorWorkspace(enable, keyword, interval)
-    if not enable then
-        if _G.WorkspaceMonitorConn then
-            _G.WorkspaceMonitorConn:Disconnect()
-            _G.WorkspaceMonitorConn = nil
-        end
-        _G.MonitoredObjects = nil
-        return true
-    end
-    
-    keyword = keyword or "mob"
-    interval = interval or 2
-    _G.MonitoredObjects = {}
-    
-    _G.WorkspaceMonitorConn = coroutine.wrap(function()
-        while true do
-            local currentObjects = {}
-            local newCount = 0
-            
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj.Name:lower():find(keyword:lower(), 1, true) then
-                    local key = obj:GetFullName()
-                    currentObjects[key] = true
-                    if not _G.MonitoredObjects[key] then
-                        newCount = newCount + 1
-                    end
-                end
-            end
-            
-            if newCount > 0 then
-                Utils.Notification("ReyAI", "Detected " .. newCount .. " new " .. keyword .. "(s)", 3)
-            end
-            
-            _G.MonitoredObjects = currentObjects
-            task.wait(interval)
-        end
-    end)
-    _G.WorkspaceMonitorConn()
-    return true
+	if not enable then
+		if _G.WorkspaceMonitorConn then
+			_G.WorkspaceMonitorConn:Disconnect()
+			_G.WorkspaceMonitorConn = nil
+		end
+		_G.MonitoredObjects = nil
+		return true
+	end
+	
+	keyword = keyword or "mob"
+	interval = interval or 2
+	_G.MonitoredObjects = {}
+	
+	_G.WorkspaceMonitorConn = coroutine.wrap(function()
+		while true do
+			local currentObjects = {}
+			local newCount = 0
+			
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj.Name:lower():find(keyword:lower(), 1, true) then
+					local key = obj:GetFullName()
+					currentObjects[key] = true
+					if not _G.MonitoredObjects[key] then
+						newCount = newCount + 1
+					end
+				end
+			end
+			
+			if newCount > 0 then
+				Utils.Notification("ReyAI", "Detected " .. newCount .. " new " .. keyword .. "(s)", 3)
+			end
+			
+			_G.MonitoredObjects = currentObjects
+			task.wait(interval)
+		end
+	end)
+	_G.WorkspaceMonitorConn()
+	return true
 end
 
 Utils.DetectionControl = {
-    promptEnabled = true,
-    clickDetectorEnabled = true,
-    mobSpawnEnabled = true,
-    lowHealthEnabled = true,
-    teleportEnabled = true,
-    currencyEnabled = true
+	promptEnabled = false,
+	clickDetectorEnabled = false,
+	mobSpawnEnabled = false,
+	lowHealthEnabled = false,
+	teleportEnabled = false,
+	currencyEnabled = false
 }
 
 function Utils.StopAutoDetection(feature)
-    if not feature then
-        for k, _ in pairs(Utils.DetectionControl) do
-            Utils.DetectionControl[k] = false
-        end
-        return true
-    end
-    
-    local map = {
-        prompt = "promptEnabled",
-        proximity = "promptEnabled",
-        click = "clickDetectorEnabled",
-        clickdetector = "clickDetectorEnabled",
-        mob = "mobSpawnEnabled",
-        mobspawn = "mobSpawnEnabled",
-        health = "lowHealthEnabled",
-        lowhealth = "lowHealthEnabled",
-        teleport = "teleportEnabled",
-        tp = "teleportEnabled",
-        currency = "currencyEnabled",
-        money = "currencyEnabled"
-    }
-    
-    local key = map[feature:lower()]
-    if key and Utils.DetectionControl[key] ~= nil then
-        Utils.DetectionControl[key] = false
-        return true
-    end
-    return false
+	if not feature then
+		for k, _ in pairs(Utils.DetectionControl) do
+			Utils.DetectionControl[k] = false
+		end
+		return true
+	end
+	
+	local map = {
+		prompt = "promptEnabled",
+		proximity = "promptEnabled",
+		click = "clickDetectorEnabled",
+		clickdetector = "clickDetectorEnabled",
+		mob = "mobSpawnEnabled",
+		mobspawn = "mobSpawnEnabled",
+		health = "lowHealthEnabled",
+		lowhealth = "lowHealthEnabled",
+		teleport = "teleportEnabled",
+		tp = "teleportEnabled",
+		currency = "currencyEnabled",
+		money = "currencyEnabled"
+	}
+	
+	local key = map[feature:lower()]
+	if key and Utils.DetectionControl[key] ~= nil then
+		Utils.DetectionControl[key] = false
+		return true
+	end
+	return false
 end
 
 function Utils.StartAutoDetection(feature)
-    local map = {
-        prompt = "promptEnabled",
-        proximity = "promptEnabled",
-        click = "clickDetectorEnabled",
-        clickdetector = "clickDetectorEnabled",
-        mob = "mobSpawnEnabled",
-        mobspawn = "mobSpawnEnabled",
-        health = "lowHealthEnabled",
-        lowhealth = "lowHealthEnabled",
-        teleport = "teleportEnabled",
-        tp = "teleportEnabled",
-        currency = "currencyEnabled",
-        money = "currencyEnabled"
-    }
-    
-    if not feature then
-        for k, _ in pairs(Utils.DetectionControl) do
-            Utils.DetectionControl[k] = true
-        end
-        return true
-    end
-    
-    local key = map[feature:lower()]
-    if key and Utils.DetectionControl[key] ~= nil then
-        Utils.DetectionControl[key] = true
-        return true
-    end
-    return false
+	local map = {
+		prompt = "promptEnabled",
+		proximity = "promptEnabled",
+		click = "clickDetectorEnabled",
+		clickdetector = "clickDetectorEnabled",
+		mob = "mobSpawnEnabled",
+		mobspawn = "mobSpawnEnabled",
+		health = "lowHealthEnabled",
+		lowhealth = "lowHealthEnabled",
+		teleport = "teleportEnabled",
+		tp = "teleportEnabled",
+		currency = "currencyEnabled",
+		money = "currencyEnabled"
+	}
+	
+	if not feature then
+		for k, _ in pairs(Utils.DetectionControl) do
+			Utils.DetectionControl[k] = true
+		end
+		return true
+	end
+	
+	local key = map[feature:lower()]
+	if key and Utils.DetectionControl[key] ~= nil then
+		Utils.DetectionControl[key] = true
+		return true
+	end
+	return false
 end
 
 Utils.KillState = {
-    threshold = 0.9,
-    buttons = {V1 = nil, V2 = nil, V3 = nil},
-    autoV4 = false,
-    autoV5 = false,
-    v4Conn = nil,
-    v5Conn = nil,
-    v5Loop = nil,
-    hooked = {}
+	threshold = 0.9,
+	buttons = {V1 = nil, V2 = nil, V3 = nil},
+	autoV4 = false,
+	autoV5 = false,
+	v4Conn = nil,
+	v5Conn = nil,
+	v5Loop = nil,
+	hooked = {}
 }
 
 function Utils.Kill(action, value)
-    action = action:lower()
-    
-    if action == "threshold" then
-        Utils.KillState.threshold = math.clamp((tonumber(value) or 90) / 100, 0.01, 1)
-        return true
-    end
-    
-    if action == "v1" or action == "v2" or action == "v3" then
-        local ver = action:sub(2,2)
-        if value == true then
-            if Utils.KillState.buttons["V"..ver] then
-                Utils.KillState.buttons["V"..ver]:Destroy()
-            end
-            local sg = Instance.new("ScreenGui")
-            sg.Name = "KillV"..ver
-            sg.Parent = game:GetService("CoreGui")
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 80, 0, 35)
-            btn.Position = UDim2.new(1, -140, 0, 10 + ((tonumber(ver)-1)*40))
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            btn.Text = "KILL V"..ver
-            btn.TextColor3 = Color3.new(1, 0, 0)
-            btn.BorderSizePixel = 0
-            btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 14
-            btn.Parent = sg
-            btn.Active = true
-            btn.Draggable = true
-            btn.MouseButton1Click:Connect(function()
-                pcall(function()
-                    sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
-                    sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
-                end)
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("Humanoid") and obj.Parent and obj.Parent:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name then
-                        if ver == "1" and obj.Health < obj.MaxHealth then obj.Health = 0 end
-                        if ver == "2" and obj.Health < obj.MaxHealth then obj.Parent:BreakJoints() end
-                        if ver == "3" then obj.Health = 0 end
-                    end
-                end
-            end)
-            Utils.KillState.buttons["V"..ver] = sg
-        else
-            if Utils.KillState.buttons["V"..ver] then
-                Utils.KillState.buttons["V"..ver]:Destroy()
-                Utils.KillState.buttons["V"..ver] = nil
-            end
-        end
-        return true
-    end
-    
-    if action == "v4" then
-        if value == true then
-            if Utils.KillState.v4Conn then return true end
-            Utils.KillState.autoV4 = true
-            local function hook(hum)
-                if Utils.KillState.hooked[hum] then return end
-                Utils.KillState.hooked[hum] = hum.HealthChanged:Connect(function()
-                    if not Utils.KillState.autoV4 then return end
-                    local m = hum.Parent
-                    if m and m:IsA("Model") and m.Name ~= LocalPlayer.Name and hum.Health > 0 then
-                        if hum.Health / math.max(hum.MaxHealth, 1) < Utils.KillState.threshold then
-                            hum.Health = 0
-                            m:BreakJoints()
-                        end
-                    end
-                end)
-            end
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Humanoid") then hook(v) end
-            end
-            Utils.KillState.v4Conn = workspace.DescendantAdded:Connect(function(v)
-                if v:IsA("Humanoid") then task.wait() hook(v) end
-            end)
-        else
-            Utils.KillState.autoV4 = false
-            if Utils.KillState.v4Conn then
-                Utils.KillState.v4Conn:Disconnect()
-                Utils.KillState.v4Conn = nil
-            end
-            for _, c in pairs(Utils.KillState.hooked) do pcall(function() c:Disconnect() end) end
-            Utils.KillState.hooked = {}
-        end
-        return true
-    end
-    
-    if action == "v5" then
-        if value == true then
-            if Utils.KillState.autoV5 then return true end
-            Utils.KillState.autoV5 = true
-            local humans = {}
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Humanoid") and v.Parent and v.Parent:IsA("Model") and v.Parent.Name ~= LocalPlayer.Name then
-                    humans[v] = true
-                end
-            end
-            Utils.KillState.v5Conn = workspace.DescendantAdded:Connect(function(v)
-                if not Utils.KillState.autoV5 then return end
-                local h = v:IsA("Humanoid") and v or v:FindFirstChildWhichIsA("Humanoid")
-                if h and h.Parent and h.Parent:IsA("Model") and h.Parent.Name ~= LocalPlayer.Name then
-                    humans[h] = true
-                end
-            end)
-            Utils.KillState.v5Loop = task.spawn(function()
-                while Utils.KillState.autoV5 do
-                    for h in pairs(humans) do
-                        if not h or not h.Parent or h.Health <= 0 then
-                            humans[h] = nil
-                        elseif h.Health > 0 and h.Health / math.max(h.MaxHealth, 1) < Utils.KillState.threshold then
-                            h.Health = 0
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        else
-            Utils.KillState.autoV5 = false
-            if Utils.KillState.v5Conn then
-                Utils.KillState.v5Conn:Disconnect()
-                Utils.KillState.v5Conn = nil
-            end
-            if Utils.KillState.v5Loop then
-                task.cancel(Utils.KillState.v5Loop)
-                Utils.KillState.v5Loop = nil
-            end
-        end
-        return true
-    end
-    
-    if action == "all" then
-        if value == true then
-            Utils.Kill("v1", true) Utils.Kill("v2", true) Utils.Kill("v3", true)
-        else
-            Utils.Kill("v1", false) Utils.Kill("v2", false) Utils.Kill("v3", false)
-        end
-        return true
-    end
-    
-    return false
+	action = action:lower()
+	
+	if action == "threshold" then
+		Utils.KillState.threshold = math.clamp((tonumber(value) or 90) / 100, 0.01, 1)
+		return true
+	end
+	
+	if action == "v1" or action == "v2" or action == "v3" then
+		local ver = action:sub(2,2)
+		if value == true then
+			if Utils.KillState.buttons["V"..ver] then
+				Utils.KillState.buttons["V"..ver]:Destroy()
+			end
+			local sg = Instance.new("ScreenGui")
+			sg.Name = "KillV"..ver
+			sg.Parent = game:GetService("CoreGui")
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(0, 80, 0, 35)
+			btn.Position = UDim2.new(1, -140, 0, 10 + ((tonumber(ver)-1)*40))
+			btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			btn.Text = "KILL V"..ver
+			btn.TextColor3 = Color3.new(1, 0, 0)
+			btn.BorderSizePixel = 0
+			btn.Font = Enum.Font.GothamBold
+			btn.TextSize = 14
+			btn.Parent = sg
+			btn.Active = true
+			btn.Draggable = true
+			btn.MouseButton1Click:Connect(function()
+				pcall(function()
+					sethiddenproperty(LocalPlayer, "SimulationRadius", 112412400000)
+					sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 112412400000)
+				end)
+				for _, obj in ipairs(workspace:GetDescendants()) do
+					if obj:IsA("Humanoid") and obj.Parent and obj.Parent:IsA("Model") and obj.Parent.Name ~= LocalPlayer.Name then
+						if ver == "1" and obj.Health < obj.MaxHealth then obj.Health = 0 end
+						if ver == "2" and obj.Health < obj.MaxHealth then obj.Parent:BreakJoints() end
+						if ver == "3" then obj.Health = 0 end
+					end
+				end
+			end)
+			Utils.KillState.buttons["V"..ver] = sg
+		else
+			if Utils.KillState.buttons["V"..ver] then
+				Utils.KillState.buttons["V"..ver]:Destroy()
+				Utils.KillState.buttons["V"..ver] = nil
+			end
+		end
+		return true
+	end
+	
+	if action == "v4" then
+		if value == true then
+			if Utils.KillState.v4Conn then return true end
+			Utils.KillState.autoV4 = true
+			local function hook(hum)
+				if Utils.KillState.hooked[hum] then return end
+				Utils.KillState.hooked[hum] = hum.HealthChanged:Connect(function()
+					if not Utils.KillState.autoV4 then return end
+					local m = hum.Parent
+					if m and m:IsA("Model") and m.Name ~= LocalPlayer.Name and hum.Health > 0 then
+						if hum.Health / math.max(hum.MaxHealth, 1) < Utils.KillState.threshold then
+							hum.Health = 0
+							m:BreakJoints()
+						end
+					end
+				end)
+			end
+			for _, v in ipairs(workspace:GetDescendants()) do
+				if v:IsA("Humanoid") then hook(v) end
+			end
+			Utils.KillState.v4Conn = workspace.DescendantAdded:Connect(function(v)
+				if v:IsA("Humanoid") then task.wait() hook(v) end
+			end)
+		else
+			Utils.KillState.autoV4 = false
+			if Utils.KillState.v4Conn then
+				Utils.KillState.v4Conn:Disconnect()
+				Utils.KillState.v4Conn = nil
+			end
+			for _, c in pairs(Utils.KillState.hooked) do pcall(function() c:Disconnect() end) end
+			Utils.KillState.hooked = {}
+		end
+		return true
+	end
+	
+	if action == "v5" then
+		if value == true then
+			if Utils.KillState.autoV5 then return true end
+			Utils.KillState.autoV5 = true
+			local humans = {}
+			for _, v in ipairs(workspace:GetDescendants()) do
+				if v:IsA("Humanoid") and v.Parent and v.Parent:IsA("Model") and v.Parent.Name ~= LocalPlayer.Name then
+					humans[v] = true
+				end
+			end
+			Utils.KillState.v5Conn = workspace.DescendantAdded:Connect(function(v)
+				if not Utils.KillState.autoV5 then return end
+				local h = v:IsA("Humanoid") and v or v:FindFirstChildWhichIsA("Humanoid")
+				if h and h.Parent and h.Parent:IsA("Model") and h.Parent.Name ~= LocalPlayer.Name then
+					humans[h] = true
+				end
+			end)
+			Utils.KillState.v5Loop = task.spawn(function()
+				while Utils.KillState.autoV5 do
+					for h in pairs(humans) do
+						if not h or not h.Parent or h.Health <= 0 then
+							humans[h] = nil
+						elseif h.Health > 0 and h.Health / math.max(h.MaxHealth, 1) < Utils.KillState.threshold then
+							h.Health = 0
+						end
+					end
+					task.wait(0.1)
+				end
+			end)
+		else
+			Utils.KillState.autoV5 = false
+			if Utils.KillState.v5Conn then
+				Utils.KillState.v5Conn:Disconnect()
+				Utils.KillState.v5Conn = nil
+			end
+			if Utils.KillState.v5Loop then
+				task.cancel(Utils.KillState.v5Loop)
+				Utils.KillState.v5Loop = nil
+			end
+		end
+		return true
+	end
+	
+	if action == "all" then
+		if value == true then
+			Utils.Kill("v1", true) Utils.Kill("v2", true) Utils.Kill("v3", true)
+		else
+			Utils.Kill("v1", false) Utils.Kill("v2", false) Utils.Kill("v3", false)
+		end
+		return true
+	end
+	
+	return false
 end
 
 getgenv().Utils = Utils
 
 function detectMobilePlatform()
-    local UserInputService = game:GetService("UserInputService")
-    local hasTouchScreen = UserInputService.TouchEnabled
-    local camera = workspace.CurrentCamera
-    local viewportSize = camera and camera.ViewportSize or Vector2.new(0, 0)
-    local isSmallScreen = viewportSize.X <= 1024 or viewportSize.Y <= 768
-    local hasGyroscope = UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled
-    local noKeyboard = not UserInputService.KeyboardEnabled
-    local executorName = identifyexecutor and identifyexecutor() or "Unknown"
-    local isMobileExecutor = executorName:lower():find("delta") or 
-                             executorName:lower():find("arceus") or
-                             executorName:lower():find("fluxus") or
-                             executorName:lower():find("krnl")
-    local isMobile = hasTouchScreen and (noKeyboard or isSmallScreen or hasGyroscope or isMobileExecutor)
-    if hasTouchScreen and isMobileExecutor then
-        isMobile = true
-    end
-    return isMobile
+	local UserInputService = game:GetService("UserInputService")
+	local hasTouchScreen = UserInputService.TouchEnabled
+	local camera = workspace.CurrentCamera
+	local viewportSize = camera and camera.ViewportSize or Vector2.new(0, 0)
+	local isSmallScreen = viewportSize.X <= 1024 or viewportSize.Y <= 768
+	local hasGyroscope = UserInputService.GyroscopeEnabled or UserInputService.AccelerometerEnabled
+	local noKeyboard = not UserInputService.KeyboardEnabled
+	local executorName = identifyexecutor and identifyexecutor() or "Unknown"
+	local isMobileExecutor = executorName:lower():find("delta") or 
+							 executorName:lower():find("arceus") or
+							 executorName:lower():find("fluxus") or
+							 executorName:lower():find("krnl")
+	local isMobile = hasTouchScreen and (noKeyboard or isSmallScreen or hasGyroscope or isMobileExecutor)
+	if hasTouchScreen and isMobileExecutor then
+		isMobile = true
+	end
+	return isMobile
 end
 
 local isMobile = detectMobilePlatform() and "Mobile" or "PC"
 
 task.spawn(function()
-    local success, desc = pcall(function()
-        return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
-    end)
-    if success and desc then
-        _G.OriginalAvatarDesc = desc
-    end
+	local success, desc = pcall(function()
+		return Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+	end)
+	if success and desc then
+		_G.OriginalAvatarDesc = desc
+	end
 end)
 
 local function SzaFeHttpR(options)
-    if type(options) ~= "table" then return nil end
+	if type(options) ~= "table" then return nil end
 
-    local url = tostring(options.Url or "")
-    if url == "" then return nil end
+	local url = tostring(options.Url or "")
+	if url == "" then return nil end
 
-    local method = string.upper(tostring(options.Method or "GET"))
-    local headers = type(options.Headers) == "table" and options.Headers or {}
-    local body = options.Body
+	local method = string.upper(tostring(options.Method or "GET"))
+	local headers = type(options.Headers) == "table" and options.Headers or {}
+	local body = options.Body
 
-    local function normalize(res)
-        if type(res) == "table" then
-            return {
-                Body = res.Body,
-                StatusCode = res.StatusCode or 0,
-                Success = res.Success ~= false
-            }
-        elseif type(res) == "string" then
-            return { Body = res, StatusCode = 200, Success = true }
-        end
-    end
+	local function normalize(res)
+		if type(res) == "table" then
+			return {
+				Body = res.Body,
+				StatusCode = res.StatusCode or 0,
+				Success = res.Success ~= false
+			}
+		elseif type(res) == "string" then
+			return { Body = res, StatusCode = 200, Success = true }
+		end
+	end
 
-    local function attempt(fn)
-        local ok, res = pcall(fn)
-        if ok and res then
-            return normalize(res)
-        end
-    end
-    
-    local executorFirst = 
-        attempt(function() return request and request(options) end) or
-        attempt(function() return http and http.request(options) end) or
-        attempt(function() return http_request and http_request(options) end) or
-        attempt(function() return syn and syn.request(options) end) or
-        attempt(function() return fluxus and fluxus.request(options) end)
-    
-    if executorFirst then
-        return executorFirst
-    end
+	local function attempt(fn)
+		local ok, res = pcall(fn)
+		if ok and res then
+			return normalize(res)
+		end
+	end
+	
+	local executorFirst = 
+		attempt(function() return request and request(options) end) or
+		attempt(function() return http and http.request(options) end) or
+		attempt(function() return http_request and http_request(options) end) or
+		attempt(function() return syn and syn.request(options) end) or
+		attempt(function() return fluxus and fluxus.request(options) end)
+	
+	if executorFirst then
+		return executorFirst
+	end
 
-    if method == "GET" then
-        return attempt(function()
-            return ReyHttpService:GetAsync(url, false, headers)
-        end) or attempt(function()
-            return game:HttpGetAsync(url)
-        end)
+	if method == "GET" then
+		return attempt(function()
+			return ReyHttpService:GetAsync(url, false, headers)
+		end) or attempt(function()
+			return game:HttpGetAsync(url)
+		end)
 
-    elseif method == "POST" then
-        local contentType = headers["Content-Type"] or "application/json"
+	elseif method == "POST" then
+		local contentType = headers["Content-Type"] or "application/json"
 
-        return attempt(function()
-            return ReyHttpService:PostAsync(url, body or "", contentType, false, headers)
-        end) or attempt(function()
-            return ReyHttpService:RequestAsync({
-                Url = url,
-                Method = "POST",
-                Headers = headers,
-                Body = body
-            })
-        end) or attempt(function()
-            return game:HttpPostAsync(url, body, contentType)
-        end)
-    end
+		return attempt(function()
+			return ReyHttpService:PostAsync(url, body or "", contentType, false, headers)
+		end) or attempt(function()
+			return ReyHttpService:RequestAsync({
+				Url = url,
+				Method = "POST",
+				Headers = headers,
+				Body = body
+			})
+		end) or attempt(function()
+			return game:HttpPostAsync(url, body, contentType)
+		end)
+	end
 
-    return nil
+	return nil
 end
 
 local hR = SzaFeHttpR
 local Public = false
 local PublicFull = false
+local IsAIMessage = false
 local TextChatService = game:GetService("TextChatService")
 local function sendMessage(msg)
     if not Public then return end
-    TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+    IsAIMessage = true
+    pcall(function()
+        TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+    end)
+    IsAIMessage = false
 end
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 if not WindUI then
-    warn("Failed to load WindUI")
-    return
+	warn("Failed to load WindUI")
+	return
 end
 
 local Window = WindUI:CreateWindow({
-    Title = "Rey Hub",
-    Icon = "rbxassetid://84687062999466",
-    Author = "Vera",
-    Folder = "ReyHub",
-    Size = UDim2.fromOffset(260, 290),
-    Transparent = true,
-    Theme = "Crimson",
-    Background = "",
-    User = { Enabled = false, Anonymous = false, Callback = function() Window:SelectTab(2) end },
-    SideBarWidth = 170,
-    HasOutline = true,
-    ScrollBarEnabled = true,
-    HideSearchBar = false,
+	Title = "Rey Hub",
+	Icon = "rbxassetid://84687062999466",
+	Author = "Vera",
+	Folder = "ReyHub",
+	Size = UDim2.fromOffset(260, 290),
+	Transparent = true,
+	Theme = "Crimson",
+	Background = "",
+	User = { Enabled = false, Anonymous = false, Callback = function() Window:SelectTab(2) end },
+	SideBarWidth = 170,
+	HasOutline = true,
+	ScrollBarEnabled = true,
+	HideSearchBar = false,
 })
 
 Window:EditOpenButton({
-    Title = "Open Menu",
-    Icon = "rbxassetid://84687062999466",
-    CornerRadius = UDim.new(0, 16),
-    StrokeThickness = 2,
-    Color = ColorSequence.new(Color3.fromHex("#480607"), Color3.fromHex("#990000")),
-    OnlyMobile = false,
-    Enabled = true,
-    Draggable = true
+	Title = "Open Menu",
+	Icon = "rbxassetid://84687062999466",
+	CornerRadius = UDim.new(0, 16),
+	StrokeThickness = 2,
+	Color = ColorSequence.new(Color3.fromHex("#480607"), Color3.fromHex("#990000")),
+	OnlyMobile = false,
+	Enabled = true,
+	Draggable = true
 })
 
 local Tab = Window:Tab({ Title = "Script Assistant", Icon = "code" })
@@ -1670,20 +1675,20 @@ local Tab = Window:Tab({ Title = "Script Assistant", Icon = "code" })
 local queryValue = ""
 
 local Input = Tab:Input({
-    Title = "Query",
-    Desc = "Describe what script you want",
-    Value = "",
-    InputIcon = "search",
-    Type = "Input",
-    Placeholder = "e.g., infinite jump, esp, auto farm...",
-    Callback = function(text)
-        queryValue = text
-    end
+	Title = "Query",
+	Desc = "Describe what script you want",
+	Value = "",
+	InputIcon = "search",
+	Type = "Input",
+	Placeholder = "e.g., infinite jump, esp, auto farm...",
+	Callback = function(text)
+		queryValue = text
+	end
 })
 
 local CodeDisplay = Tab:Code({
-    Title = "Generated Script",
-    Code = "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate"
+	Title = "Generated Script",
+	Code = "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate"
 })
 
 local systemPrompt = [[
@@ -1711,8 +1716,8 @@ INTERNAL EXEC:
 SYSTEM DETECTION EVENT:
 [REY_SYSTEM:DETECTED]
 {
-    "type": "ProximityPrompt|ClickDetector|MobSpawn|PlayerJoin|LowHealth|Teleport|CurrencyChange",
-    "data": { ... }
+	"type": "ProximityPrompt|ClickDetector|MobSpawn|PlayerJoin|LowHealth|Teleport|CurrencyChange",
+	"data": { ... }
 }
 [/REY_SYSTEM:DETECTED]
 
@@ -1771,10 +1776,10 @@ User: "kill"
 -- Script by ReyAI | ReyHub
 local npcs = Utils.GetAllNPCs(50)
 for _, npc in ipairs(npcs) do
-    if npc.Name == "Zombie" then
-        Utils.TeleportTo(npc.Position, false)
-        task.wait(0.3)
-    end
+	if npc.Name == "Zombie" then
+		Utils.TeleportTo(npc.Position, false)
+		task.wait(0.3)
+	end
 end
 ```
 
@@ -1798,8 +1803,8 @@ User: "heal"
 -- Search for health pack or use heal ability
 local healthPacks = Utils.FindInWorkspace("Health")
 if #healthPacks > 0 then
-    Utils.TeleportTo(healthPacks[1].Position, false)
-    return {healed=true, method="health pack"}
+	Utils.TeleportTo(healthPacks[1].Position, false)
+	return {healed=true, method="health pack"}
 end
 return {healed=false}
 [/REY_INTERNAL:EXEC]
@@ -1953,7 +1958,7 @@ User: "tp to alex"
 -- Script by ReyAI | ReyHub
 local target = Utils.FindPlayer("alex")
 if target and type(target) ~= "table" then
-    Utils.TeleportTo(target, false)
+	Utils.TeleportTo(target, false)
 end
 ```
 
@@ -1963,7 +1968,7 @@ User: "tween to alex"
 -- Script by ReyAI | ReyHub
 local target = Utils.FindPlayer("alex")
 if target and type(target) ~= "table" then
-    Utils.TeleportTo(target, true)
+	Utils.TeleportTo(target, true)
 end
 ```
 
@@ -1973,7 +1978,7 @@ User: "tween to alex speed 200"
 -- Script by ReyAI | ReyHub
 local target = Utils.FindPlayer("alex")
 if target and type(target) ~= "table" then
-    Utils.TeleportTo(target, true, 200)
+	Utils.TeleportTo(target, true, 200)
 end
 ```
 
@@ -2014,19 +2019,19 @@ User: "infinite jump"
 -- Script by ReyAI | ReyHub
 _G.InfiniteJump = true
 _G.InfiniteJumpLoop = coroutine.wrap(function()
-    local UIS = game:GetService("UserInputService")
-    local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
-    local hum = char:WaitForChild("Humanoid")
-    local jumping = false
-    UIS.JumpRequest:Connect(function()
-        if _G.InfiniteJump and not jumping then
-            jumping = true
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            task.wait(0.1)
-            jumping = false
-        end
-    end)
-    while _G.InfiniteJump do task.wait() end
+	local UIS = game:GetService("UserInputService")
+	local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+	local hum = char:WaitForChild("Humanoid")
+	local jumping = false
+	UIS.JumpRequest:Connect(function()
+		if _G.InfiniteJump and not jumping then
+			jumping = true
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
+			task.wait(0.1)
+			jumping = false
+		end
+	end)
+	while _G.InfiniteJump do task.wait() end
 end)
 _G.InfiniteJumpLoop()
 ```
@@ -2071,15 +2076,15 @@ User: "yes"
 -- Script by ReyAI | ReyHub
 _G.CoinFarm = true
 _G.CoinFarmLoop = coroutine.wrap(function()
-    while _G.CoinFarm do
-        for _, v in ipairs(workspace:GetDescendants()) do
-            if v.Name == "Coin" and v:IsA("BasePart") and _G.CoinFarm then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                task.wait(0.3)
-            end
-        end
-        task.wait()
-    end
+	while _G.CoinFarm do
+		for _, v in ipairs(workspace:GetDescendants()) do
+			if v.Name == "Coin" and v:IsA("BasePart") and _G.CoinFarm then
+				game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+				task.wait(0.3)
+			end
+		end
+		task.wait()
+	end
 end)
 _G.CoinFarmLoop()
 ```
@@ -2091,14 +2096,14 @@ User: "give me korblox"
 local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
 local hum = char:FindFirstChildOfClass("Humanoid")
 if hum and hum.RigType == Enum.HumanoidRigType.R15 then
-    local ru, rl, rf = char:FindFirstChild("RightUpperLeg"), char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot")
-    if ru and rl and rf then
-        _G.KorbloxBackup = {rlTrans=rl.Transparency, rfTrans=rf.Transparency, ruMesh=ru.MeshId, ruTex=ru.TextureID}
-        rl.Transparency = 1
-        rf.Transparency = 1
-        ru.MeshId = "http://www.roblox.com/asset/?id=902942096"
-        ru.TextureID = "http://www.roblox.com/asset/?id=902843398"
-    end
+	local ru, rl, rf = char:FindFirstChild("RightUpperLeg"), char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot")
+	if ru and rl and rf then
+		_G.KorbloxBackup = {rlTrans=rl.Transparency, rfTrans=rf.Transparency, ruMesh=ru.MeshId, ruTex=ru.TextureID}
+		rl.Transparency = 1
+		rf.Transparency = 1
+		ru.MeshId = "http://www.roblox.com/asset/?id=902942096"
+		ru.TextureID = "http://www.roblox.com/asset/?id=902843398"
+	end
 end
 ```
 
@@ -2107,14 +2112,14 @@ User: "remove korblox"
 ```lua
 -- Script by ReyAI | ReyHub
 if _G.KorbloxBackup then
-    local char = game.Players.LocalPlayer.Character
-    if char then
-        local rl, rf, ru = char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot"), char:FindFirstChild("RightUpperLeg")
-        if rl then rl.Transparency = _G.KorbloxBackup.rlTrans or 0 end
-        if rf then rf.Transparency = _G.KorbloxBackup.rfTrans or 0 end
-        if ru then ru.MeshId, ru.TextureID = _G.KorbloxBackup.ruMesh or "", _G.KorbloxBackup.ruTex or "" end
-    end
-    _G.KorbloxBackup = nil
+	local char = game.Players.LocalPlayer.Character
+	if char then
+		local rl, rf, ru = char:FindFirstChild("RightLowerLeg"), char:FindFirstChild("RightFoot"), char:FindFirstChild("RightUpperLeg")
+		if rl then rl.Transparency = _G.KorbloxBackup.rlTrans or 0 end
+		if rf then rf.Transparency = _G.KorbloxBackup.rfTrans or 0 end
+		if ru then ru.MeshId, ru.TextureID = _G.KorbloxBackup.ruMesh or "", _G.KorbloxBackup.ruTex or "" end
+	end
+	_G.KorbloxBackup = nil
 end
 ```
 
@@ -2201,7 +2206,7 @@ User: "go to shop"
 [Rey]: [REY_INTERNAL:EXEC]
 local success, name, pos = Utils.TeleportToObject("shop", false)
 if not success then
-    success, name, pos = Utils.TeleportToObject("store", false)
+	success, name, pos = Utils.TeleportToObject("store", false)
 end
 return {success = success, name = name, position = pos}
 [/REY_INTERNAL:EXEC]
@@ -2301,7 +2306,7 @@ User: "auto click that"
 ```lua
 -- Script by ReyAI | ReyHub
 if Utils.GuiDetectionState.lastDetectedPath then
-    Utils.AutoClickGUI(Utils.GuiDetectionState.lastDetectedPath)
+	Utils.AutoClickGUI(Utils.GuiDetectionState.lastDetectedPath)
 end
 ```
 
@@ -2429,7 +2434,7 @@ User: "what detection is on"
 [Rey]: [REY_INTERNAL:EXEC]
 local status = {}
 for k, v in pairs(Utils.DetectionControl) do
-    status[k] = v
+	status[k] = v
 end
 return status
 [/REY_INTERNAL:EXEC]
@@ -2484,288 +2489,288 @@ Utils.Kill("all", false)
 ]]
 
 local function GetActiveScriptsList()
-    local list = ""
-    for k, v in pairs(_G) do
-        if typeof(v) == "RBXScriptConnection" then
-            list = list .. "_G." .. tostring(k) .. " = Connection (active)\n"
-        elseif type(v) == "thread" then
-            local status = coroutine.status(v)
-            if status == "running" or status == "suspended" then
-                list = list .. "_G." .. tostring(k) .. " = Thread (" .. status .. ")\n"
-            else
-                list = list .. "_G." .. tostring(k) .. " = Thread (dead)\n"
-            end
-        elseif type(v) == "boolean" and v == true then
-            if string.find(string.lower(k), "auto") or string.find(string.lower(k), "loop") then
-                list = list .. "_G." .. tostring(k) .. " = true (Loop Toggle)\n"
-            else
-                list = list .. "_G." .. tostring(k) .. " = true\n"
-            end
-        elseif type(v) == "table" and v ~= _G then
-            if string.find(string.lower(k), "original") or string.find(string.lower(k), "backup") then
-                list = list .. "_G." .. tostring(k) .. " = Table (Backup Data)\n"
-            end
-        end
-    end
-    if list == "" then
-        list = "No active scripts or stored data\n"
-    end
-    return list
+	local list = ""
+	for k, v in pairs(_G) do
+		if typeof(v) == "RBXScriptConnection" then
+			list = list .. "_G." .. tostring(k) .. " = Connection (active)\n"
+		elseif type(v) == "thread" then
+			local status = coroutine.status(v)
+			if status == "running" or status == "suspended" then
+				list = list .. "_G." .. tostring(k) .. " = Thread (" .. status .. ")\n"
+			else
+				list = list .. "_G." .. tostring(k) .. " = Thread (dead)\n"
+			end
+		elseif type(v) == "boolean" and v == true then
+			if string.find(string.lower(k), "auto") or string.find(string.lower(k), "loop") then
+				list = list .. "_G." .. tostring(k) .. " = true (Loop Toggle)\n"
+			else
+				list = list .. "_G." .. tostring(k) .. " = true\n"
+			end
+		elseif type(v) == "table" and v ~= _G then
+			if string.find(string.lower(k), "original") or string.find(string.lower(k), "backup") then
+				list = list .. "_G." .. tostring(k) .. " = Table (Backup Data)\n"
+			end
+		end
+	end
+	if list == "" then
+		list = "No active scripts or stored data\n"
+	end
+	return list
 end
 
 local function BuildSystemPrompt()
-    local modeText = PublicFull and [[
+	local modeText = PublicFull and [[
 PUBLIC FULL MODE IS ACTIVE: You are currently responding to ALL players in the server. Be respectful and helpful to everyone. When responding to a specific player, address them by name.
 ]] or [[
 You are only responding to your master.
 ]]
-    return systemPrompt .. modeText .. "\n\nCURRENT ACTIVE SCRIPTS (in _G):\n" .. GetActiveScriptsList()
+	return systemPrompt .. modeText .. "\n\nCURRENT ACTIVE SCRIPTS (in _G):\n" .. GetActiveScriptsList()
 end
 
 local function detectAndExecuteInternal(response)
-    local pattern = "%[REY_INTERNAL:EXEC%](.-)%[/REY_INTERNAL:EXEC%]"
-    local code = string.match(response, pattern)
-    
-    if not code then
-        return nil, nil
-    end
-    
-    local execSuccess, execResult = pcall(function()
-        local fn = loadstring(code)
-        if not fn then
-            error("Failed to compile code")
-        end
-        return fn()
-    end)
-    
-    if not execSuccess then
-        return nil, tostring(execResult)
-    end
-    
-    local function serializeData(data)
-        if type(data) == "table" then
-            local result = {}
-            for k, v in pairs(data) do
-                if type(v) == "userdata" then
-                    if typeof(v) == "CFrame" then
-                        local x, y, z = v:GetComponents()
-                        result[k] = {type = "CFrame", x = x, y = y, z = z}
-                    elseif typeof(v) == "Vector3" then
-                        result[k] = {type = "Vector3", x = v.X, y = v.Y, z = v.Z}
-                    elseif typeof(v) == "Vector2" then
-                        result[k] = {type = "Vector2", x = v.X, y = v.Y}
-                    elseif typeof(v) == "Color3" then
-                        result[k] = {type = "Color3", r = v.R, g = v.G, b = v.B}
-                    elseif typeof(v) == "Instance" then
-                        result[k] = {type = "Instance", name = v.Name, className = v.ClassName}
-                    else
-                        result[k] = {type = "userdata", class = typeof(v)}
-                    end
-                elseif type(v) == "table" then
-                    result[k] = serializeData(v)
-                else
-                    result[k] = v
-                end
-            end
-            return result
-        elseif type(data) == "userdata" then
-            if typeof(data) == "CFrame" then
-                local x, y, z = data:GetComponents()
-                return {type = "CFrame", x = x, y = y, z = z}
-            elseif typeof(data) == "Vector3" then
-                return {type = "Vector3", x = data.X, y = data.Y, z = data.Z}
-            elseif typeof(data) == "Vector2" then
-                return {type = "Vector2", x = data.X, y = data.Y}
-            elseif typeof(data) == "Color3" then
-                return {type = "Color3", r = data.R, g = data.G, b = data.B}
-            elseif typeof(data) == "Instance" then
-                return {type = "Instance", name = data.Name, className = data.ClassName}
-            else
-                return {type = "userdata", class = typeof(data)}
-            end
-        else
-            return data
-        end
-    end
-    
-    local serialized = serializeData(execResult)
-    
-    local jsonSuccess, jsonResult = pcall(function()
-        return game:GetService("HttpService"):JSONEncode(serialized)
-    end)
-    
-    if jsonSuccess then
-        return jsonResult, nil
-    else
-        return nil, "Failed to encode result to JSON: " .. tostring(jsonResult)
-    end
+	local pattern = "%[REY_INTERNAL:EXEC%](.-)%[/REY_INTERNAL:EXEC%]"
+	local code = string.match(response, pattern)
+	
+	if not code then
+		return nil, nil
+	end
+	
+	local execSuccess, execResult = pcall(function()
+		local fn = loadstring(code)
+		if not fn then
+			error("Failed to compile code")
+		end
+		return fn()
+	end)
+	
+	if not execSuccess then
+		return nil, tostring(execResult)
+	end
+	
+	local function serializeData(data)
+		if type(data) == "table" then
+			local result = {}
+			for k, v in pairs(data) do
+				if type(v) == "userdata" then
+					if typeof(v) == "CFrame" then
+						local x, y, z = v:GetComponents()
+						result[k] = {type = "CFrame", x = x, y = y, z = z}
+					elseif typeof(v) == "Vector3" then
+						result[k] = {type = "Vector3", x = v.X, y = v.Y, z = v.Z}
+					elseif typeof(v) == "Vector2" then
+						result[k] = {type = "Vector2", x = v.X, y = v.Y}
+					elseif typeof(v) == "Color3" then
+						result[k] = {type = "Color3", r = v.R, g = v.G, b = v.B}
+					elseif typeof(v) == "Instance" then
+						result[k] = {type = "Instance", name = v.Name, className = v.ClassName}
+					else
+						result[k] = {type = "userdata", class = typeof(v)}
+					end
+				elseif type(v) == "table" then
+					result[k] = serializeData(v)
+				else
+					result[k] = v
+				end
+			end
+			return result
+		elseif type(data) == "userdata" then
+			if typeof(data) == "CFrame" then
+				local x, y, z = data:GetComponents()
+				return {type = "CFrame", x = x, y = y, z = z}
+			elseif typeof(data) == "Vector3" then
+				return {type = "Vector3", x = data.X, y = data.Y, z = data.Z}
+			elseif typeof(data) == "Vector2" then
+				return {type = "Vector2", x = data.X, y = data.Y}
+			elseif typeof(data) == "Color3" then
+				return {type = "Color3", r = data.R, g = data.G, b = data.B}
+			elseif typeof(data) == "Instance" then
+				return {type = "Instance", name = data.Name, className = data.ClassName}
+			else
+				return {type = "userdata", class = typeof(data)}
+			end
+		else
+			return data
+		end
+	end
+	
+	local serialized = serializeData(execResult)
+	
+	local jsonSuccess, jsonResult = pcall(function()
+		return game:GetService("HttpService"):JSONEncode(serialized)
+	end)
+	
+	if jsonSuccess then
+		return jsonResult, nil
+	else
+		return nil, "Failed to encode result to JSON: " .. tostring(jsonResult)
+	end
 end
 
 local function SendToAI(userInput, conversationHistory, maxLoop)
-    maxLoop = maxLoop or 5
-    if maxLoop <= 0 then return nil end
-    
-    local HttpService = game:GetService("HttpService")
-    local url = "https://ch.at/v1/chat/completions"
-    
-    local messages = {}
-    
-    table.insert(messages, {
-        role = "system",
-        content = BuildSystemPrompt()
-    })
-    
-    if conversationHistory then
-        for _, msg in ipairs(conversationHistory) do
-            table.insert(messages, msg)
-        end
-    else
-        conversationHistory = {}
-    end
-    
-    table.insert(messages, {
-        role = "user",
-        content = userInput
-    })
-    
-    local requestBody = HttpService:JSONEncode({
-        messages = messages,
-        temperature = 0.2,
-        max_tokens = 500
-    })
-    
-    local response = hR({
-        Url = url,
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = requestBody
-    })
-    
-    if response and response.Body then
-        local data = HttpService:JSONDecode(response.Body)
-        if data.choices and data.choices[1] and data.choices[1].message then
-            local message = data.choices[1].message.content
-            
-            table.insert(conversationHistory, {role = "user", content = userInput})
-            table.insert(conversationHistory, {role = "assistant", content = message})
-            
-            local execResult = detectAndExecuteInternal(message)
-            if execResult then
-                local systemMessage = string.format([[
+	maxLoop = maxLoop or 5
+	if maxLoop <= 0 then return nil end
+	
+	local HttpService = game:GetService("HttpService")
+	local url = "https://ch.at/v1/chat/completions"
+	
+	local messages = {}
+	
+	table.insert(messages, {
+		role = "system",
+		content = BuildSystemPrompt()
+	})
+	
+	if conversationHistory then
+		for _, msg in ipairs(conversationHistory) do
+			table.insert(messages, msg)
+		end
+	else
+		conversationHistory = {}
+	end
+	
+	table.insert(messages, {
+		role = "user",
+		content = userInput
+	})
+	
+	local requestBody = HttpService:JSONEncode({
+		messages = messages,
+		temperature = 0.2,
+		max_tokens = 500
+	})
+	
+	local response = hR({
+		Url = url,
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json"
+		},
+		Body = requestBody
+	})
+	
+	if response and response.Body then
+		local data = HttpService:JSONDecode(response.Body)
+		if data.choices and data.choices[1] and data.choices[1].message then
+			local message = data.choices[1].message.content
+			
+			table.insert(conversationHistory, {role = "user", content = userInput})
+			table.insert(conversationHistory, {role = "assistant", content = message})
+			
+			local execResult = detectAndExecuteInternal(message)
+			if execResult then
+				local systemMessage = string.format([[
 [REY_SYSTEM:DATA]
 %s
 [/REY_SYSTEM:DATA]
 
 Based on this data, provide the final script for the original request.
 ]], execResult)
-                
-                return SendToAI(systemMessage, conversationHistory, maxLoop - 1)
-            end
-            
-            return message, conversationHistory
-        end
-    end
-    return nil
+				
+				return SendToAI(systemMessage, conversationHistory, maxLoop - 1)
+			end
+			
+			return message, conversationHistory
+		end
+	end
+	return nil
 end
 
 local conversationHistory = nil
 
 local GenerateButton = Tab:Button({
-    Title = "Generate Script",
-    Desc = "Request script from ReyAI",
-    Icon = "wand",
-    Callback = function()
-        if queryValue == "" then
-            CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Please enter a query first")
-            return
-        end
-        
-        CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Loading...")
-        WindUI:Notify({Title = "ReyAI", Content = "Generating, Please wait...", Duration = 5})
-        
-        local success, result = pcall(function()
-            local response, newHistory = SendToAI(queryValue, conversationHistory)
-            if newHistory then conversationHistory = newHistory end
-            if response then
-                local code = response
-                
-                code = string.gsub(code, "^%[Rey%]:%s*", "")
-                
-                local codeBlock = string.match(code, "```lua%s*(.-)%s*```")
-                if codeBlock then
-                    code = codeBlock
-                else
-                    codeBlock = string.match(code, "```%s*(.-)%s*```")
-                    if codeBlock then
-                        code = codeBlock
-                    else
-                        local codePart = string.match(code, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
-                        if codePart then
-                            code = codePart
-                        end
-                    end
-                end
-                
-                code = string.gsub(code, "^%s+", "")
-                code = string.gsub(code, "%s+$", "")
-                return code
-            else
-                return "-- Script by ReyAI | ReyHub\n-- Failed to generate script"
-            end
-        end)
-        
-        if success then
-            WindUI:Notify({Title = "ReyAI", Content = "Success, Please check your code", Duration = 5})
-            CodeDisplay:SetCode(result)
-        else
-            WindUI:Notify({Title = "ReyAI", Content = "Error", Duration = 5})
-            CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Error")
-        end
-    end
+	Title = "Generate Script",
+	Desc = "Request script from ReyAI",
+	Icon = "wand",
+	Callback = function()
+		if queryValue == "" then
+			CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Please enter a query first")
+			return
+		end
+		
+		CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Loading...")
+		WindUI:Notify({Title = "ReyAI", Content = "Generating, Please wait...", Duration = 5})
+		
+		local success, result = pcall(function()
+			local response, newHistory = SendToAI(queryValue, conversationHistory)
+			if newHistory then conversationHistory = newHistory end
+			if response then
+				local code = response
+				
+				code = string.gsub(code, "^%[Rey%]:%s*", "")
+				
+				local codeBlock = string.match(code, "```lua%s*(.-)%s*```")
+				if codeBlock then
+					code = codeBlock
+				else
+					codeBlock = string.match(code, "```%s*(.-)%s*```")
+					if codeBlock then
+						code = codeBlock
+					else
+						local codePart = string.match(code, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
+						if codePart then
+							code = codePart
+						end
+					end
+				end
+				
+				code = string.gsub(code, "^%s+", "")
+				code = string.gsub(code, "%s+$", "")
+				return code
+			else
+				return "-- Script by ReyAI | ReyHub\n-- Failed to generate script"
+			end
+		end)
+		
+		if success then
+			WindUI:Notify({Title = "ReyAI", Content = "Success, Please check your code", Duration = 5})
+			CodeDisplay:SetCode(result)
+		else
+			WindUI:Notify({Title = "ReyAI", Content = "Error", Duration = 5})
+			CodeDisplay:SetCode("-- Script by ReyAI | ReyHub\n-- Error")
+		end
+	end
 })
 
 local ExecuteButton = Tab:Button({
-    Title = "Execute Script",
-    Desc = "Run the generated script",
-    Icon = "play",
-    Callback = function()
-        local code = CodeDisplay.Code
-        if code == "-- Script by ReyAI | ReyHub\n-- Loading..." or code == "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate" then
-            return
-        end
-        
-        local success, err = pcall(function()
-            loadstring(code)()
-        end)
-        
-        if success then
-            WindUI:Notify({Title = "ReyAI", Content = "Executed", Duration = 2})
-        else
-            WindUI:Notify({Title = "ReyAI", Content = "Error: " .. tostring(err), Duration = 5})
-        end
-    end
+	Title = "Execute Script",
+	Desc = "Run the generated script",
+	Icon = "play",
+	Callback = function()
+		local code = CodeDisplay.Code
+		if code == "-- Script by ReyAI | ReyHub\n-- Loading..." or code == "-- Script by ReyAI | ReyHub\n-- Enter a query and click Generate" then
+			return
+		end
+		
+		local success, err = pcall(function()
+			loadstring(code)()
+		end)
+		
+		if success then
+			WindUI:Notify({Title = "ReyAI", Content = "Executed", Duration = 2})
+		else
+			WindUI:Notify({Title = "ReyAI", Content = "Error: " .. tostring(err), Duration = 5})
+		end
+	end
 })
 
 local ReyAIChat = {}
 ReyAIChat.__index = ReyAIChat
 
 function ReyAIChat.new(settings)
-    local self = setmetatable({}, ReyAIChat)
-    
-    self.CommandPrefix = (settings and settings.CommandPrefix) or "?"
-    self.Notify = settings and settings.NotifyFunc or function() end
-    self.OnAIResponse = settings and settings.OnAIResponse or function(code) loadstring(code)() end
-    self.HttpFunc = settings and settings.HttpFunc
-    
-    self.ChatEnabled = false
-    self.LegacyConnection = nil
-    self.PlayerChatConnection = nil
-    self.ExperienceConnections = {}
-    self.ConversationHistory = nil
-    
-    return self
+	local self = setmetatable({}, ReyAIChat)
+	
+	self.CommandPrefix = (settings and settings.CommandPrefix) or "?"
+	self.Notify = settings and settings.NotifyFunc or function() end
+	self.OnAIResponse = settings and settings.OnAIResponse or function(code) loadstring(code)() end
+	self.HttpFunc = settings and settings.HttpFunc
+	
+	self.ChatEnabled = false
+	self.LegacyConnection = nil
+	self.PlayerChatConnection = nil
+	self.ExperienceConnections = {}
+	self.ConversationHistory = nil
+	
+	return self
 end
 
 function ReyAIChat:Enable()
@@ -2776,7 +2781,17 @@ function ReyAIChat:Enable()
     
     self.IsActive = false
     
+    local function isExperienceChatActive()
+        local success = pcall(function()
+            return game:GetService("CoreGui"):FindFirstChild("ExperienceChat") ~= nil
+        end)
+        return success
+    end
+    
     local function onMessageReceived(message, speaker)
+        if IsAIMessage then return false end
+        if speaker == LocalPlayer and message:sub(1, 6) == "[Rey] " then return false end
+        
         local msgLower = message:lower()
         local isFromOther = speaker and speaker ~= LocalPlayer
         
@@ -2788,7 +2803,11 @@ function ReyAIChat:Enable()
                 Public = false
                 PublicFull = false
                 self.Notify("info", "ReyAI", "AI Deactivated")
-                if PublicFull then sendMessage("[Rey] Deactivated") end
+                if Public then 
+                    IsAIMessage = true
+                    sendMessage("[Rey] Deactivated")
+                    IsAIMessage = false
+                end
             end
             return true
         end
@@ -2798,7 +2817,9 @@ function ReyAIChat:Enable()
                 Public = true
                 PublicFull = true
                 self.Notify("info", "ReyAI", "Public Full mode enabled - everyone can use Rey")
+                IsAIMessage = true
                 sendMessage("[Rey] Public Full mode enabled. Everyone can use me. Say 'rey' to activate.")
+                IsAIMessage = false
             end
             return true
         end
@@ -2807,7 +2828,9 @@ function ReyAIChat:Enable()
             if not isFromOther then
                 Public = true
                 self.Notify("info", "ReyAI", "Public mode enabled - chat is visible to all")
+                IsAIMessage = true
                 sendMessage("[Rey] Public mode enabled.")
+                IsAIMessage = false
             end
             return true
         end
@@ -2817,9 +2840,13 @@ function ReyAIChat:Enable()
                 self.IsActive = true
                 self.Notify("success", "ReyAI", "AI Activated for " .. (speaker and speaker.Name or "you"))
                 if PublicFull and isFromOther then
+                    IsAIMessage = true
                     sendMessage("[Rey] Activated for " .. speaker.Name)
+                    IsAIMessage = false
                 elseif PublicFull and not isFromOther then
+                    IsAIMessage = true
                     sendMessage("[Rey] Activated")
+                    IsAIMessage = false
                 end
             end
             return true
@@ -2835,12 +2862,16 @@ function ReyAIChat:Enable()
         return false
     end
     
-    self.LegacyConnection = LocalPlayer.Chatted:Connect(function(message, recipient)
-        local shouldProcess = onMessageReceived(message, LocalPlayer)
-        if shouldProcess then
-            self:SendToAI(message, 5, nil)
-        end
-    end)
+    local useExperienceChat = isExperienceChatActive()
+    
+    if not useExperienceChat then
+        self.LegacyConnection = LocalPlayer.Chatted:Connect(function(message, recipient)
+            local shouldProcess = onMessageReceived(message, LocalPlayer)
+            if shouldProcess then
+                self:SendToAI(message, 5, nil)
+            end
+        end)
+    end
     
     self.PlayerChatConnection = Players.PlayerChatted:Connect(function(player, message)
         local shouldProcess = onMessageReceived(message, player)
@@ -2877,6 +2908,7 @@ function ReyAIChat:HookExperienceChat(callback)
     local CoreGui = game:GetService("CoreGui")
     local TCS = game:GetService("TextChatService")
     local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
     
     while not CoreGui:FindFirstChild("ExperienceChat") do
         task.wait(0.5)
@@ -2923,16 +2955,22 @@ function ReyAIChat:HookExperienceChat(callback)
         
         box.Text = ""
         
-        local isCommand = callback(raw)
+        local isCommand = callback(raw, LocalPlayer)
         
         if isCommand then
             local channels = TCS:FindFirstChild("TextChannels")
             local sysChan = channels and channels:FindFirstChild("RBXSystem")
             if sysChan and sysChan:IsA("TextChannel") then
                 sysChan:DisplaySystemMessage('<font color="#FFD700">[You]</font> ' .. raw)
-                if self.IsActive then sendMessage(raw) end
+                if Public then 
+                    IsAIMessage = true
+                    sendMessage(raw)
+                    IsAIMessage = false
+                end
             end
-            if self.IsActive then self:SendToAI(raw) end
+            if self.IsActive then 
+                self:SendToAI(raw, 5, nil) 
+            end
         else
             local rec = "All"
             if chip and chip:IsA("TextButton") then
@@ -3046,36 +3084,23 @@ function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
     
     table.insert(self.ConversationHistory, {role = "user", content = userInput})
     table.insert(self.ConversationHistory, {role = "assistant", content = result})
-    print(result.."\n")
     
     local execResult, execError = detectAndExecuteInternal(result)
     if execError then
-        print("EXEC ERROR:", execError)
-        self.Notify("info", "ReyAI", "Scan error, retrying...")
-        
         local errorMessage = string.format([[
 [REY_SYSTEM:ERROR]
 %s
 [/REY_SYSTEM:ERROR]
-
-The code you provided failed to execute. Please fix the error and try again with [REY_INTERNAL:EXEC].
 ]], execError)
-        
         return self:SendToAI(errorMessage, maxLoop - 1, fromPlayer)
     end
     
     if execResult then
-        print(execResult)
-        self.Notify("info", "ReyAI", "Scanning game...")
-        
         local systemMessage = string.format([[
 [REY_SYSTEM:DATA]
 %s
 [/REY_SYSTEM:DATA]
-
-Based on this data, provide the final script for the original request or using format [REY_INTERNAL] to get more data.
 ]], execResult)
-        
         return self:SendToAI(systemMessage, maxLoop - 1, fromPlayer)
     end
     
@@ -3105,10 +3130,14 @@ Based on this data, provide the final script for the original request or using f
     if codePart and codePart ~= "" then
         if textPart and systemChannel then
             systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. textPart)
+            IsAIMessage = true
             sendMessage("[Rey] " .. senderPrefix .. textPart)
+            IsAIMessage = false
         elseif systemChannel then
             systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. 'Executing script...')
+            IsAIMessage = true
             sendMessage("[Rey] " .. senderPrefix .. "Executing Script...")
+            IsAIMessage = false
         end
         
         codePart = string.gsub(codePart, "^%s+", "")
@@ -3127,202 +3156,204 @@ Based on this data, provide the final script for the original request or using f
     else
         if systemChannel then
             systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. cleanResult)
+            IsAIMessage = true
             sendMessage("[Rey] " .. senderPrefix .. cleanResult)
+            IsAIMessage = false
         end
     end
 end
 
 local AI = ReyAIChat.new({
-    CommandPrefix = "?",
-    HttpFunc = hR,
-    NotifyFunc = function(style, title, msg)
-        WindUI:Notify({Title = title, Content = msg, Duration = 3})
-    end,
-    OnAIResponse = function(code)
-        local success, err = pcall(loadstring(code))
-        if not success then
-            WindUI:Notify({Title = "ReyAI", Content = "Error: " .. err, Duration = 5})
-        end
-    end
+	CommandPrefix = "?",
+	HttpFunc = hR,
+	NotifyFunc = function(style, title, msg)
+		WindUI:Notify({Title = title, Content = msg, Duration = 3})
+	end,
+	OnAIResponse = function(code)
+		local success, err = pcall(loadstring(code))
+		if not success then
+			WindUI:Notify({Title = "ReyAI", Content = "Error: " .. err, Duration = 5})
+		end
+	end
 })
 
 -- ==== OPTIMIZED DETECTION SYSTEM (SINGLE LOOP) ====
 local DetectionState = {
-    promptedObjects = {},
-    clickedObjects = {},
-    knownMobs = {},
-    lowHealthTriggered = false,
-    lastPosition = nil,
-    lastCurrency = {},
-    lastMobCheck = 0,
-    lastCurrencyCheck = 0
+	promptedObjects = {},
+	clickedObjects = {},
+	knownMobs = {},
+	lowHealthTriggered = false,
+	lastPosition = nil,
+	lastCurrency = {},
+	lastMobCheck = 0,
+	lastCurrencyCheck = 0
 }
 
 local function SendDetectionEvent(eventType, eventData)
-    if not AI or not AI.IsActive then return end
-    
-    local enabledMap = {
-        ProximityPrompt = Utils.DetectionControl.promptEnabled,
-        ClickDetector = Utils.DetectionControl.clickDetectorEnabled,
-        MobSpawn = Utils.DetectionControl.mobSpawnEnabled,
-        LowHealth = Utils.DetectionControl.lowHealthEnabled,
-        Teleport = Utils.DetectionControl.teleportEnabled,
-        CurrencyChange = Utils.DetectionControl.currencyEnabled
-    }
-    
-    if enabledMap[eventType] == false then return end
-    
-    local HttpService = game:GetService("HttpService")
-    local detectionMessage = string.format([[
+	if not AI or not AI.IsActive then return end
+	
+	local enabledMap = {
+		ProximityPrompt = Utils.DetectionControl.promptEnabled,
+		ClickDetector = Utils.DetectionControl.clickDetectorEnabled,
+		MobSpawn = Utils.DetectionControl.mobSpawnEnabled,
+		LowHealth = Utils.DetectionControl.lowHealthEnabled,
+		Teleport = Utils.DetectionControl.teleportEnabled,
+		CurrencyChange = Utils.DetectionControl.currencyEnabled
+	}
+	
+	if enabledMap[eventType] == false then return end
+	
+	local HttpService = game:GetService("HttpService")
+	local detectionMessage = string.format([[
 [REY_SYSTEM:DETECTED]
 {"type": "%s", "data": %s}
 [/REY_SYSTEM:DETECTED]
 ]], eventType, HttpService:JSONEncode(eventData))
-    
-    task.spawn(function()
-        AI:SendToAI(detectionMessage, 3, nil)
-    end)
+	
+	task.spawn(function()
+		AI:SendToAI(detectionMessage, 3, nil)
+	end)
 end
 
 getgenv().SendDetectionEvent = SendDetectionEvent
 
 coroutine.wrap(function()
-    DetectionState.lastCurrency = Utils.GetCurrency()
-    
-    while true do
-        local now = os.clock()
-        local char = LocalPlayer.Character
-        
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local currentPos = hrp.Position
-            
-            if DetectionState.lastPosition then
-                local dist = (currentPos - DetectionState.lastPosition).Magnitude
-                if dist > 200 then
-                    SendDetectionEvent("Teleport", {
-                        distance = math.floor(dist),
-                        to = {x = currentPos.X, y = currentPos.Y, z = currentPos.Z}
-                    })
-                end
-            end
-            DetectionState.lastPosition = currentPos
-            
-            if now - DetectionState.lastMobCheck >= 3 then
-                DetectionState.lastMobCheck = now
-                local currentMobs = {}
-                local newMobs = {}
-                
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj:IsA("Model") and obj ~= char then
-                        local hum = obj:FindFirstChild("Humanoid")
-                        if hum and hum.Health > 0 then
-                            local isNPC = true
-                            for _, p in ipairs(Players:GetPlayers()) do
-                                if p.Character == obj then 
-                                    isNPC = false 
-                                    break 
-                                end
-                            end
-                            
-                            if isNPC then
-                                local key = obj:GetFullName()
-                                currentMobs[key] = {name = obj.Name}
-                                if not DetectionState.knownMobs[key] then
-                                    table.insert(newMobs, {name = obj.Name})
-                                end
-                            end
-                        end
-                    end
-                end
-                
-                if #newMobs > 0 then
-                    SendDetectionEvent("MobSpawn", {count = #newMobs, mobs = newMobs})
-                end
-                DetectionState.knownMobs = currentMobs
-            end
-            
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then
-                local percent = hum.Health / hum.MaxHealth
-                if percent <= 0.25 and not DetectionState.lowHealthTriggered then
-                    DetectionState.lowHealthTriggered = true
-                    SendDetectionEvent("LowHealth", {
-                        health = hum.Health,
-                        maxHealth = hum.MaxHealth
-                    })
-                elseif percent > 0.25 then
-                    DetectionState.lowHealthTriggered = false
-                end
-            end
-        end
-        
-        if now - DetectionState.lastCurrencyCheck >= 2 then
-            DetectionState.lastCurrencyCheck = now
-            local currentCurrency = Utils.GetCurrency()
-            
-            for name, value in pairs(currentCurrency) do
-                local oldValue = DetectionState.lastCurrency[name] or 0
-                if value ~= oldValue then
-                    SendDetectionEvent("CurrencyChange", {
-                        currency = name,
-                        old = oldValue,
-                        new = value,
-                        change = value - oldValue
-                    })
-                end
-            end
-            
-            DetectionState.lastCurrency = currentCurrency
-        end
-        
-        task.wait(0.5)
-    end
+	DetectionState.lastCurrency = Utils.GetCurrency()
+	
+	while true do
+		local now = os.clock()
+		local char = LocalPlayer.Character
+		
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local hrp = char.HumanoidRootPart
+			local currentPos = hrp.Position
+			
+			if DetectionState.lastPosition then
+				local dist = (currentPos - DetectionState.lastPosition).Magnitude
+				if dist > 200 then
+					SendDetectionEvent("Teleport", {
+						distance = math.floor(dist),
+						to = {x = currentPos.X, y = currentPos.Y, z = currentPos.Z}
+					})
+				end
+			end
+			DetectionState.lastPosition = currentPos
+			
+			if now - DetectionState.lastMobCheck >= 3 then
+				DetectionState.lastMobCheck = now
+				local currentMobs = {}
+				local newMobs = {}
+				
+				for _, obj in ipairs(workspace:GetDescendants()) do
+					if obj:IsA("Model") and obj ~= char then
+						local hum = obj:FindFirstChild("Humanoid")
+						if hum and hum.Health > 0 then
+							local isNPC = true
+							for _, p in ipairs(Players:GetPlayers()) do
+								if p.Character == obj then 
+									isNPC = false 
+									break 
+								end
+							end
+							
+							if isNPC then
+								local key = obj:GetFullName()
+								currentMobs[key] = {name = obj.Name}
+								if not DetectionState.knownMobs[key] then
+									table.insert(newMobs, {name = obj.Name})
+								end
+							end
+						end
+					end
+				end
+				
+				if #newMobs > 0 then
+					SendDetectionEvent("MobSpawn", {count = #newMobs, mobs = newMobs})
+				end
+				DetectionState.knownMobs = currentMobs
+			end
+			
+			local hum = char:FindFirstChild("Humanoid")
+			if hum then
+				local percent = hum.Health / hum.MaxHealth
+				if percent <= 0.25 and not DetectionState.lowHealthTriggered then
+					DetectionState.lowHealthTriggered = true
+					SendDetectionEvent("LowHealth", {
+						health = hum.Health,
+						maxHealth = hum.MaxHealth
+					})
+				elseif percent > 0.25 then
+					DetectionState.lowHealthTriggered = false
+				end
+			end
+		end
+		
+		if now - DetectionState.lastCurrencyCheck >= 2 then
+			DetectionState.lastCurrencyCheck = now
+			local currentCurrency = Utils.GetCurrency()
+			
+			for name, value in pairs(currentCurrency) do
+				local oldValue = DetectionState.lastCurrency[name] or 0
+				if value ~= oldValue then
+					SendDetectionEvent("CurrencyChange", {
+						currency = name,
+						old = oldValue,
+						new = value,
+						change = value - oldValue
+					})
+				end
+			end
+			
+			DetectionState.lastCurrency = currentCurrency
+		end
+		
+		task.wait(0.5)
+	end
 end)()
 
 local function hookClickDetector(obj)
-    if not obj:IsA("ClickDetector") then return end
-    local key = obj:GetFullName()
-    if DetectionState.clickedObjects[key] then return end
-    DetectionState.clickedObjects[key] = true
-    
-    SendDetectionEvent("ClickDetector", {
-        name = obj.Parent and obj.Parent.Name or "Unknown",
-        path = key
-    })
+	if not obj:IsA("ClickDetector") then return end
+	local key = obj:GetFullName()
+	if DetectionState.clickedObjects[key] then return end
+	DetectionState.clickedObjects[key] = true
+	
+	SendDetectionEvent("ClickDetector", {
+		name = obj.Parent and obj.Parent.Name or "Unknown",
+		path = key
+	})
 end
 
 local shownPrompts = {}
 local function hookProximityPrompt(prompt)
-    local key = prompt:GetFullName()
-    if shownPrompts[key] then return end
-    shownPrompts[key] = true
-    
-    SendDetectionEvent("ProximityPrompt", {
-        name = prompt.Parent and prompt.Parent.Name or "Unknown",
-        path = key,
-        holdDuration = prompt.HoldDuration
-    })
+	local key = prompt:GetFullName()
+	if shownPrompts[key] then return end
+	shownPrompts[key] = true
+	
+	SendDetectionEvent("ProximityPrompt", {
+		name = prompt.Parent and prompt.Parent.Name or "Unknown",
+		path = key,
+		holdDuration = prompt.HoldDuration
+	})
 end
 
 for _, obj in ipairs(workspace:GetDescendants()) do
-    if obj:IsA("ProximityPrompt") then
-        obj.PromptShown:Connect(function()
-            hookProximityPrompt(obj)
-        end)
-    elseif obj:IsA("ClickDetector") then
-        hookClickDetector(obj)
-    end
+	if obj:IsA("ProximityPrompt") then
+		obj.PromptShown:Connect(function()
+			hookProximityPrompt(obj)
+		end)
+	elseif obj:IsA("ClickDetector") then
+		hookClickDetector(obj)
+	end
 end
 
 workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA("ProximityPrompt") then
-        obj.PromptShown:Connect(function()
-            hookProximityPrompt(obj)
-        end)
-    elseif obj:IsA("ClickDetector") then
-        hookClickDetector(obj)
-    end
+	if obj:IsA("ProximityPrompt") then
+		obj.PromptShown:Connect(function()
+			hookProximityPrompt(obj)
+		end)
+	elseif obj:IsA("ClickDetector") then
+		hookClickDetector(obj)
+	end
 end)
 
 AI:Enable()
