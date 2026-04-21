@@ -929,8 +929,8 @@ function KillV5.Toggle(state)
 	if state then
 		KillV5.Humanoids = {}
 		
-		-- Hook existing humanoids from workspace children only
-		for _, v in ipairs(workspace:GetChildren()) do
+		-- Hook existing humanoids from workspace descendants
+		for _, v in ipairs(workspace:GetDescendants()) do
 			if v:IsA("Model") then
 				local hum = v:FindFirstChildWhichIsA("Humanoid")
 				if hum and hum.Parent and hum.Parent.Name ~= LocalPlayer.Name then
