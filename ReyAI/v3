@@ -3626,6 +3626,66 @@ function ReyAIChat:HookExperienceChat(callback)
     end))
 end
 
+function ReyAIChat:DisplayResponse(result, fromPlayer)
+    local TCS = game:GetService("TextChatService")
+    local channels = TCS:FindFirstChild("TextChannels")
+    local systemChannel = channels and channels:FindFirstChild("RBXSystem")
+    
+    local senderPrefix = ""
+    if fromPlayer and fromPlayer ~= game.Players.LocalPlayer then
+        senderPrefix = "@" .. fromPlayer.Name .. " "
+    end
+    
+    local cleanResult = string.gsub(result, "^%[Rey%]:%s*", "")
+    
+    local textPart = string.match(cleanResult, "^(.-)%s*```")
+    if not textPart then
+        textPart = string.match(cleanResult, "^(.-)%s*%-%- Script by ReyAI %| ReyHub")
+    end
+    local codePart = string.match(cleanResult, "```lua%s*(.-)%s*```")
+    if not codePart then
+        codePart = string.match(cleanResult, "```%s*(.-)%s*```")
+        if not codePart then
+            codePart = string.match(cleanResult, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
+        end
+    end
+    
+    if codePart and codePart ~= "" then
+        if textPart and systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. textPart)
+            IsAIMessage = true
+            sendMessage("[Rey] " .. senderPrefix .. textPart)
+            IsAIMessage = false
+        elseif systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. 'Executing script...')
+            IsAIMessage = true
+            sendMessage("[Rey] " .. senderPrefix .. "Executing Script...")
+            IsAIMessage = false
+        end
+        
+        codePart = string.gsub(codePart, "^%s+", "")
+        codePart = string.gsub(codePart, "%s+$", "")
+        codePart = string.gsub(codePart, "^```lua%s*", "")
+        codePart = string.gsub(codePart, "^```%s*", "")
+        codePart = string.gsub(codePart, "%s*```$", "")
+        
+        if codePart ~= "" then
+            self.Notify("success", "ReyAI", "Executing script")
+            CodeDisplay:SetCode(codePart)
+            if self.OnAIResponse then
+                self.OnAIResponse(codePart)
+            end
+        end
+    else
+        if systemChannel then
+            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. cleanResult)
+            IsAIMessage = true
+            sendMessage("[Rey] " .. senderPrefix .. cleanResult)
+            IsAIMessage = false
+        end
+    end
+end
+
 function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
     maxLoop = maxLoop or 5
     if maxLoop <= 0 then
@@ -3697,7 +3757,11 @@ function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
 %s
 [/REY_SYSTEM:ERROR]
 ]], execError)
-        return self:SendToAI(errorMessage, maxLoop - 1, fromPlayer)
+        local aiResponse = self:SendToAI(errorMessage, maxLoop - 1, fromPlayer)
+        if aiResponse then
+            self:DisplayResponse(aiResponse, fromPlayer)
+        end
+        return
     end
     
     if execResult then
@@ -3705,67 +3769,17 @@ function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
 [REY_SYSTEM:DATA]
 %s
 [/REY_SYSTEM:DATA]
+
+Based on this data, respond to the user with the information they requested.
 ]], execResult)
-        return self:SendToAI(systemMessage, maxLoop - 1, fromPlayer)
-    end
-    
-    local TCS = game:GetService("TextChatService")
-    local channels = TCS:FindFirstChild("TextChannels")
-    local systemChannel = channels and channels:FindFirstChild("RBXSystem")
-    
-    local senderPrefix = ""
-    if fromPlayer and fromPlayer ~= game.Players.LocalPlayer then
-        senderPrefix = "@" .. fromPlayer.Name .. " "
-    end
-    
-    local cleanResult = string.gsub(result, "^%[Rey%]:%s*", "")
-    
-    local textPart = string.match(cleanResult, "^(.-)%s*```")
-    if not textPart then
-        textPart = string.match(cleanResult, "^(.-)%s*%-%- Script by ReyAI %| ReyHub")
-    end
-    local codePart = string.match(cleanResult, "```lua%s*(.-)%s*```")
-    if not codePart then
-        codePart = string.match(cleanResult, "```%s*(.-)%s*```")
-        if not codePart then
-            codePart = string.match(cleanResult, "%-%- Script by ReyAI %| ReyHub%s*(.+)$")
+        local aiResponse = self:SendToAI(systemMessage, maxLoop - 1, fromPlayer)
+        if aiResponse then
+            self:DisplayResponse(aiResponse, fromPlayer)
         end
+        return
     end
     
-    if codePart and codePart ~= "" then
-        if textPart and systemChannel then
-            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. textPart)
-            IsAIMessage = true
-            sendMessage("[Rey] " .. senderPrefix .. textPart)
-            IsAIMessage = false
-        elseif systemChannel then
-            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. 'Executing script...')
-            IsAIMessage = true
-            sendMessage("[Rey] " .. senderPrefix .. "Executing Script...")
-            IsAIMessage = false
-        end
-        
-        codePart = string.gsub(codePart, "^%s+", "")
-        codePart = string.gsub(codePart, "%s+$", "")
-        codePart = string.gsub(codePart, "^```lua%s*", "")
-        codePart = string.gsub(codePart, "^```%s*", "")
-        codePart = string.gsub(codePart, "%s*```$", "")
-        
-        if codePart ~= "" then
-            self.Notify("success", "ReyAI", "Executing script")
-            CodeDisplay:SetCode(codePart)
-            if self.OnAIResponse then
-                self.OnAIResponse(codePart)
-            end
-        end
-    else
-        if systemChannel then
-            systemChannel:DisplaySystemMessage('<font color="#9370DB">[Rey]</font> ' .. senderPrefix .. cleanResult)
-            IsAIMessage = true
-            sendMessage("[Rey] " .. senderPrefix .. cleanResult)
-            IsAIMessage = false
-        end
-    end
+    self:DisplayResponse(result, fromPlayer)
 end
 
 local AI = ReyAIChat.new({
