@@ -1186,40 +1186,152 @@ function Utils.FindGUIByPath(path)
 end
 
 -- ==== PROXIMITY PROMPT & CLICK DETECTOR ====
-function Utils.HookProximityPrompts(enable, autoInstant)
-	if not enable then
-		if _G.ProximityPromptConn then
-			_G.ProximityPromptConn:Disconnect()
-			_G.ProximityPromptConn = nil
-		end
-		_G.AutoInstantPrompt = false
-		return true
-	end
-	
-	_G.AutoInstantPrompt = autoInstant or false
-	_G.PromptCounter = _G.PromptCounter or {}
-	
-	_G.ProximityPromptConn = workspace.DescendantAdded:Connect(function(obj)
-		if obj:IsA("ProximityPrompt") then
-			task.wait(0.1)
-			
-			local parent = obj.Parent
-			local key = parent and parent:GetFullName() or obj:GetFullName()
-			_G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
-			
-			if _G.AutoInstantPrompt then
-				pcall(function()
-					fireproximityprompt(obj, 0)
-				end)
-			end
-			
-			if _G.PromptCounter[key] == 1 then
-				Utils.Notification("ReyAI", "Proximity Prompt detected: " .. (parent and parent.Name or "Unknown"))
-			end
-		end
-	end)
-	
-	return true
+function Utils.ProximityPrompt(action, value)
+    action = action:lower()
+    
+    if action == "instant" then
+        if value == true then
+            if _G.InstantPromptConn then return true end
+            _G.InstantPromptEnabled = true
+            
+            local function makeInstant(prompt)
+                if prompt.HoldDuration > 0 then
+                    prompt.HoldDuration = 0
+                end
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    makeInstant(obj)
+                end
+            end
+            
+            _G.InstantPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") and _G.InstantPromptEnabled then
+                    makeInstant(obj)
+                end
+            end)
+        else
+            _G.InstantPromptEnabled = false
+            if _G.InstantPromptConn then
+                _G.InstantPromptConn:Disconnect()
+                _G.InstantPromptConn = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "auto" then
+        if value == true then
+            if _G.AutoPromptConn then return true end
+            _G.AutoPromptEnabled = true
+            
+            local function autoFire(prompt)
+                task.wait(0.05)
+                pcall(function()
+                    fireproximityprompt(prompt, 0)
+                end)
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    obj.PromptShown:Connect(function()
+                        if _G.AutoPromptEnabled then
+                            autoFire(obj)
+                        end
+                    end)
+                end
+            end
+            
+            _G.AutoPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") then
+                    obj.PromptShown:Connect(function()
+                        if _G.AutoPromptEnabled then
+                            autoFire(obj)
+                        end
+                    end)
+                end
+            end)
+        else
+            _G.AutoPromptEnabled = false
+            if _G.AutoPromptConn then
+                _G.AutoPromptConn:Disconnect()
+                _G.AutoPromptConn = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "fire" then
+        local target = value
+        if type(target) == "string" then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent.Name:lower():find(target:lower(), 1, true) then
+                    pcall(function()
+                        fireproximityprompt(obj, 0)
+                    end)
+                    return true
+                end
+            end
+        elseif typeof(target) == "Instance" and target:IsA("ProximityPrompt") then
+            pcall(function()
+                fireproximityprompt(target, 0)
+            end)
+            return true
+        end
+        return false
+    end
+    
+    if action == "fireall" then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                pcall(function()
+                    fireproximityprompt(obj, 0)
+                end)
+            end
+        end
+        return true
+    end
+    
+    if action == "hook" then
+        if value == true then
+            if _G.HookPromptConn then return true end
+            _G.HookPromptEnabled = true
+            _G.PromptCounter = _G.PromptCounter or {}
+            
+            local function hook(prompt)
+                local parent = prompt.Parent
+                local key = parent and parent:GetFullName() or prompt:GetFullName()
+                _G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
+                
+                if _G.PromptCounter[key] == 1 then
+                    Utils.Notification("ReyAI", "Proximity Prompt: " .. (parent and parent.Name or "Unknown"))
+                end
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    hook(obj)
+                end
+            end
+            
+            _G.HookPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") and _G.HookPromptEnabled then
+                    hook(obj)
+                end
+            end)
+        else
+            _G.HookPromptEnabled = false
+            if _G.HookPromptConn then
+                _G.HookPromptConn:Disconnect()
+                _G.HookPromptConn = nil
+            end
+            _G.PromptCounter = {}
+        end
+        return true
+    end
+    
+    return false
 end
 
 function Utils.HookClickDetectors(enable, autoClick)
@@ -1523,6 +1635,306 @@ function Utils.Kill(action, value)
 	return false
 end
 
+Utils.CustomDetection = {
+    targets = {},
+    connections = {},
+    active = false
+}
+
+function Utils.DetectCustom(action, target, radius)
+    action = action:lower()
+    
+    if action == "add" then
+        if not target or target == "" then return false end
+        
+        local searchName = target:lower()
+        local targetKey = searchName .. "_" .. (radius or 0)
+        
+        if Utils.CustomDetection.targets[targetKey] then return true end
+        
+        local function checkObject(obj)
+            if obj.Name:lower():find(searchName, 1, true) or obj:GetFullName():lower():find(searchName, 1, true) then
+                local pos = Utils.GetPosition(obj)
+                if pos then
+                    if radius then
+                        local char = LocalPlayer.Character
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            local dist = (Vector3.new(pos.x, pos.y, pos.z) - char.HumanoidRootPart.Position).Magnitude
+                            if dist > radius then return end
+                        end
+                    end
+                    
+                    task.spawn(function()
+                        local msg = string.format([[
+[REY_SYSTEM:DETECTED]
+{"type": "CustomDetection", "data": {"target": "%s", "name": "%s", "position": {"x": %s, "y": %s, "z": %s}}}
+[/REY_SYSTEM:DETECTED]
+]], target, obj.Name, pos.x, pos.y, pos.z)
+                        AI:SendToAI(msg, 3, nil)
+                    end)
+                end
+            end
+        end
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            checkObject(obj)
+        end
+        
+        local conn = workspace.DescendantAdded:Connect(function(obj)
+            task.wait(0.1)
+            checkObject(obj)
+        end)
+        
+        Utils.CustomDetection.targets[targetKey] = {
+            name = target,
+            radius = radius,
+            connection = conn
+        }
+        
+        return true
+    end
+    
+    if action == "remove" then
+        if not target or target == "" then return false end
+        
+        local searchName = target:lower()
+        for key, data in pairs(Utils.CustomDetection.targets) do
+            if data.name:lower() == searchName then
+                if data.connection then
+                    data.connection:Disconnect()
+                end
+                Utils.CustomDetection.targets[key] = nil
+                return true
+            end
+        end
+        return false
+    end
+    
+    if action == "clear" then
+        for _, data in pairs(Utils.CustomDetection.targets) do
+            if data.connection then
+                data.connection:Disconnect()
+            end
+        end
+        Utils.CustomDetection.targets = {}
+        return true
+    end
+    
+    if action == "list" then
+        local list = {}
+        for _, data in pairs(Utils.CustomDetection.targets) do
+            table.insert(list, {name = data.name, radius = data.radius})
+        end
+        return list
+    end
+    
+    return false
+end
+
+function Utils.DetectNearby(target, radius, continuous)
+    if not target or target == "" then return false end
+    radius = radius or 50
+    continuous = continuous or false
+    
+    local searchName = target:lower()
+    local found = {}
+    
+    local function scan()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local myPos = char.HumanoidRootPart.Position
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj.Name:lower():find(searchName, 1, true) then
+                local pos = Utils.GetPosition(obj)
+                if pos then
+                    local objPos = Vector3.new(pos.x, pos.y, pos.z)
+                    local dist = (objPos - myPos).Magnitude
+                    if dist <= radius and not found[obj] then
+                        found[obj] = true
+                        task.spawn(function()
+                            local msg = string.format([[
+[REY_SYSTEM:DETECTED]
+{"type": "NearbyDetection", "data": {"target": "%s", "name": "%s", "distance": %s, "position": {"x": %s, "y": %s, "z": %s}}}
+[/REY_SYSTEM:DETECTED]
+]], target, obj.Name, math.floor(dist), pos.x, pos.y, pos.z)
+                            AI:SendToAI(msg, 3, nil)
+                        end)
+                    end
+                end
+            end
+        end
+    end
+    
+    scan()
+    
+    if continuous then
+        _G.NearbyDetectionLoop = coroutine.wrap(function()
+            while _G.NearbyDetectionEnabled do
+                scan()
+                task.wait(1)
+            end
+        end)
+        _G.NearbyDetectionEnabled = true
+        _G.NearbyDetectionLoop()
+    end
+    
+    return true
+end
+
+function Utils.StopNearbyDetection()
+    _G.NearbyDetectionEnabled = false
+    return true
+end
+
+Utils.Music = {
+    sound = nil,
+    volume = 0.5,
+    loop = false,
+    lastSearch = {},
+    downloads = {}
+}
+
+function Utils.MusicControl(action, value)
+    action = action:lower()
+    
+    if action == "search" then
+        local query = value
+        local url = "https://api.ryzumi.net/api/search/yt?query=" .. game:GetService("HttpService"):UrlEncode(query)
+        local success, response = pcall(function() return game:HttpGet(url) end)
+        if not success then return nil end
+        local data = game:GetService("HttpService"):JSONDecode(response)
+        
+        local results = {}
+        for _, v in pairs(data.videos) do
+            table.insert(results, {
+                id = v.id,
+                title = v.title,
+                author = v.author and v.author.name or "Unknown",
+                duration = v.duration and v.duration.timestamp or "?:??"
+            })
+        end
+        
+        Utils.Music.lastSearch = results
+        return results
+    end
+    
+    if action == "download" then
+        local index = tonumber(value)
+        local v = Utils.Music.lastSearch[index]
+        if not v then return false end
+        
+        if Utils.Music.downloads[v.id] then return false end
+        Utils.Music.downloads[v.id] = true
+        
+        local url = "https://api.ryzumi.net/api/downloader/ytmp3?url=https://youtube.com/watch?v=" .. v.id
+        local success, response = pcall(function() return game:HttpGet(url) end)
+        if not success then Utils.Music.downloads[v.id] = nil return false end
+        
+        local data = game:GetService("HttpService"):JSONDecode(response)
+        local audioSuccess, audioData = pcall(function() return game:HttpGet(data.url) end)
+        if not audioSuccess then Utils.Music.downloads[v.id] = nil return false end
+        
+        local folder = "ReyHub/Music/"
+        if not isfolder(folder) then makefolder(folder) end
+        local safeTitle = v.title:gsub("[^%w%s]", ""):gsub("%s+", "_")
+        local filePath = folder .. safeTitle .. ".mp3"
+        writefile(filePath, audioData)
+        
+        Utils.Music.downloads[v.id] = nil
+        return {success = true, title = v.title, path = filePath}
+    end
+    
+    if action == "play" then
+        local title = value
+        local folder = "ReyHub/Music/"
+        local files = listfiles(folder)
+        
+        for _, file in ipairs(files) do
+            if file:match("%.mp3$") then
+                local name = file:match("([^/]+)%.mp3$"):gsub("_", " "):lower()
+                if name:find(title:lower(), 1, true) then
+                    if Utils.Music.sound then
+                        Utils.Music.sound:Stop()
+                        Utils.Music.sound:Destroy()
+                    end
+                    
+                    local sound = Instance.new("Sound")
+                    sound.SoundId = getcustomasset(file)
+                    sound.Volume = Utils.Music.volume
+                    sound.Parent = game.Players.LocalPlayer.PlayerGui
+                    
+                    sound.Ended:Connect(function()
+                        if Utils.Music.loop then
+                            Utils.MusicControl("play", title)
+                        end
+                    end)
+                    
+                    sound:Play()
+                    Utils.Music.sound = sound
+                    return {success = true, name = name}
+                end
+            end
+        end
+        return {success = false}
+    end
+    
+    if action == "pause" then
+        if Utils.Music.sound then
+            Utils.Music.sound:Pause()
+            return true
+        end
+        return false
+    end
+    
+    if action == "resume" then
+        if Utils.Music.sound then
+            Utils.Music.sound:Resume()
+            return true
+        end
+        return false
+    end
+    
+    if action == "stop" then
+        if Utils.Music.sound then
+            Utils.Music.sound:Stop()
+            Utils.Music.sound:Destroy()
+            Utils.Music.sound = nil
+            return true
+        end
+        return false
+    end
+    
+    if action == "volume" then
+        Utils.Music.volume = math.clamp(tonumber(value) / 100, 0, 1)
+        if Utils.Music.sound then
+            Utils.Music.sound.Volume = Utils.Music.volume
+        end
+        return true
+    end
+    
+    if action == "loop" then
+        Utils.Music.loop = value == true
+        return true
+    end
+    
+    if action == "library" then
+        local folder = "ReyHub/Music/"
+        if not isfolder(folder) then return {} end
+        local files = listfiles(folder)
+        local songs = {}
+        for _, file in ipairs(files) do
+            if file:match("%.mp3$") then
+                local name = file:match("([^/]+)%.mp3$"):gsub("_", " ")
+                table.insert(songs, name)
+            end
+        end
+        return songs
+    end
+    
+    return false
+end
+
 getgenv().Utils = Utils
 
 function detectMobilePlatform()
@@ -1631,8 +2043,11 @@ local TextChatService = game:GetService("TextChatService")
 local function sendMessage(msg)
     if not Public then return end
     IsAIMessage = true
-    pcall(function()
-        TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+    task.spawn(function()
+	    task.wait(0.1)
+	    pcall(function()
+	        TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
+	    end)
     end)
     IsAIMessage = false
 end
@@ -1698,10 +2113,10 @@ USER: ]] .. game.Players.LocalPlayer.Name .. [[ (]] .. game.Players.LocalPlayer.
 DEVICE: ]] .. isMobile .. [[
 
 ===== RESPONSE FORMAT =====
-CONVERSATION:
+CONVERSATION (no script):
 [Rey]: Your response here
 
-SCRIPT OUTPUT:
+SCRIPT OUTPUT (always include text before code):
 [Rey]: Short response
 ```lua
 -- Script by ReyAI | ReyHub
@@ -1882,18 +2297,35 @@ Utils.StopAutoClick() -> bool
 Utils.StartRecord() -> bool
 Utils.StopRecord() -> array of actions
 Utils.PlayRecord(actions: table?, speed: number?) -> bool
-Utils.HookProximityPrompts(enable: bool, autoInstant: bool?) -> bool
+Utils.ProximityPrompt(action: string, value: any) -> bool
+-- action: "instant" + true/false = set all prompts HoldDuration to 0
+-- action: "auto" + true/false = auto fire when PromptShown
+-- action: "fire" + name/Instance = fire specific prompt
+-- action: "fireall" = fire all prompts in workspace
+-- action: "hook" + true/false = detect and notify prompts
 Utils.HookClickDetectors(enable: bool, autoClick: bool?) -> bool
 Utils.MonitorWorkspace(enable: bool, keyword: string?, interval: number?) -> bool
 Utils.DetectionControl = {promptEnabled, clickDetectorEnabled, mobSpawnEnabled, lowHealthEnabled, teleportEnabled, currencyEnabled}
 Utils.StopAutoDetection(feature: string?) -> bool  -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk matikan semua
 Utils.StartAutoDetection(feature: string?) -> bool -- feature: "prompt", "click", "mob", "health", "teleport", "currency". Kosongkan untuk nyalakan semua
+Utils.DetectCustom(action: string, target: string, radius: number?) -> bool  -- "add"/"remove"/"clear"/"list"
+Utils.DetectNearby(target: string, radius: number?, continuous: bool?) -> bool  -- Scan nearby objects
+Utils.StopNearbyDetection() -> bool
 Utils.Kill(action: string, value: any) -> bool
 -- action: "v1"/"v2"/"v3" + true/false = show/hide button
 -- action: "v4"/"v5" + true/false = enable/disable auto kill
 -- action: "threshold" + number = set health threshold (%)
 -- action: "all" + true/false = show/hide all buttons
-
+Utils.MusicControl(action: string, value: any) -> any
+-- action: "search" + query = search YouTube, returns results
+-- action: "download" + index = download from last search
+-- action: "play" + title = play song from library
+-- action: "pause" = pause current song
+-- action: "resume" = resume current song
+-- action: "stop" = stop current song
+-- action: "volume" + 0-100 = set volume
+-- action: "loop" + true/false = toggle loop
+-- action: "library" = list downloaded songs
 ===== RULES =====
 - DO EXACTLY WHAT USER SAYS. "kick me" = kick. No arguments.
 - NEVER guess names. Use Utils.FindPlayer() for ANY player search.
@@ -1908,6 +2340,8 @@ Utils.Kill(action: string, value: any) -> bool
 - Never use print() for speaking.
 - Mobile: ]] .. (isMobile == "Mobile" and "NO keybinds, NO mouse, NO Keyboard input." or "PC: all input allowed.") .. [[
 - Responses MUST be short. Roblox Chat has character limit.
+- ALWAYS include a short text response before ANY code block, even just "Done." or "Set to X."
+- NEVER output code block alone without [Rey]: text above it.
 
 ===== INTERACTION PATTERN =====
 When user asks for INFO (where is X, find X, list X):
@@ -2442,47 +2876,204 @@ return status
 [After receiving data]
 [Rey]: Prompt: ON, Click: ON, Mob: ON, Health: ON, Teleport: ON, Currency: ON.
 
+User: "prompt instant" or "instant prompt"
+[Rey]: All prompts set to 0s hold.
+```lua
+Utils.ProximityPrompt("instant", true)
+```
+
+User: "prompt normal" or "normal prompt"
+[Rey]: Prompts restored to normal.
+```lua
+Utils.ProximityPrompt("instant", false)
+```
+
+User: "prompt auto" or "auto prompt"
+[Rey]: Auto fire prompts when shown.
+```lua
+Utils.ProximityPrompt("auto", true)
+```
+
+User: "prompt manual" or "manual prompt"
+[Rey]: Auto fire disabled.
+```lua
+Utils.ProximityPrompt("auto", false)
+```
+
+User: "fire prompt [name]"
+[Rey]: Fired [name] prompt.
+```lua
+Utils.ProximityPrompt("fire", "[name]")
+```
+
+User: "fire all prompts"
+[Rey]: Fired all prompts.
+```lua
+Utils.ProximityPrompt("fireall")
+```
+
+User: "prompt hook" or "hook prompt"
+[Rey]: Prompt detection enabled.
+```lua
+Utils.ProximityPrompt("hook", true)
+```
+
+User: "prompt unhook" or "unhook prompt"
+[Rey]: Prompt detection disabled.
+```lua
+Utils.ProximityPrompt("hook", false)
+```
+
 User: "kill v1" or "instant kill v1" or "one hit v1"
 [Rey]: Kill V1 button shown.
-\`\`\`lua
+```lua
 Utils.Kill("v1", true)
-\`\`\`
+```
 
 User: "hide kill v1" or "destroy instant kill v1" or "hide one hit v1"
 [Rey]: Kill V1 hidden.
-\`\`\`lua
+```lua
 Utils.Kill("v1", false)
-\`\`\`
+```
 
 User: "kill v4 on" or "instant kill v4 on" or "one hit v4"
 [Rey]: Auto kill V4 activated.
-\`\`\`lua
+```lua
 Utils.Kill("v4", true)
-\`\`\`
+```
 
 User: "kill v4 off" or "instant kill v4 off" or "one hit v4 stop"
 [Rey]: Auto kill V4 disabled.
-\`\`\`lua
+```lua
 Utils.Kill("v4", false)
-\`\`\`
+```
 
 User: "kill threshold 80" or "instant kill 80%"
 [Rey]: Threshold set to 80%.
-\`\`\`lua
+```lua
 Utils.Kill("threshold", 80)
-\`\`\`
+```
 
 User: "show all kill"
 [Rey]: All kill buttons shown.
-\`\`\`lua
+```lua
 Utils.Kill("all", true)
-\`\`\`
+```
 
 User: "hide all kill"
 [Rey]: All kill buttons hidden.
-\`\`\`lua
+```lua
 Utils.Kill("all", false)
-\`\`\`
+```
+
+User: "detect checkpoint"
+[Rey]: Watching for Checkpoint.
+```lua
+Utils.DetectCustom("add", "Checkpoint")
+```
+
+User: "detect mob within 30"
+[Rey]: Watching for mobs within 30 studs.
+```lua
+Utils.DetectCustom("add", "mob", 30)
+```
+
+User: "stop detect checkpoint"
+[Rey]: Stopped watching Checkpoint.
+```lua
+Utils.DetectCustom("remove", "Checkpoint")
+```
+
+User: "clear all detection"
+[Rey]: All custom detections cleared.
+```lua
+Utils.DetectCustom("clear")
+```
+
+User: "scan nearby chest"
+[Rey]: Scanning for chests within 50 studs.
+```lua
+Utils.DetectNearby("chest", 50)
+```
+
+User: "watch nearby enemy"
+[Rey]: Continuously watching for enemies within 30 studs.
+```lua
+Utils.DetectNearby("enemy", 30, true)
+```
+
+User: "stop nearby watch"
+[Rey]: Nearby detection stopped.
+```lua
+Utils.StopNearbyDetection()
+```
+
+User: "search music [query]"
+[Rey]: [REY_INTERNAL:EXEC]
+local results = Utils.MusicControl("search", "[query]")
+if not results then return {found=false} end
+local top = {}
+for i = 1, math.min(5, #results) do
+    top[i] = results[i].title .. " - " .. results[i].author
+end
+return {found=true, total=#results, top=top}
+[/REY_INTERNAL:EXEC]
+[Rey]: Found [total] songs. Top 5: [list]. Download which? Say "download 1".
+
+User: "download [number]"
+[Rey]: [REY_INTERNAL:EXEC]
+return Utils.MusicControl("download", [number])
+[/REY_INTERNAL:EXEC]
+[Rey]: Downloaded "[title]". Play now? Say "play [title]".
+
+User: "play [title]"
+[Rey]: [REY_INTERNAL:EXEC]
+return Utils.MusicControl("play", "[title]")
+[/REY_INTERNAL:EXEC]
+[Rey]: Now playing: [title].
+
+User: "pause music"
+[Rey]: Paused.
+```lua
+Utils.MusicControl("pause")
+```
+
+User: "resume music"
+[Rey]: Resumed.
+```lua
+Utils.MusicControl("resume")
+```
+
+User: "stop music"
+[Rey]: Stopped.
+```lua
+Utils.MusicControl("stop")
+```
+
+User: "volume [num]"
+[Rey]: Volume set to [num]%.
+```lua
+Utils.MusicControl("volume", [num])
+```
+
+User: "loop on"
+[Rey]: Loop enabled.
+```lua
+Utils.MusicControl("loop", true)
+```
+
+User: "loop off"
+[Rey]: Loop disabled.
+```lua
+Utils.MusicControl("loop", false)
+```
+
+User: "my library"
+[Rey]: [REY_INTERNAL:EXEC]
+local songs = Utils.MusicControl("library")
+return {count=#songs, songs=songs}
+[/REY_INTERNAL:EXEC]
+[Rey]: You have [count] songs: [list].
 
 ===== END =====
 [Rey]: Ready.
@@ -2835,6 +3426,19 @@ function ReyAIChat:Enable()
             return true
         end
         
+        if string.find(msgLower, "rey debug") then
+		    local history = self.ConversationHistory
+		    if history then
+		        local json = game:GetService("HttpService"):JSONEncode(history)
+		        setclipboard(json)
+		        print("Conversation history copied to clipboard! Length: " .. #json .. " characters")
+		    else
+		        setclipboard("conversationHistory is nil")
+		        print("conversationHistory is nil")
+		    end
+		    return true
+		end
+        
         if string.find(msgLower, "rey") and not self.IsActive then
             if not isFromOther or PublicFull then
                 self.IsActive = true
@@ -3082,6 +3686,7 @@ function ReyAIChat:SendToAI(userInput, maxLoop, fromPlayer)
         return
     end
     
+    print(result)
     table.insert(self.ConversationHistory, {role = "user", content = userInput})
     table.insert(self.ConversationHistory, {role = "assistant", content = result})
     
@@ -3193,12 +3798,14 @@ local function SendDetectionEvent(eventType, eventData)
 	if not AI or not AI.IsActive then return end
 	
 	local enabledMap = {
-		ProximityPrompt = Utils.DetectionControl.promptEnabled,
-		ClickDetector = Utils.DetectionControl.clickDetectorEnabled,
-		MobSpawn = Utils.DetectionControl.mobSpawnEnabled,
-		LowHealth = Utils.DetectionControl.lowHealthEnabled,
-		Teleport = Utils.DetectionControl.teleportEnabled,
-		CurrencyChange = Utils.DetectionControl.currencyEnabled
+	    ProximityPrompt = Utils.DetectionControl.promptEnabled,
+	    ClickDetector = Utils.DetectionControl.clickDetectorEnabled,
+	    MobSpawn = Utils.DetectionControl.mobSpawnEnabled,
+	    LowHealth = Utils.DetectionControl.lowHealthEnabled,
+	    Teleport = Utils.DetectionControl.teleportEnabled,
+	    CurrencyChange = Utils.DetectionControl.currencyEnabled,
+	    CustomDetection = true,
+	    NearbyDetection = true
 	}
 	
 	if enabledMap[eventType] == false then return end
@@ -3314,7 +3921,7 @@ end)()
 local function hookClickDetector(obj)
 	if not obj:IsA("ClickDetector") then return end
 	local key = obj:GetFullName()
-	if DetectionState.clickedObjects[key] then return end
+	if DetectionState.clickedObjects[key] or not Utils.DetectionControl.clickDetectorEnabled then return end
 	DetectionState.clickedObjects[key] = true
 	
 	SendDetectionEvent("ClickDetector", {
@@ -3326,7 +3933,7 @@ end
 local shownPrompts = {}
 local function hookProximityPrompt(prompt)
 	local key = prompt:GetFullName()
-	if shownPrompts[key] then return end
+	if shownPrompts[key] or not Utils.DetectionControl.promptEnabled then return end
 	shownPrompts[key] = true
 	
 	SendDetectionEvent("ProximityPrompt", {
