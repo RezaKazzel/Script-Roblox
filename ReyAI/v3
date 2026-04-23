@@ -3075,6 +3075,18 @@ return {count=#songs, songs=songs}
 [/REY_INTERNAL:EXEC]
 [Rey]: You have [count] songs: [list].
 
+User: "remote spy" or "rspy"
+[Rey]: Loading RemoteSpy...
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RezaKazzel/Script-Roblox/refs/heads/main/Script/rspy%20eja"))()
+```
+
+User: "dex" or "dex explorer"
+[Rey]: Loading Dex Explorer...
+```lua
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-REAL-DEX-EXPLORER-DONT-BE-SCAMMED-41800"))()
+```
+
 ===== END =====
 [Rey]: Ready.
 ]]
