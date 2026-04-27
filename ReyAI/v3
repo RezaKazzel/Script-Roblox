@@ -1,8 +1,13 @@
+-- ReyAI, Beta Test v0.3
+
 local game = game
 local request = rawget(getgenv(), "request") or rawget(getgenv(), "http_request")
 local ReyHttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+local tpx = loadstring(game:HttpGet("https://raw.githubusercontent.com/tanhoangviet/ToolForLua/refs/heads/main/TopbarPlus_Extended.lua"))()
+local Icon = tpx.Icon
 
 local Utils = {}
 
@@ -2075,14 +2080,16 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:EditOpenButton({
+	Enabled = false,
+	--[[
 	Title = "Open Menu",
 	Icon = "rbxassetid://84687062999466",
 	CornerRadius = UDim.new(0, 16),
 	StrokeThickness = 2,
 	Color = ColorSequence.new(Color3.fromHex("#480607"), Color3.fromHex("#990000")),
 	OnlyMobile = false,
-	Enabled = true,
 	Draggable = true
+	--]]
 })
 
 local Tab = Window:Tab({ Title = "Script Assistant", Icon = "code" })
@@ -3794,7 +3801,7 @@ Based on this data, respond to the user with the information they requested.
     self:DisplayResponse(result, fromPlayer)
 end
 
-local AI = ReyAIChat.new({
+AI = ReyAIChat.new({
 	CommandPrefix = "?",
 	HttpFunc = hR,
 	NotifyFunc = function(style, title, msg)
@@ -3990,3 +3997,38 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 
 AI:Enable()
+
+local menu = Icon.new()
+menu:setLabel("Rey Hub")
+menu:setOrder(1)
+
+-- Toggle ReyAI
+local reyAIToggle = Icon.new()
+reyAIToggle:setLabel("[OFF] ReyAI")
+reyAIToggle:setWidth(120)
+reyAIToggle:autoDeselect(false)
+reyAIToggle.toggled:Connect(function(isOn)
+    print(AI.IsActive)
+    if isOn then
+        reyAIToggle:setLabel("[ON] ReyAI")
+        AI.IsActive = true
+        WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Enabled", Duration = 3})
+    else
+        reyAIToggle:setLabel("[OFF] ReyAI")
+        AI.IsActive = false
+        WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Disabled", Duration = 3})
+    end
+end)
+
+-- WindUI Hide/Show button (toggle window)
+local windUIButton = Icon.new()
+windUIButton:setLabel("Hide/Show WindUI")
+windUIButton:setWidth(140)
+windUIButton:oneClick()
+windUIButton.deselected:Connect(function()
+    if Window then
+        Window:Toggle()
+    end
+end)
+
+menu:setDropdown({reyAIToggle, windUIButton})
