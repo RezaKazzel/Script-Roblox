@@ -3364,6 +3364,7 @@ local ExecuteButton = Tab:Button({
 })
 
 local ReyAIChat = {}
+local sendButton
 ReyAIChat.__index = ReyAIChat
 
 function ReyAIChat.new(settings)
@@ -3410,6 +3411,7 @@ function ReyAIChat:Enable()
         if string.find(msgLower, "rey off") or string.find(msgLower, "rey stop") then
             if not isFromOther or PublicFull then
                 self.IsActive = false
+                if sendButton then sendButton.Active = true end
                 Public = false
                 PublicFull = false
                 self.Notify("info", "ReyAI", "AI Deactivated")
@@ -3461,6 +3463,7 @@ function ReyAIChat:Enable()
         if string.find(msgLower, "rey") and not self.IsActive then
             if not isFromOther or PublicFull then
                 self.IsActive = true
+                if sendButton then sendButton.Active = false end
                 self.Notify("success", "ReyAI", "AI Activated for " .. (speaker and speaker.Name or "you"))
                 if PublicFull and isFromOther then
                     IsAIMessage = true
@@ -3565,7 +3568,7 @@ function ReyAIChat:HookExperienceChat(callback)
     
     local box = findComponent(textBoxContainer, {"TextBox", "Text", "Input"})
     local btn = findComponent(container, {"SendButton", "sendButton", "Send", "Button"})
-    
+    sendButton = btn
     if not box or not btn then return end
     
     local chip = textContainer:FindFirstChild("TargetChannelChip") or 
@@ -3594,7 +3597,7 @@ function ReyAIChat:HookExperienceChat(callback)
             if self.IsActive then 
                 self:SendToAI(raw, 5, nil) 
             end
-        else
+        elseif not self.IsActive then
             local rec = "All"
             if chip and chip:IsA("TextButton") then
                 local txt = chip.Text or ""
@@ -3626,7 +3629,7 @@ function ReyAIChat:HookExperienceChat(callback)
                        TCS.TextChannels:GetChildren()[1]
             end
             if chan and chan:IsA("TextChannel") then
-                chan:SendAsync(raw)
+                --chan:SendAsync(raw)
             end
         end
     end
@@ -3634,6 +3637,7 @@ function ReyAIChat:HookExperienceChat(callback)
     table.insert(self.ExperienceConnections, box.FocusLost:Connect(function(enter)
         if enter then processChat() end
     end))
+    
     table.insert(self.ExperienceConnections, btn.MouseButton1Click:Connect(processChat))
     
     table.insert(self.ExperienceConnections, box:GetPropertyChangedSignal("Text"):Connect(function()
@@ -4012,10 +4016,12 @@ reyAIToggle.toggled:Connect(function(isOn)
     if isOn then
         reyAIToggle:setLabel("[ON] ReyAI")
         AI.IsActive = true
+        if sendButton then sendButton.Active = false end
         WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Enabled", Duration = 3})
     else
         reyAIToggle:setLabel("[OFF] ReyAI")
         AI.IsActive = false
+        if sendButton then sendButton.Active = true end
         WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Disabled", Duration = 3})
     end
 end)
