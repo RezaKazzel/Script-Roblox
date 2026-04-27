@@ -2079,6 +2079,8 @@ local Window = WindUI:CreateWindow({
 	HideSearchBar = false,
 })
 
+Window:Close()
+
 Window:EditOpenButton({
 	Enabled = false,
 	--[[
