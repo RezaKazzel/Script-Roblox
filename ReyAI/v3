@@ -6,9 +6,6 @@ local ReyHttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local tpx = loadstring(game:HttpGet("https://raw.githubusercontent.com/tanhoangviet/ToolForLua/refs/heads/main/TopbarPlus_Extended.lua"))()
-local Icon = tpx.Icon
-
 local Utils = {}
 
 function Utils.FindPlayer(name)
@@ -2079,19 +2076,15 @@ local Window = WindUI:CreateWindow({
 	HideSearchBar = false,
 })
 
-Window:Close()
-
 Window:EditOpenButton({
-	Enabled = false,
-	--[[
 	Title = "Open Menu",
 	Icon = "rbxassetid://84687062999466",
 	CornerRadius = UDim.new(0, 16),
 	StrokeThickness = 2,
 	Color = ColorSequence.new(Color3.fromHex("#480607"), Color3.fromHex("#990000")),
 	OnlyMobile = false,
+	Enabled = true,
 	Draggable = true
-	--]]
 })
 
 local Tab = Window:Tab({ Title = "Script Assistant", Icon = "code" })
@@ -3366,7 +3359,6 @@ local ExecuteButton = Tab:Button({
 })
 
 local ReyAIChat = {}
-local sendButton
 ReyAIChat.__index = ReyAIChat
 
 function ReyAIChat.new(settings)
@@ -3413,7 +3405,6 @@ function ReyAIChat:Enable()
         if string.find(msgLower, "rey off") or string.find(msgLower, "rey stop") then
             if not isFromOther or PublicFull then
                 self.IsActive = false
-                if sendButton then sendButton.Active = true end
                 Public = false
                 PublicFull = false
                 self.Notify("info", "ReyAI", "AI Deactivated")
@@ -3465,7 +3456,6 @@ function ReyAIChat:Enable()
         if string.find(msgLower, "rey") and not self.IsActive then
             if not isFromOther or PublicFull then
                 self.IsActive = true
-                if sendButton then sendButton.Active = false end
                 self.Notify("success", "ReyAI", "AI Activated for " .. (speaker and speaker.Name or "you"))
                 if PublicFull and isFromOther then
                     IsAIMessage = true
@@ -3570,7 +3560,7 @@ function ReyAIChat:HookExperienceChat(callback)
     
     local box = findComponent(textBoxContainer, {"TextBox", "Text", "Input"})
     local btn = findComponent(container, {"SendButton", "sendButton", "Send", "Button"})
-    sendButton = btn
+    
     if not box or not btn then return end
     
     local chip = textContainer:FindFirstChild("TargetChannelChip") or 
@@ -3599,7 +3589,7 @@ function ReyAIChat:HookExperienceChat(callback)
             if self.IsActive then 
                 self:SendToAI(raw, 5, nil) 
             end
-        elseif not self.IsActive then
+        else
             local rec = "All"
             if chip and chip:IsA("TextButton") then
                 local txt = chip.Text or ""
@@ -3631,7 +3621,7 @@ function ReyAIChat:HookExperienceChat(callback)
                        TCS.TextChannels:GetChildren()[1]
             end
             if chan and chan:IsA("TextChannel") then
-                --chan:SendAsync(raw)
+                chan:SendAsync(raw)
             end
         end
     end
@@ -3639,7 +3629,6 @@ function ReyAIChat:HookExperienceChat(callback)
     table.insert(self.ExperienceConnections, box.FocusLost:Connect(function(enter)
         if enter then processChat() end
     end))
-    
     table.insert(self.ExperienceConnections, btn.MouseButton1Click:Connect(processChat))
     
     table.insert(self.ExperienceConnections, box:GetPropertyChangedSignal("Text"):Connect(function()
@@ -4003,40 +3992,3 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 
 AI:Enable()
-
-local menu = Icon.new()
-menu:setLabel("Rey Hub")
-menu:setOrder(1)
-
--- Toggle ReyAI
-local reyAIToggle = Icon.new()
-reyAIToggle:setLabel("[OFF] ReyAI")
-reyAIToggle:setWidth(120)
-reyAIToggle:autoDeselect(false)
-reyAIToggle.toggled:Connect(function(isOn)
-    print(AI.IsActive)
-    if isOn then
-        reyAIToggle:setLabel("[ON] ReyAI")
-        AI.IsActive = true
-        if sendButton then sendButton.Active = false end
-        WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Enabled", Duration = 3})
-    else
-        reyAIToggle:setLabel("[OFF] ReyAI")
-        AI.IsActive = false
-        if sendButton then sendButton.Active = true end
-        WindUI:Notify({Title = "ReyAI", Icon = "info", Content = "ReyAI Disabled", Duration = 3})
-    end
-end)
-
--- WindUI Hide/Show button (toggle window)
-local windUIButton = Icon.new()
-windUIButton:setLabel("Hide/Show WindUI")
-windUIButton:setWidth(140)
-windUIButton:oneClick()
-windUIButton.deselected:Connect(function()
-    if Window then
-        Window:Toggle()
-    end
-end)
-
-menu:setDropdown({reyAIToggle, windUIButton})
