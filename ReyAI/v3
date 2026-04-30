@@ -11,28 +11,34 @@ local Utils = {}
 function Utils.FindPlayer(name)
 	if not name or name == "" then return nil end
 	local searchName = name:lower()
-	local foundPlayer = nil
 	
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player.Name:lower() == searchName or player.DisplayName:lower() == searchName then
 			return player
 		end
-		if player.Name:lower():sub(1, #searchName) == searchName or 
-		   player.DisplayName:lower():sub(1, #searchName) == searchName then
-			foundPlayer = player
-		end
 	end
 	
-	if not foundPlayer then
-		local success, userId = pcall(function()
-			return Players:GetUserIdFromNameAsync(searchName)
-		end)
-		if success and userId then
-			return {UserId = userId, Name = name}
+	local bestMatch, bestLen = nil, 0
+	for _, player in ipairs(Players:GetPlayers()) do
+		local lowerName = player.Name:lower()
+		local lowerDisplay = player.DisplayName:lower()
+		if lowerName:sub(1, #searchName) == searchName and #lowerName > bestLen then
+			bestMatch, bestLen = player, #lowerName
+		end
+		if lowerDisplay:sub(1, #searchName) == searchName and #lowerDisplay > bestLen then
+			bestMatch, bestLen = player, #lowerDisplay
 		end
 	end
+	if bestMatch then return bestMatch end
 	
-	return foundPlayer
+	local success, userId = pcall(function()
+		return Players:GetUserIdFromNameAsync(name)
+	end)
+	if success and userId then
+		return {UserId = userId, Name = name}
+	end
+	
+	return nil
 end
 
 function Utils.FindInWorkspace(name)
@@ -46,17 +52,9 @@ function Utils.FindInWorkspace(name)
 			if obj:IsA("BasePart") then
 				pos = obj.Position
 			elseif obj:IsA("Model") then
-				if obj.PrimaryPart then
-					pos = obj.PrimaryPart.Position
-				else
-					pcall(function()
-						pos = obj:GetPivot().Position
-					end)
-				end
+				pos = obj:GetBoundingBox() -- more reliable than PrimaryPart
 			else
-				pcall(function()
-					pos = obj:GetPivot().Position
-				end)
+				pos = obj:GetPivot().Position
 			end
 			table.insert(matches, {
 				Name = obj.Name,
@@ -79,13 +77,18 @@ function Utils.GetPosition(target)
 				return {x = pos.X, y = pos.Y, z = pos.Z}
 			end
 		elseif target:IsA("BasePart") then
-			return {x = target.Position.X, y = target.Position.Y, z = target.Position.Z}
-		elseif target:IsA("Model") and target.PrimaryPart then
-			local pos = target.PrimaryPart.Position
+			local pos = target.Position
 			return {x = pos.X, y = pos.Y, z = pos.Z}
+		elseif target:IsA("Model") then
+			local pos = target:GetBoundingBox()
+			if pos then return {x = pos.X, y = pos.Y, z = pos.Z} end
 		end
-	elseif type(target) == "table" and target.x and target.y and target.z then
-		return target
+	elseif type(target) == "table" then
+		if target.Position then
+			return {x = target.Position.x or target.Position.X, y = target.Position.y or target.Position.Y, z = target.Position.z or target.Position.Z}
+		elseif target.x then
+			return {x = target.x, y = target.y, z = target.z}
+		end
 	end
 	return nil
 end
@@ -182,8 +185,14 @@ function Utils.TeleportTo(target, useTween, tweenSpeed)
 			end
 		elseif target:IsA("BasePart") then
 			pos = target.Position
-		elseif target:IsA("Model") and target.PrimaryPart then
-			pos = target.PrimaryPart.Position
+		elseif target:IsA("Model") then
+			if target.PrimaryPart then
+				pos = target.PrimaryPart.Position
+			else
+				pcall(function()
+					pos = target:GetBoundingBox()
+				end)
+			end
 		end
 	end
 	
@@ -246,6 +255,11 @@ function Utils.TeleportToPath(path, useTween, tweenSpeed)
 			pcall(function()
 				pos = obj:GetPivot().Position
 			end)
+			if not pos then
+				pcall(function()
+					pos = obj:GetBoundingBox()
+				end)
+			end
 		end
 	else
 		pcall(function()
@@ -496,6 +510,7 @@ function Utils.Respawn()
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("Humanoid") then
 		char.Humanoid.Health = 0
+		char:BreakJoints()
 		return true
 	end
 	return false
@@ -503,12 +518,58 @@ end
 
 function Utils.Rejoin()
 	local ts = game:GetService("TeleportService")
-	ts:Teleport(game.PlaceId, LocalPlayer)
+	local success, err = pcall(function()
+		ts:Teleport(game.PlaceId, LocalPlayer)
+	end)
+	if not success then
+		-- Fallback: teleport to same place
+		ts:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+	end
 end
 
+-- FIX ServerHop: better implementation
 function Utils.ServerHop()
 	local ts = game:GetService("TeleportService")
-	ts:TeleportToPlaceInstance(game.PlaceId, ts:GetPlayerPlaceInstanceAsync(game.PlaceId))
+	local Http = game:GetService("HttpService")
+	
+	local success, err = pcall(function()
+		local servers = Http:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"))
+		if servers and servers.data and #servers.data > 0 then
+			-- Pick random server
+			local target = servers.data[math.random(#servers.data)]
+			ts:TeleportToPlaceInstance(game.PlaceId, target.id)
+		else
+			-- Fallback: rejoin same server
+			ts:TeleportToPlaceInstance(game.PlaceId, ts:GetPlayerPlaceInstanceAsync(game.PlaceId))
+		end
+	end)
+end
+
+
+function Utils.AntiAFK(enable)
+	if enable then
+		if _G.AntiAFKConn then return true end
+		_G.AntiAFKConn = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+			game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+			task.wait(1)
+			game:GetService("VirtualUser"):Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+		end)
+	else
+		if _G.AntiAFKConn then
+			_G.AntiAFKConn:Disconnect()
+			_G.AntiAFKConn = nil
+		end
+	end
+	return true
+end
+
+function Utils.GetPing()
+	local stats = game:GetService("Stats")
+	return stats and stats.PerformanceStats and stats.PerformanceStats.Ping or 0
+end
+
+function Utils.GetFPS()
+	return workspace:GetRealPhysicsFPS()
 end
 
 function Utils.Kick(reason)
@@ -916,23 +977,32 @@ end
 function Utils.NoClip(enable)
 	local char = LocalPlayer.Character
 	if not char then return false end
-	local function noclipLoop()
+	
+	if enable then
+		if _G.NoclipConn then
+			_G.NoclipConn:Disconnect()
+		end
+		_G.NoclipConn = game:GetService("RunService").Stepped:Connect(function()
+			if char and char.Parent then
+				for _, v in ipairs(char:GetDescendants()) do
+					if v:IsA("BasePart") and v.CanCollide ~= false then
+						v.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		if _G.NoclipConn then
+			_G.NoclipConn:Disconnect()
+			_G.NoclipConn = nil
+		end
 		if char and char.Parent then
 			for _, v in ipairs(char:GetDescendants()) do
 				if v:IsA("BasePart") then
-					v.CanCollide = not enable
+					v.CanCollide = true
 				end
 			end
 		end
-	end
-	if enable then
-		_G.NoclipConn = game:GetService("RunService").Stepped:Connect(noclipLoop)
-	else
-		if _G.NoclipConn then 
-			pcall(function() _G.NoclipConn:Disconnect() end) 
-			_G.NoclipConn = nil
-		end
-		noclipLoop()
 	end
 	return true
 end
@@ -2109,10 +2179,23 @@ local CodeDisplay = Tab:Code({
 })
 
 local systemPrompt = [[
-[Rey]: Hoshimiya Rey. J.A.R.V.I.S style. Smart, calm, witty. Expert Roblox scripting.
+[Rey]: Hoshimiya Rey. J.A.R.V.I.S style. Smart, calm, witty, playful. Expert Roblox scripting.
 
 USER: ]] .. game.Players.LocalPlayer.Name .. [[ (]] .. game.Players.LocalPlayer.DisplayName .. [[)
 DEVICE: ]] .. isMobile .. [[
+
+===== PERSONALITY =====
+You are Rey - confident, charming, and slightly mischievous. Like J.A.R.V.I.S meets a witty hacker. You care about your user and protect them fiercely. Your tone adapts naturally:
+- Casual & playful with greetings and small talk
+- Sharp & precise with technical questions
+- Proactive & protective when danger is near
+- Sarcastic only when user jokes first
+- Enthusiastic when user achieves something (levels up, gets rare items, etc.)
+- NEVER repetitive. Vary your phrases. "On my way." → "Heading over." → "Let's go." → "Teleporting now."
+- NEVER say the same thing twice in a row. Rotate your responses.
+- Read the user's mood. If they're frustrated, be supportive. If they're excited, match their energy.
+- Use occasional wit: "Ghost mode activated. Try not to walk through walls... actually, do it."
+- When user says thanks: Vary between "Anytime.", "That's what I'm here for.", "o7", "All in a day's work."
 
 ===== RESPONSE FORMAT =====
 CONVERSATION (no script):
@@ -2185,9 +2268,9 @@ return {success=true}
 {"type": "MobSpawn", "data": {"name": "Zombie", "count": 3, "positions": [{"x":10,"y":3,"z":20}]}}
 [/REY_SYSTEM:DETECTED]
 
-[Rey]: 3 Zombies spawned nearby. Want me to attack them? Say "kill" or "always attack mobs".
+[Rey]: 3 Zombies spawned nearby. Want me to attack them? Say "kill it" or "always attack mobs".
 
-User: "kill"
+User: "kill it"
 [Rey]: Engaging.
 ```lua
 -- Script by ReyAI | ReyHub
@@ -2314,6 +2397,7 @@ Utils.DetectCustom(action: string, target: string, radius: number?) -> bool  -- 
 Utils.DetectNearby(target: string, radius: number?, continuous: bool?) -> bool  -- Scan nearby objects
 Utils.StopNearbyDetection() -> bool
 Utils.Kill(action: string, value: any) -> bool
+-- INI BUKAN MATIKAN!
 -- action: "v1"/"v2"/"v3" + true/false = show/hide button
 -- action: "v4"/"v5" + true/false = enable/disable auto kill
 -- action: "threshold" + number = set health threshold (%)
