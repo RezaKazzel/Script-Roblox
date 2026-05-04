@@ -1259,151 +1259,193 @@ end
 
 -- ==== PROXIMITY PROMPT & CLICK DETECTOR ====
 function Utils.ProximityPrompt(action, value)
-	action = action:lower()
-	
-	if action == "instant" then
-		if value == true then
-			if _G.InstantPromptConn then return true end
-			_G.InstantPromptEnabled = true
-			
-			local function makeInstant(prompt)
-				if prompt.HoldDuration > 0 then
-					prompt.HoldDuration = 0
-				end
-			end
-			
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("ProximityPrompt") then
-					makeInstant(obj)
-				end
-			end
-			
-			_G.InstantPromptConn = workspace.DescendantAdded:Connect(function(obj)
-				if obj:IsA("ProximityPrompt") and _G.InstantPromptEnabled then
-					makeInstant(obj)
-				end
-			end)
-		else
-			_G.InstantPromptEnabled = false
-			if _G.InstantPromptConn then
-				_G.InstantPromptConn:Disconnect()
-				_G.InstantPromptConn = nil
-			end
-		end
-		return true
-	end
-	
-	if action == "auto" then
-		if value == true then
-			if _G.AutoPromptConn then return true end
-			_G.AutoPromptEnabled = true
-			
-			local function autoFire(prompt)
-				task.wait(0.05)
-				pcall(function()
-					fireproximityprompt(prompt, 0)
-				end)
-			end
-			
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("ProximityPrompt") then
-					obj.PromptShown:Connect(function()
-						if _G.AutoPromptEnabled then
-							autoFire(obj)
-						end
-					end)
-				end
-			end
-			
-			_G.AutoPromptConn = workspace.DescendantAdded:Connect(function(obj)
-				if obj:IsA("ProximityPrompt") then
-					obj.PromptShown:Connect(function()
-						if _G.AutoPromptEnabled then
-							autoFire(obj)
-						end
-					end)
-				end
-			end)
-		else
-			_G.AutoPromptEnabled = false
-			if _G.AutoPromptConn then
-				_G.AutoPromptConn:Disconnect()
-				_G.AutoPromptConn = nil
-			end
-		end
-		return true
-	end
-	
-	if action == "fire" then
-		local target = value
-		if type(target) == "string" then
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent.Name:lower():find(target:lower(), 1, true) then
-					pcall(function()
-						fireproximityprompt(obj, 0)
-					end)
-					return true
-				end
-			end
-		elseif typeof(target) == "Instance" and target:IsA("ProximityPrompt") then
-			pcall(function()
-				fireproximityprompt(target, 0)
-			end)
-			return true
-		end
-		return false
-	end
-	
-	if action == "fireall" then
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("ProximityPrompt") then
-				pcall(function()
-					fireproximityprompt(obj, 0)
-				end)
-			end
-		end
-		return true
-	end
-	
-	if action == "hook" then
-		if value == true then
-			if _G.HookPromptConn then return true end
-			_G.HookPromptEnabled = true
-			_G.PromptCounter = _G.PromptCounter or {}
-			
-			local function hook(prompt)
-				local parent = prompt.Parent
-				local key = parent and parent:GetFullName() or prompt:GetFullName()
-				_G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
-				
-				if _G.PromptCounter[key] == 1 then
-					Utils.Notification("ReyAI", "Proximity Prompt: " .. (parent and parent.Name or "Unknown"))
-				end
-			end
-			
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("ProximityPrompt") then
-					hook(obj)
-				end
-			end
-			
-			_G.HookPromptConn = workspace.DescendantAdded:Connect(function(obj)
-				if obj:IsA("ProximityPrompt") and _G.HookPromptEnabled then
-					hook(obj)
-				end
-			end)
-		else
-			_G.HookPromptEnabled = false
-			if _G.HookPromptConn then
-				_G.HookPromptConn:Disconnect()
-				_G.HookPromptConn = nil
-			end
-			_G.PromptCounter = {}
-		end
-		return true
-	end
-	
-	return false
+    action = action:lower()
+    
+    if action == "instant" then
+        if value == true then
+            if _G.InstantPromptConn then return true end
+            _G.InstantPromptEnabled = true
+            
+            local ProximityPromptService = game:GetService("ProximityPromptService")
+            
+            if _G.PromptButtonHoldBegan then
+                _G.PromptButtonHoldBegan:Disconnect()
+                _G.PromptButtonHoldBegan = nil
+            end
+            _G.PromptButtonHoldBegan = ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+                fireproximityprompt(prompt, 0)
+            end)
+            
+            local function makeInstant(prompt)
+                if prompt.HoldDuration > 0 then
+                    prompt.HoldDuration = 0
+                end
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    makeInstant(obj)
+                end
+            end
+            
+            _G.InstantPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") and _G.InstantPromptEnabled then
+                    makeInstant(obj)
+                end
+            end)
+        else
+            _G.InstantPromptEnabled = false
+            if _G.InstantPromptConn then
+                _G.InstantPromptConn:Disconnect()
+                _G.InstantPromptConn = nil
+            end
+            if _G.PromptButtonHoldBegan then
+                _G.PromptButtonHoldBegan:Disconnect()
+                _G.PromptButtonHoldBegan = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "distance" or action == "maxdistance" then
+        local dist = tonumber(value) or 10
+        _G.PromptDistance = dist
+        
+        local function setDistance(prompt)
+            pcall(function()
+                prompt.MaxActivationDistance = dist
+            end)
+        end
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                setDistance(obj)
+            end
+        end
+        
+        if _G.PromptDistanceConn then
+            _G.PromptDistanceConn:Disconnect()
+        end
+        _G.PromptDistanceConn = workspace.DescendantAdded:Connect(function(obj)
+            if obj:IsA("ProximityPrompt") then
+                setDistance(obj)
+            end
+        end)
+        
+        return true
+    end
+    
+    if action == "auto" then
+        if value == true then
+            if _G.AutoPromptConn then return true end
+            _G.AutoPromptEnabled = true
+            
+            local function autoFire(prompt)
+                task.wait(0.05)
+                pcall(function()
+                    fireproximityprompt(prompt, 0)
+                end)
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    obj.PromptShown:Connect(function()
+                        if _G.AutoPromptEnabled then
+                            autoFire(obj)
+                        end
+                    end)
+                end
+            end
+            
+            _G.AutoPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") then
+                    obj.PromptShown:Connect(function()
+                        if _G.AutoPromptEnabled then
+                            autoFire(obj)
+                        end
+                    end)
+                end
+            end)
+        else
+            _G.AutoPromptEnabled = false
+            if _G.AutoPromptConn then
+                _G.AutoPromptConn:Disconnect()
+                _G.AutoPromptConn = nil
+            end
+        end
+        return true
+    end
+    
+    if action == "fire" then
+        local target = value
+        if type(target) == "string" then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent.Name:lower():find(target:lower(), 1, true) then
+                    pcall(function()
+                        fireproximityprompt(obj, 0)
+                    end)
+                    return true
+                end
+            end
+        elseif typeof(target) == "Instance" and target:IsA("ProximityPrompt") then
+            pcall(function()
+                fireproximityprompt(target, 0)
+            end)
+            return true
+        end
+        return false
+    end
+    
+    if action == "fireall" then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                pcall(function()
+                    fireproximityprompt(obj, 0)
+                end)
+            end
+        end
+        return true
+    end
+    
+    if action == "hook" then
+        if value == true then
+            if _G.HookPromptConn then return true end
+            _G.HookPromptEnabled = true
+            _G.PromptCounter = _G.PromptCounter or {}
+            
+            local function hook(prompt)
+                local parent = prompt.Parent
+                local key = parent and parent:GetFullName() or prompt:GetFullName()
+                _G.PromptCounter[key] = (_G.PromptCounter[key] or 0) + 1
+                
+                if _G.PromptCounter[key] == 1 then
+                    Utils.Notification("ReyAI", "Proximity Prompt: " .. (parent and parent.Name or "Unknown"))
+                end
+            end
+            
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    hook(obj)
+                end
+            end
+            
+            _G.HookPromptConn = workspace.DescendantAdded:Connect(function(obj)
+                if obj:IsA("ProximityPrompt") and _G.HookPromptEnabled then
+                    hook(obj)
+                end
+            end)
+        else
+            _G.HookPromptEnabled = false
+            if _G.HookPromptConn then
+                _G.HookPromptConn:Disconnect()
+                _G.HookPromptConn = nil
+            end
+            _G.PromptCounter = {}
+        end
+        return true
+    end
+    
+    return false
 end
 
 function Utils.HookClickDetectors(enable, autoClick)
@@ -2458,7 +2500,12 @@ Utils.StopRecord() -> array of actions
 Utils.PlayRecord(actions?, speed?) -> bool
 Utils.FindGUIByPath(path) -> GuiObject
 Utils.ProximityPrompt(action, value) -> bool
--- action: "instant"/"auto"/"fire"/"fireall"/"hook" + value
+-- action: "instant" + true/false = set all prompts HoldDuration to 0 via PromptButtonHoldBegan
+-- action: "distance" + number = set MaxActivationDistance for all prompts
+-- action: "auto" + true/false = auto fire when PromptShown
+-- action: "fire" + name/Instance = fire specific prompt
+-- action: "fireall" = fire all prompts in workspace
+-- action: "hook" + true/false = detect and notify prompts
 Utils.HookClickDetectors(enable, autoClick?) -> bool
 Utils.MonitorWorkspace(enable, keyword?, interval?) -> bool
 Utils.DetectionControl = {promptEnabled, clickDetectorEnabled, mobSpawnEnabled, lowHealthEnabled, teleportEnabled, currencyEnabled}
@@ -2910,6 +2957,18 @@ User: "prompt normal"
 [Rey]: Restored.
 ```lua
 Utils.ProximityPrompt("instant", false)
+```
+
+User: "prompt distance 20" or "prompt maxdistance 20"
+[Rey]: Max distance set to 20.
+```lua
+Utils.ProximityPrompt("distance", 20)
+```
+
+User: "prompt distance default" or "prompt maxdistance reset"
+[Rey]: Back to 10.
+```lua
+Utils.ProximityPrompt("distance", 10)
 ```
 
 User: "prompt auto"
