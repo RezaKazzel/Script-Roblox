@@ -3534,6 +3534,9 @@ function ReyAIChat:Enable()
 				IsAIMessage = true
 				sendMessage("[Rey] Public Full mode enabled. Everyone can use me. Say 'rey' to activate.")
 				IsAIMessage = false
+				Public = false
+				PublicFull = false
+				task.spawn(function() task.wait(0.5) Public = true; PublicFull = true end)
 			end
 			return true
 		end
@@ -3545,6 +3548,8 @@ function ReyAIChat:Enable()
 				IsAIMessage = true
 				sendMessage("[Rey] Public mode enabled.")
 				IsAIMessage = false
+				Public = false
+				task.spawn(function() task.wait(0.5) Public = true end)
 			end
 			return true
 		end
