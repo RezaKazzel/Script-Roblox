@@ -39,7 +39,8 @@ local State = {
 	AutoFarm = false,
 	RestrictAutoFarm = false,
 	RestrictedParent = false,
-	Noclip = false
+	Noclip = false,
+	CheckHumanoid = true
 }
 
 local UI = UI or Rey:CreateUI("Rey Rework")
@@ -132,7 +133,7 @@ end
 function Utils.GetMonsterList()
 	local monsters = {}
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and (obj:FindFirstChildWhichIsA("Humanoid") and State.CheckHumanoid) and obj:FindFirstChild("HumanoidRootPart") then
 			if not table.find(monsters, obj.Name) then
 				table.insert(monsters, obj.Name)
 			end
@@ -1279,6 +1280,10 @@ Rey:CreateToggle(MiscTab, "Float Platform", "Create movable platform", Floating.
 -- Settings Tab
 Rey:CreateToggle(UI.SettingsTab, "Remove AutoFarm Restriction", "Farm multiple mobs at once", function(state)
 	State.RestrictAutoFarm = state
+end)
+
+Rey:CreateToggle(UI.SettingsTab, "AutoFarm ext.", "don't check humanoid in List", function(state)
+	State.CheckHumanoid = state
 end)
 
 Rey:CreateToggle(UI.SettingsTab, "AutoFarmV2 ext.", "check parent, not health", function(state)
