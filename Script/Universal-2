@@ -75,41 +75,68 @@ function Utils.StartThread(key, func)
 	coroutine.resume(ActiveConnections[key])
 end
 
-function Utils.GetMobFolder(modelName)
+function Utils.GetMobContainer(modelName)
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj.Name == modelName and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model")
+			and obj.Name == modelName
+			and obj.Name ~= LocalPlayer.Name
+			and obj:FindFirstChild("HumanoidRootPart") then
+			
 			local currentObj = obj
-			while currentObj and not currentObj:IsA("Folder") do
-				if currentObj.Parent and currentObj.Parent:IsA("Folder") then
-					return currentObj.Parent
-				end
+			
+			while currentObj.Parent and currentObj.Parent ~= State.SelectedFolder do
 				currentObj = currentObj.Parent
 			end
+			
+			return currentObj
 		end
 	end
+	
 	return nil
 end
 
 function Utils.GetNearbyEnemies(range)
 	local enemies = {}
-	local Character = LocalPlayer.Character
-	if not Character or not Character:FindFirstChild("HumanoidRootPart") then return {} end
-	local rootPart = Character.HumanoidRootPart
+	local character = LocalPlayer.Character
+	if not character then return {} end
+	
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if not rootPart then return {} end
 	
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and (not State.CheckHumanoid or obj:FindFirstChildWhichIsA("Humanoid")) and obj:FindFirstChild("HumanoidRootPart") then
-			local humanoid = obj.Humanoid
-			local enemyRootPart = obj.HumanoidRootPart
-			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
+		if obj:IsA("Model")
+			and obj.Name ~= LocalPlayer.Name
+			and obj:FindFirstChild("HumanoidRootPart")
+			and (not State.SelectedMob or obj.Name == State.SelectedMob) then
 			
-			if humanoid and humanoid.Health > 0 and distance <= range then
-				table.insert(enemies, obj)
+			local humanoid = State.CheckHumanoid and obj:FindFirstChildWhichIsA("Humanoid")
+			local enemyRoot = obj:FindFirstChild("HumanoidRootPart")
+			
+			if enemyRoot then
+				if State.CheckHumanoid and (not humanoid or humanoid.Health <= 0) then
+					continue
+				end
+				
+				local distance = (rootPart.Position - enemyRoot.Position).Magnitude
+				
+				if distance <= range then
+					table.insert(enemies, obj)
+				end
 			end
 		end
 	end
 	
 	table.sort(enemies, function(a, b)
-		return a.Humanoid.Health < b.Humanoid.Health
+		if not State.CheckHumanoid then
+			local distA = (rootPart.Position - a.HumanoidRootPart.Position).Magnitude
+			local distB = (rootPart.Position - b.HumanoidRootPart.Position).Magnitude
+			return distA < distB
+		end
+		
+		local humA = a:FindFirstChildWhichIsA("Humanoid")
+		local humB = b:FindFirstChildWhichIsA("Humanoid")
+		
+		return humA.Health < humB.Health
 	end)
 	
 	return enemies
@@ -263,7 +290,7 @@ function AutoFarm.ToggleFarm(state)
 	local playerRoot = char and char:FindFirstChild("HumanoidRootPart")  
 	if not playerRoot then return end  
 	  
-	local mobFolder = Utils.GetMobFolder(State.SelectedMob)  
+	local mobFolder = Utils.GetMobContainer(State.SelectedMob)  
 	if not mobFolder then  
 		Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)  
 		return  
@@ -322,7 +349,7 @@ function AutoFarm.ToggleFarmV2(state)
 	local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
 	if not playerRoot then return end
 	
-	local mobFolder = Utils.GetMobFolder(State.SelectedMob)
+	local mobFolder = Utils.GetMobContainer(State.SelectedMob)
 	if not mobFolder then
 		Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
 		return
