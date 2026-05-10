@@ -82,16 +82,9 @@ function Utils.GetMobContainer(modelName)
 			and obj.Name ~= LocalPlayer.Name
 			and obj:FindFirstChild("HumanoidRootPart") then
 			
-			local currentObj = obj
-			
-			while currentObj.Parent and currentObj.Parent ~= State.SelectedFolder do
-				currentObj = currentObj.Parent
-			end
-			
-			return currentObj
+			return obj.Parent
 		end
 	end
-	
 	return nil
 end
 
