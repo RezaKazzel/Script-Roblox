@@ -40,7 +40,7 @@ local State = {
 	RestrictAutoFarm = false,
 	RestrictedParent = false,
 	Noclip = false,
-	CheckHumanoid = true
+	CheckHumanoid = false
 }
 
 local UI = UI or Rey:CreateUI("Rey Rework")
@@ -97,7 +97,7 @@ function Utils.GetNearbyEnemies(range)
 	local rootPart = Character.HumanoidRootPart
 	
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and obj:FindFirstChildWhichIsA("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and (not State.CheckHumanoid or obj:FindFirstChildWhichIsA("Humanoid")) and obj:FindFirstChild("HumanoidRootPart") then
 			local humanoid = obj.Humanoid
 			local enemyRootPart = obj.HumanoidRootPart
 			local distance = (rootPart.Position - enemyRootPart.Position).Magnitude
@@ -133,7 +133,7 @@ end
 function Utils.GetMonsterList()
 	local monsters = {}
 	for _, obj in ipairs(State.SelectedFolder:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and (obj:FindFirstChildWhichIsA("Humanoid") and State.CheckHumanoid) and obj:FindFirstChild("HumanoidRootPart") then
+		if obj:IsA("Model") and obj.Name ~= LocalPlayer.Name and (not State.CheckHumanoid or obj:FindFirstChildWhichIsA("Humanoid")) and obj:FindFirstChild("HumanoidRootPart") then
 			if not table.find(monsters, obj.Name) then
 				table.insert(monsters, obj.Name)
 			end
@@ -254,59 +254,59 @@ function AutoFarm.ToggleEquip(state)
 	end
 end
 
-function AutoFarm.ToggleFarm(state)
-	Utils.Disconnect("AutoFarm")
-	Utils.RemoveBodyVelocity()
-	if not state or not State.SelectedMob then return end
-	
-	local char = LocalPlayer.Character
-	local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-	if not playerRoot then return end
-	
-	local mobFolder = Utils.GetMobFolder(State.SelectedMob)
-	if not mobFolder then
-		Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)
-		return
-	end
-	
-	Utils.SetupBodyVelocity()
-	local currentTarget
-	
-	Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()
-		local char = LocalPlayer.Character
-		local playerRoot = char and char:FindFirstChild("HumanoidRootPart")
-		if not playerRoot then return end
-		
-		if not currentTarget or not currentTarget.Parent then
-			currentTarget = nil
-			for _, mob in ipairs(mobFolder:GetChildren()) do
-				if mob:IsA("Model") and mob.Name == State.SelectedMob then
-					local hum = mob:FindFirstChildWhichIsA("Humanoid")
-					local root = mob:FindFirstChild("HumanoidRootPart")
-					if hum and root and hum.Health > 0 then
-						currentTarget = mob
-						break
-					end
-				end
-			end
-		end
-		
-		if not currentTarget then return end
-		
-		local hum = currentTarget:FindFirstChildWhichIsA("Humanoid")
-		local root = currentTarget:FindFirstChild("HumanoidRootPart")
-		if not hum or not root or hum.Health <= 0 then
-			currentTarget = nil
-			return
-		end
-		
-		if State.OneHit then
-			Utils.ApplyOneHit(currentTarget)
-		end
-		
-		playerRoot.CFrame = Utils.getTargetCFrame(root)
-		Utils.Attack(char)
-	end))
+function AutoFarm.ToggleFarm(state)  
+	Utils.Disconnect("AutoFarm")  
+	Utils.RemoveBodyVelocity()  
+	if not state or not State.SelectedMob then return end  
+	  
+	local char = LocalPlayer.Character  
+	local playerRoot = char and char:FindFirstChild("HumanoidRootPart")  
+	if not playerRoot then return end  
+	  
+	local mobFolder = Utils.GetMobFolder(State.SelectedMob)  
+	if not mobFolder then  
+		Rey:Notify("error", "Auto Farm", "Mob folder not found", 3)  
+		return  
+	end  
+	  
+	Utils.SetupBodyVelocity()  
+	local currentTarget  
+	  
+	Utils.AddConnection("AutoFarm", RunService.Heartbeat:Connect(function()  
+		local char = LocalPlayer.Character  
+		local playerRoot = char and char:FindFirstChild("HumanoidRootPart")  
+		if not playerRoot then return end  
+		  
+		if not currentTarget or not currentTarget.Parent then  
+			currentTarget = nil  
+			for _, mob in ipairs(mobFolder:GetChildren()) do  
+				if mob:IsA("Model") and mob.Name == State.SelectedMob then  
+					local hum = State.CheckHumanoid and mob:FindFirstChildWhichIsA("Humanoid") or true  
+					local root = mob:FindFirstChild("HumanoidRootPart")  
+					if hum and root and (not State.CheckHumanoid or hum.Health > 0) then  
+						currentTarget = mob  
+						break  
+					end  
+				end  
+			end  
+		end  
+		  
+		if not currentTarget then return end  
+		  
+		local hum = State.CheckHumanoid and currentTarget:FindFirstChildWhichIsA("Humanoid") or true  
+		local root = currentTarget:FindFirstChild("HumanoidRootPart")  
+		if not hum or not root or (State.CheckHumanoid and hum.Health <= 0) then  
+			currentTarget = nil  
+			return  
+		end  
+		  
+		if State.OneHit then  
+			Utils.ApplyOneHit(currentTarget)  
+		end  
+		  
+		playerRoot.CFrame = Utils.getTargetCFrame(root)  
+		Utils.Attack(char)  
+	end))  
 end
 
 function AutoFarm.ToggleFarmV2(state)
@@ -336,9 +336,9 @@ function AutoFarm.ToggleFarmV2(state)
 			currentTarget = nil
 			
 			local function checkMob(mob)
-				local hum = mob:FindFirstChildWhichIsA("Humanoid")
+				local hum = State.CheckHumanoid and mob:FindFirstChildWhichIsA("Humanoid") or true
 				local root = mob:FindFirstChild("HumanoidRootPart")
-				if not hum or not root or hum.Health <= 0 then
+				if not hum or not root or (State.CheckHumanoid and hum.Health <= 0) then
 					return false
 				end
 				if State.RestrictedParent and mob.Parent ~= mobFolder then
@@ -422,9 +422,9 @@ function AutoFarm.ToggleFarmNearby(state)
 			return
 		end
 		
-		local hum = target:FindFirstChildWhichIsA("Humanoid")
+		local hum = State.CheckHumanoid and target:FindFirstChildWhichIsA("Humanoid") or true
 		local root = target:FindFirstChild("HumanoidRootPart")
-		if not hum or not root or hum.Health <= 0 then
+		if not hum or not root or (State.CheckHumanoid and hum.Health <= 0) then
 			target = nil
 			return
 		end
